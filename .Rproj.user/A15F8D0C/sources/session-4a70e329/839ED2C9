@@ -3,15 +3,17 @@
     "path": "~/Github/Lucasbpofc.github.io/index.html",
     "project_path": "index.html",
     "type": "html",
-    "hash": "961939320",
+    "hash": "0",
     "contents": "",
     "dirty": true,
     "created": 1729963474695.0,
-    "source_on_save": false,
+    "source_on_save": true,
     "relative_order": 6,
     "properties": {
         "source_window_id": "",
-        "Source": "Source"
+        "Source": "Source",
+        "cursorPosition": "4,0",
+        "scrollLine": "0"
     },
     "folds": "",
     "lastKnownWriteTime": 1620574338,
