@@ -1,27 +1,22 @@
-.tmp
-.publish
-.deploy
-node_modules
-bower_components
-releases
+# build output
+dist/
+.cache
+# dependencies
+node_modules/
 
-*~
-*#
-.DS_STORE
-Thumbs.db
-.netbeans
-nbproject
-.idea
-.node_history
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 
-lib-cov
-*.seed
-*.log
-*.out
-*.pid
-npm-debug.log
+# environment variables
+.env
+.env.production
 
-*.iml
-/dist
-/.env
+# macOS-specific files
+.DS_Store
+
+# Astro
+.astro/
