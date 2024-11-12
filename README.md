@@ -1,4 +1,3 @@
 # Lucasbelo.io
 
-Oooooopaaa !
-Falarei um pouco aqui.
+Seja muito bem vindo a meu Git, atualizações em breve!
