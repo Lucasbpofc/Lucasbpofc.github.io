@@ -11,3 +11,8 @@
 <a href="https://www.linkedin.com/in/lucas-pereira-belo-3aa8a51a9" target="_blank"><img loading="lazy" src="https://img.shields.io/badge/-LinkedIn-%230077B5?style=for-the-badge&logo=linkedin&logoColor=white" target="_blank"></a>   
 </div>
 - ⚡ Curiosidade: Ligeiragente apaixonado pelo Vasco da Gama, gosto de jogar xadrez e gosto bastante de séries temporais.
+<div>
+<a href="https://github.com/Lucasbpofc">
+<img loading="lazy" height="180em" src="https://github-readme-stats.vercel.app/api/top-langs/?username=seu-usuário-aqui&layout=compact&langs_count=7&theme=dracula"/>
+<img loading="lazy" height="180em" src="https://github-readme-stats.vercel.app/api?username=seu-usuário-aqui&show_icons=true&theme=dracula&include_all_commits=true&count_private=true"/>
+</div>
