@@ -2,7 +2,7 @@
 ## Bem vindo ao meu perfil GitHub 👋
 
 - 🔭 Atualmente estou cursando Mestrado em estatística aplicada e biometria na universidade federal de Viçosa - UFV.
-- 🌱 Atualmente em conjunto com minha pós graduação estou aprendendo um pouquinho mais sobre o Power BI e SQL na escola DNC.
+- 🌱 Em conjunto com minha pós graduação estou aprendendo um pouquinho mais sobre o Power BI e SQL na escola DNC.
 - 👯 Estou procurando colaborar em análises de dados em um ambito geral, a seguir scripts de trabalhos recente:
 - Série de preços do café arábica - (https://Lucasbpofc.github.io/Post_caféarabica.html)
 - Série de preços da soja - Em produção ...
