@@ -1,10 +1,11 @@
 # Olá, me chamo Lucas ! 
 ## Bem vindo ao meu perfil GitHub 👋
 
-- 🔭 Atualmente estou cursando Mestrado em estatística aplicada e biometria na universidade federal de Viçosa - UFV.
+- 🔭 Atualmente estou cursando Mestrado em estatística aplicada e biometria na universidade federal de Viçosa - UFV. Meu trabalho tem enfase em análise de sobrevivência e séries temporais.
 - 🌱 Em conjunto com minha pós graduação estou aprendendo um pouquinho mais sobre o Power BI e SQL na escola DNC.
 - 👯 Estou procurando colaborar em análises de dados em um ambito geral, a seguir scripts de trabalhos recente:
 - Série de preços do café arábica - (https://Lucasbpofc.github.io/Post_caféarabica.html)
+- Mecanismos de Censura - (https://Lucasbpofc.github.io/Mecanismos-de-Censura.html)
 - Série de preços da soja - Em produção ...
 - Informações mais detalhadas sobre os testes utilizados podem ser encontradas em publicações referentes aos trabalhos disponíveis no ORCID.
 - 📫 Como entrar em contato comigo:
