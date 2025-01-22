@@ -6,7 +6,7 @@
 - 👯 Estou procurando colaborar em análises de dados em um ambito geral, a seguir scripts de trabalhos recente:
 - Série de preços do café arábica - (https://Lucasbpofc.github.io/Post_caféarabica.html)
 - Série de preços da soja - Em produção ...
-- Informações mais detalhadas sobre os testes utilizados podem ser encontradas em publicações referentes aos trabalhos.
+- Informações mais detalhadas sobre os testes utilizados podem ser encontradas em publicações referentes aos trabalhos disponíveis no ORCID.
 - 📫 Como entrar em contato comigo:
 <div>
 <a href="https://instagram.com/lucasbello_01" target="_blank"><img loading="lazy" src="https://img.shields.io/badge/-Instagram-%23E4405F?style=for-the-badge&logo=instagram&logoColor=white" target="_blank"></a>
