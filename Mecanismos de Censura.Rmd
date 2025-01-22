@@ -55,7 +55,7 @@ ggplot(data, aes(x = Tempo, y = Individuo)) +
   )
 ```
 
-Censura tipo II
+# Censura tipo II
 
 ```{r}
 # Ocorre quando é alcançado um número r previamente
@@ -103,7 +103,7 @@ ggplot(data, aes(x = Tempo, y = Individuo)) +
 
 ```
 
-Censura tipo III
+# Censura tipo III
 
 ```{r}
 # Acontece quando a observação é retirada do estudo sem que tenha ocorrido a
