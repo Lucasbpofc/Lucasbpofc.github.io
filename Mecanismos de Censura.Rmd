@@ -1,0 +1,160 @@
+---
+title: "Tipos de Censura"
+author: "Lucas Pereira Belo"
+date: "2025-01-22"
+output: html_document
+---
+
+# Utilizando dados fictícios irei sintetizar os mecanismo de censura dos tipos I, II e III.
+
+```{r}
+individuos <- c(1, 2, 3, 4, 5)
+tempos <- c(10, 20, 15, 30, 25)  # Tempo de falha ou censura
+censuras <- c(FALSE, TRUE, FALSE, TRUE, FALSE)  # TRUE = Censura, FALSE = Falha
+```
+
+
+# Censura tipo I
+
+```{r}
+# A Censura do tipo I ocorre quando é preestabelecido o tempo de término
+# do estudo e, tem como característica a não observância do evento de
+# interesse para alguns indivíduos ao final do experimento, assim, tais
+# indivíduos são considerados como observações censuradas.
+# No gráfico anterior foram observados 5 indivíduos com um tempo mínimo de
+# 25 dias para ocorrência do evento de interesse.
+```
+
+
+```{r}
+# Gerar o gráfico
+library(ggplot2)
+
+data <- data.frame(
+  Individuo = individuos,
+  Tempo = tempos,
+  Censura = censuras
+)
+
+ggplot(data, aes(x = Tempo, y = Individuo)) +
+  geom_segment(aes(xend = Tempo, yend = Individuo), x = 0, color = "black") +
+  geom_point(aes(shape = Censura), size = 3, color = "black", fill = ifelse(censuras, "white", "black"), stroke = 1.2) +
+  scale_shape_manual(values = c(16, 21), labels = c("Falha", "Censura")) +
+  labs(
+    x = "Tempo (dias)",
+    y = "Indivíduo",
+    title = "",
+    shape = ""
+  ) +
+  scale_y_continuous(breaks = individuos) +
+  theme_minimal() +
+  theme(
+    panel.grid.major = element_line(color = "grey80"),
+    panel.grid.minor = element_line(color = "grey90"),
+    axis.line = element_line(color = "black")
+  )
+```
+
+Censura tipo II
+
+```{r}
+# Ocorre quando é alcançado um número r previamente
+# definido de indivíduos que experimentaram o evento de interesse, obtido
+# este número o estudo é finalizado, e os indivíduos que não experimentaram
+# o evento de interesse tem seus tempos censurados
+```
+
+
+```{r}
+# Dados fictícios
+individuos <- c(1, 2, 3, 4, 5, 6, 7)
+tempos <- c(15, 40, 20, 40, 25, 40, 35)  # Tempo de falha ou censura
+censuras <- c(FALSE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE)  # TRUE = Censura, FALSE = Falha
+
+```
+
+
+```{r}
+# Gerar o gráfico
+
+data <- data.frame(
+  Individuo = individuos,
+  Tempo = tempos,
+  Censura = censuras
+)
+
+ggplot(data, aes(x = Tempo, y = Individuo)) +
+  geom_segment(aes(xend = Tempo, yend = Individuo), x = 0, color = "black") +
+  geom_point(aes(shape = Censura), size = 3, color = "black", fill = ifelse(censuras, "white", "black"), stroke = 1.2) +
+  scale_shape_manual(values = c(16, 21), labels = c("Falha", "Censura")) +
+  labs(
+    x = "Tempo (dias)",
+    y = "Indivíduo",
+    title = "",
+    shape = ""
+  ) +
+  scale_y_continuous(breaks = individuos) +
+  theme_minimal() +
+  theme(
+    panel.grid.major = element_line(color = "grey80"),
+    panel.grid.minor = element_line(color = "grey90"),
+    axis.line = element_line(color = "black")
+  )
+
+```
+
+Censura tipo III
+
+```{r}
+# Acontece quando a observação é retirada do estudo sem que tenha ocorrido a
+# falha, no geral o paciente é retirado do estudo por uma causa diferente da estudada, como a morte
+# pode algum motivo não associado a análise.
+```
+
+```{r}
+# Dados fictícios
+individuos <- c(1, 2, 3, 4, 5, 6, 7)
+tempo_inicio <- c(0, 0, 0, 0, 0, 0, 0)  # Início do intervalo
+tempo_fim <- c(10, 20, 30, 28, 15, 25, 30)   # Fim do intervalo
+censuras <- c(TRUE, FALSE, TRUE, FALSE, TRUE, FALSE, TRUE)  # TRUE = Censura, FALSE = Falha
+
+```
+
+```{r}
+# Gerar o gráfico
+library(ggplot2)
+
+data <- data.frame(
+  Individuo = individuos,
+  TempoInicio = tempo_inicio,
+  TempoFim = tempo_fim,
+  Censura = censuras
+)
+
+ggplot(data, aes(y = Individuo)) +
+  geom_segment(aes(x = TempoInicio, xend = TempoFim, yend = Individuo), color = "black") +
+  geom_point(aes(x = TempoFim, color = Censura, shape = Censura), size = 3, color = "black", fill = ifelse(censuras, "white", "black"), stroke = 1.2) +
+  scale_color_manual(values = c("black", "white"), labels = c("Falha", "Censura")) +
+  scale_shape_manual(values = c(16, 21), labels = c("Falha", "Censura")) +
+  labs(
+    x = "Tempo (dias)",
+    y = "Indivíduo",
+    title = "",
+    color = "",
+    shape = ""
+  ) +
+  scale_y_continuous(breaks = individuos) +
+  theme_minimal() +
+  theme(
+    panel.grid.major = element_line(color = "grey80"),
+    panel.grid.minor = element_line(color = "grey90"),
+    axis.line = element_line(color = "black")
+  )
+
+```
+
+```{r}
+# Referências: COLOSIMO, E. A.; GIOLO, S. R. Análise de sobrevivência aplicada. 2. ed. São Paulo, SP: Editora Blucher. 2024.
+```
+
+
