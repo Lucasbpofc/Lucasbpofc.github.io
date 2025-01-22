@@ -1,0 +1,160 @@
+---
+title: "Série de preços do café arábica"
+author: "Lucas Pereira Belo"
+date: "2024-09-19"
+output: html_document
+---
+Irei apresentar neste site os processos realizados para modelagem da volatilidade do café arábica, assim como os scripts utilizados.
+
+```{r}
+library(tseries)  # Para o teste PP
+library(readxl) # Para carregar o arquivo em xlsx 
+library(fracdiff) # Para estimar o valor de d
+library(forecast)
+library(tseries)
+library(randtests) # Para realizar o teste de Cox e Stuart
+library(descomponer) # Função periodograma    
+library(TSA) # Função perodogram
+library(boot) #estimativa bootstrap
+library(lmtest)
+library(fGarch) #Modelo Garch
+
+coffe <- read_excel("coffe.xlsx")
+
+dados <- coffe
+head(dados); tail(dados)
+```
+
+Inicialmente plotamos a série de preços
+
+```{r}
+y<-dados$Reais 
+rm(y)
+
+y = ts(dados$Reais, start = c(1995,1), end = c(2023,12), freq = 12)
+plot(y, xlab= c("Tempo"),ylab = c("Preço (R$)"))
+```
+
+A série log de retornos foi plotada logo em sequência
+
+```{r}
+y1 = ts(diff(log(y)), start = c(1995,1), end = c(2023,12), freq = 12) # r = ln[y_t/y_(t-1)]
+plot(y1, xlab= c("Tempo"),ylab = c("Série de log retornos"))
+```
+
+Verificando ACF e PACF
+
+```{r}
+n = length(y) #tamanho da amostra
+par(mfrow = c(2,2))
+acf(y, n)
+acf(y1, n)
+pacf(y, n)
+pacf(y1, n)
+```
+
+O teste de Cox-Stuart verifica se a série possui alguma tendencia significativa. 
+
+```{r}
+cox.stuart.test(y1)
+```
+
+O Periodograma verifica se a série possui algum periodo e frequência significativos
+
+```{r}
+pegram<-periodogram(y1)
+```
+
+Encontrando a frequência dominante
+
+```{r}
+freq_dominant <- pegram$freq[which.max(pegram$spec)]
+period <- 1 / freq_dominant
+cat("Frequência dominante:", freq_dominant, "\n")
+cat("Período dominante:", period, "\n")
+```
+
+Utilizarei o método de reamostragem bootstrap para verificar o intervalo de significância da frequência.
+
+```{r}
+# Função de estatística de interesse
+stat_function <- function(data, indices) {
+  sample_data <- data[indices]
+  pgram <- spectrum(sample_data, plot = FALSE)
+  max(pgram$spec)
+}
+
+# Aplicando o bootstrap
+boot_result <- boot(data = y1, statistic = stat_function, R = 1000)
+
+# Calculando o intervalo de confiança
+boot_ci <- boot.ci(boot_result, type = "perc")
+
+# Visualizando os resultados
+print(boot_ci)
+
+```
+Ajustando componentes seno e cosseno para modelar a periodicidade encontrada.
+
+```{r}
+(wjj = 2*pi*freq_dominant) 
+
+t = seq(1,n)
+sen = sin(wjj*t)
+cos = cos(wjj*t)
+Xs = cbind(cos)
+```
+
+Ajustando um modelo ARIMA (1,0,0) com uma componente cosseno.
+
+```{r}
+arima = Arima(y1, order = c(1,0,0), xreg = Xs, include.mean = F); summary(arima); coeftest(arima)
+
+y_hat = arima$fitted
+plot(y1, col = "black", type = "l")
+lines(y_hat, col = "red", add = T)
+```
+
+Análise de resíduo
+
+```{r}
+
+rm = residuals(arima)
+
+hist(rm, 
+     main = "Histograma dos Resíduos do Modelo ARIMA", # Título do histograma
+     xlab = "Valores dos Resíduos",                    # Legenda do eixo X
+     ylab = "Frequência",                              # Legenda do eixo Y
+     col = "lightblue")
+
+# Iniciando a Análise Residual 
+
+shapiro.test(rm) # Não rejeitar H0 indica normalidade
+Box.test(rm, 15, type = c("Box-Pierce")) # Não Rejeitar H0 indica ausência de correlação
+Box.test(rm^2, 15, type = c("Box-Pierce")) # Não Rejeitar H0 indica variância Constante
+
+par(mfrow = c(2,1))
+acf(rm, n); pacf(rm, n)
+acf(rm^2, n); pacf(rm^2, n)
+qqnorm(rm); qqline(rm, col = "red"); hist(rm, prob = F)
+
+```
+
+Para contornar a autocorrelação ainda presente no quadrado dos resíduos, ajustamos um modelo GARCH(1,1) juntamente com uma distribuição Skew_t para capturar a leptocurtica presente nos dados.
+
+```{r}
+arch = garchFit(~ garch(1,1), include.mean = T, data = rm, trace = F, cond.dist = c("sstd"))
+summary(arch)
+#plot(arch) # 10, 11, 1337.903.873 26.594.653
+
+#cond.dist = c("norm", "snorm", "ged", "sged",
+#"std", "sstd", "snig", "QMLE"),
+```
+Ao fim, plotamos a previsão de preços para os próximos mêses
+
+```{r}
+prev = predict(arch, h = 3, plot = T, trace = F)
+prev
+```
+
+
