@@ -3,8 +3,9 @@
 
 - 🔭 Atualmente estou cursando Mestrado em estatística aplicada e biometria na universidade federal de Viçosa - UFV.
 - 🌱 Atualmente em conjunto com minha pós graduação estou aprendendo um pouquinho mais sobre o Power BI e SQL na escola DNC.
-- 👯 Estou procurando colaborar em análises de dados em um ambito geral.
+- 👯 Estou procurando colaborar em análises de dados em um ambito geral, a seguir alguns trabalhos recente:
 - Série de preços do café arábica - (https://Lucasbpofc.github.io/Post_caféarabica.html)
+- Série de preços da soja - Em produção ...
 - 📫 Como entrar em contato comigo:
 <div>
 <a href="https://instagram.com/lucasbello_01" target="_blank"><img loading="lazy" src="https://img.shields.io/badge/-Instagram-%23E4405F?style=for-the-badge&logo=instagram&logoColor=white" target="_blank"></a>
