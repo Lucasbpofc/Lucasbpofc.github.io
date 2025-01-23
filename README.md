@@ -1,7 +1,7 @@
 # Olá, me chamo Lucas ! 
 ## Bem vindo ao meu perfil GitHub 👋
 <div align="center">
-    <img height="400em" src="https://1000265939.jpg">
+    <img height="400em" src="https://[1000265939.jpg](https://github.com/Lucasbpofc/Lucasbpofc.github.io/blob/main/1000265939.jpg)">
 </div>
 
  
