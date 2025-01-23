@@ -1,8 +1,8 @@
 # Olá, me chamo Lucas ! 
 ## Bem vindo ao meu perfil GitHub 👋
 <div align="center">
-<img height="400em" src="[https://user-images.githubusercontent.com/103541346/207719344-725d2008-eeab-4af8-8d2a-34c6159817b5.png](https://github.com/Lucasbpofc/Lucasbpofc.github.io/blob/main/Lucasbelo.io.Rproj)">
- 
+<img height="400em" src="(https://github.com/Lucasbpofc/Lucasbpofc.github.io/blob/main/Lucasbelo.io.Rproj)">
+ 1000265939.jpg
 - 🔭 Atualmente estou cursando Mestrado em estatística aplicada e biometria na universidade federal de Viçosa - UFV. Meu trabalho tem enfase em análise de sobrevivência e séries temporais.
 - 🌱 Em conjunto com minha pós graduação estou aprendendo um pouquinho mais sobre o Power BI e SQL na escola DNC.
 - 👯 Estou procurando colaborar em análises de dados em um ambito geral, a seguir scripts de trabalhos recentes:
