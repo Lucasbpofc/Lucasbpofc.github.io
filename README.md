@@ -1,9 +1,8 @@
 # Olá, me chamo Lucas ! 
 ## Bem vindo ao meu perfil GitHub 👋
 <div align="center">
-    <img height="400em" src="https://[1000265939.jpg](https://github.com/Lucasbpofc/Lucasbpofc.github.io/blob/main/1000265939.jpg)">
+    <img height="400em" src="https://raw.githubusercontent.com/Lucasbpofc/Lucasbpofc.github.io/refs/heads/main/1000265939.jpg">
 </div>
-
  
 - 🔭 Atualmente estou cursando Mestrado em estatística aplicada e biometria na universidade federal de Viçosa - UFV. Meu trabalho tem enfase em análise de sobrevivência e séries temporais.
 - 🌱 Em conjunto com minha pós graduação estou aprendendo um pouquinho mais sobre o Power BI e SQL na escola DNC.
