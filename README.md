@@ -28,5 +28,4 @@
 </div>
 
 ### GitHub Activity
-
-![Snake animation](https://github.com/Lucasbpofc/Lucasbpofc/blob/output/github-contribution-grid-snake.svg)
+![snake gif](https://github.com/Lucasbpofc/Lucasbpofc/blob/output/github-contribution-grid-snake.svg)
