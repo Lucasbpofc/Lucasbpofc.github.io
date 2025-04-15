@@ -4,7 +4,7 @@
     <img height="400em" src="https://raw.githubusercontent.com/Lucasbpofc/Lucasbpofc.github.io/refs/heads/main/1000265939.jpg">
 </div>
  
-- 🔭 Atualmente estou cursando Mestrado em estatística aplicada e biometria na universidade federal de Viçosa - UFV. Meu trabalho tem enfase em análise de sobrevivência e séries temporais.
+- 🔭 Atualmente, estou cursando Mestrado em estatística aplicada e biometria na universidade federal de Viçosa - UFV. Meu trabalho tem enfase em análise de sobrevivência e séries temporais.
 - 🌱 Em conjunto com minha pós graduação estou aprendendo um pouquinho mais sobre o Power BI e SQL na escola DNC.
 - 👯 Estou procurando colaborar em análises de dados em um ambito geral, a seguir scripts de trabalhos recentes:
 - Série de preços do café arábica - (https://Lucasbpofc.github.io/Post_caféarabica.html)
