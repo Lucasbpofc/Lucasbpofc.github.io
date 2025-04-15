@@ -10,7 +10,7 @@
 - Série de preços do café arábica - (https://Lucasbpofc.github.io/Post_caféarabica.html)
 - Mecanismos de Censura - (https://Lucasbpofc.github.io/Mecanismos-de-Censura.html)
 - Série de preços da soja - Em produção ...
-- Informações mais detalhadas sobre os testes utilizados podem ser encontradas em publicações referentes aos trabalhos disponíveis no ORCID.
+- Para informações mais detalhadas sobre os testes utilizados, elas podem ser encontradas em publicações referentes aos trabalhos recentes, disponíveis no ORCID.
  
 - 📫 Como entrar em contato comigo:
 <div>
