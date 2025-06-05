@@ -1,0 +1,230 @@
+---
+title: "Explorando o Pacote forcats no R"
+author: "Lucas Pereira Belo"
+date: "05 de Junho de 2025"
+output: 
+    html_document:
+    theme: united
+    highlight: tango
+---
+
+## Introdução ao forcats
+
+- **O que é o forcats?**
+  - Pacote do tidyverse para manipulação de fatores no R.
+  - Fatores são usados para variáveis categóricas (ex.: "baixo", "médio", "alto").
+  - Oferece funções intuitivas para reordenar, renomear e agrupar níveis de fatores.
+
+- **Por que usar forcats?**
+  - Simplifica tarefas complexas com fatores.
+  - Integra-se bem com outros pacotes do tidyverse (ex.: dplyr, ggplot2).
+
+---
+
+## Instalação (se necessária) e Carregamento
+
+```{r}
+# Carregando o pacote
+library(forcats)
+library(ggplot2)
+```
+---
+
+## Tipos de Funções no forcats
+
+O forcats é um pacote bastante simples. Basicamente, ele é composto por funções de apenas dois tipos:
+
+- Funções que começam com `fct_`, que recebem uma lista de fatores e devolvem um fator.
+- Funções que começam com `lvls_`, que modificam os níveis de um fator.
+
+---
+
+## Principais Funções do forcats que utilizam fct_
+
+1. **`fct_relevel()`**: Reordena níveis manualmente;
+2. **`fct_reorder()`**: Reordena níveis com base em outra variável;
+3. **`fct_infreq()`**: Reordena níveis por frequência;
+4. **`fct_lump()`**: Agrupa níveis menos frequentes em "outros";
+5. **`fct_recode()`**: Renomeia níveis;
+6. **`fct_collapse()`**: Combina níveis em grupos;
+7. **`lvls_reorder`**: Reordenar os níveis de um fator;
+8. **`lvls_revalue()`**: Renomeando Avaliações;
+9.**`lvls_expand`**:Expandindo níveis de um fator.
+---
+
+## Exemplo 1: Reordenando Níveis com fct_relevel()
+
+```{r}
+library(forcats)
+library(ggplot2)
+dados <- data.frame(
+  categoria = factor(c("Lucas C", "Verônica", "Samantha", "Lucas C", "Verônica")),
+  valor = c(10, 20, 30, 15, 25)
+)
+dados$categoria <- fct_relevel(dados$categoria, "Lucas C", "Verônica", "Samantha")
+plot <- ggplot(dados, aes(categoria, valor)) +
+  geom_bar(stat = "identity")
+plot
+```
+
+
+---
+
+## Exemplo 2: Reordenando por Frequência com fct_infreq()
+
+```{r}
+# Dados com categorias
+dados <- data.frame(
+  categoria = factor(c("Sarah", "Sarah", "Jonas", "Brenda", "Brenda", "Brenda", "Renata"))
+)
+
+# Reordenando por frequência
+dados$categoria <- fct_infreq(dados$categoria)
+dados$categoria
+# Visualização
+plot2 <- ggplot(dados, aes(categoria)) +
+  geom_bar()
+plot2
+```
+
+**Resultado**: Os níveis são ordenados do mais frequente ("Brenda") ao menos frequente ("Renata").
+
+---
+
+## Exemplo 3: Agrupando Níveis com fct_lump()
+
+```{r}
+# Dados com várias categorias
+dados <- data.frame(
+  categoria = factor(c("A", "A", "A", "B", "C", "C", "D", "E", "F"))
+)
+
+# Agrupando níveis menos frequentes
+dados$categoria <- fct_lump(dados$categoria, n = 2)
+dados$categoria
+# Visualização
+plot3 <- ggplot(dados, aes(categoria)) +
+  geom_bar()
+plot3
+```
+
+---
+
+## Exemplo 4: Reordenando por outra variável com fct_reorder()
+
+```{r}
+# Dados de exemplo
+dados <- data.frame(
+  categoria = factor(c("A", "B", "C", "D")),
+  valor = c(10, 30, 20, 40)
+)
+
+# Reordenando por valor (decrescente)
+dados$categoria <- fct_reorder(dados$categoria, dados$valor, .desc = FALSE)
+dados$categoria
+
+# Visualização
+plot4 <- ggplot(dados, aes(categoria, valor)) +
+  geom_bar(stat = "identity")
+plot4
+```
+
+---
+
+### Exemplo 5: Alterando Níveis com fct_recode
+
+```{r}
+fator <- factor(c("Ellie", "Joel", "Tommy", "Abby"))
+
+# Alterando apenas uma
+fct_recode(fator, carol = "Ellie")
+
+# Alterando todas
+fct_recode(fator,
+           Carol = "Ellie",
+           Pedro = "Joel",
+           Pedro = "Tommy",
+           Carol = "Abby")
+```
+
+### Exemplo 6: Agrupando níveis com fct_collapse
+```{r}
+# Dados de exemplo
+dados <- data.frame(
+  genero = factor(c("Ação", "Aventura", "Drama", "Romance", "Comédia", "Ação", "Romance", "Aventura")),
+  bilheteria = c(100, 150, 80, 90, 120, 110, 95, 140)
+)
+
+# Agrupando níveis com fct_collapse
+dados$genero <- fct_collapse(dados$genero,
+                             "Ação/Aventura" = c("Ação", "Aventura"),
+                             "Drama/Romance" = c("Drama", "Romance"),
+                             "Outros" = "Comédia")
+print(dados$genero)
+
+# Visualização
+plot <- ggplot(dados, aes(genero, bilheteria)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Bilheteria por Grupo de Gêneros", x = "Gênero", y = "Bilheteria (milhões)")
+plot
+```
+
+### Exemplo 7: Reordenando Níveis com lvls_reorder
+
+```{r}
+fator <- factor(c("casado", "viuvo", "solteiro", "divorciado"))
+fator
+
+lvls_reorder(fator, c(3, 1, 2, 4))
+```
+
+
+## Exemplo 8: Renomeando Avaliações com lvls_revalue()
+
+```{r}
+dados <- data.frame(
+  Notas = factor(c("Aprovado", "Final", "Aprovado", "Reprovado", "Final")),
+  pontuacao = c(70, 55, 90, 50, 75)
+)
+
+dados$Notas <- lvls_revalue(dados$Notas, c("A", "B", "C"))
+print(dados$Notas)
+plot <- ggplot(dados, aes(Notas, pontuacao)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Situação final (Abreviada)", x = "Situação", y = "Pontuação")
+print(plot)
+```
+
+
+## Exemplo 9: Expandindo níveis de um fator com a função lvls_expand
+
+```{r}
+dados <- data.frame(
+  nota = factor(c("A", "B", "C", "B", "A")),
+  frequencia = c(2, 3, 1, 2, 1)
+)
+dados$nota <- lvls_expand(dados$nota, c("A", "B", "C", "D", "F"))
+print(dados$nota)
+plot <- ggplot(dados, aes(nota, frequencia)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Frequência por Nota (Escala Completa)", x = "Nota", y = "Frequência")
+print(plot)
+```
+---
+
+## Vantagens do forcats
+
+- **Flexibilidade**: Manipulação intuitiva de fatores.
+- **Integração**: Funciona bem com tidyverse (dplyr, ggplot2).
+- **Legibilidade**: Código mais claro e conciso.
+- **Robustez**: Evita erros comuns ao manipular fatores manualmente.
+
+---
+
+## Conclusão
+
+- O `forcats` é uma ferramenta poderosa para trabalhar com variáveis categóricas no R.
+- Facilita a reordenação, renomeação e agrupamento de níveis.
+- Ideal para análises exploratórias e visualizações com `ggplot2`.
+
+- Referências [forcats.tidyverse.org](https://forcats.tidyverse.org)
