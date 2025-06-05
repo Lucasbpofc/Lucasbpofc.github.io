@@ -9,6 +9,7 @@
 - 👯 Estou procurando colaborar em análises de dados em um ambito geral, a seguir scripts de trabalhos recentes:
 - Série de preços do café arábica - (https://Lucasbpofc.github.io/Post_caféarabica.html)
 - Mecanismos de Censura - (https://Lucasbpofc.github.io/Mecanismos-de-Censura.html)
+- Estudo do pacote Forcats - (https://Lucasbpofc.github.io/Pacote-forcats.html)
 - Série de preços da soja - Em produção ...
 - Para informações mais detalhadas sobre os testes utilizados, elas podem ser encontradas em publicações referentes aos trabalhos recentes, disponíveis no ORCID.
  
