@@ -120,7 +120,7 @@ dados <- data.frame(
 )
 
 # Reordenando por valor (decrescente)
-dados$categoria <- fct_reorder(dados$categoria, dados$valor, .desc = FALSE)
+dados$categoria <- fct_reorder(dados$categoria, dados$valor, .desc = TRUE)
 dados$categoria
 
 # Visualização
