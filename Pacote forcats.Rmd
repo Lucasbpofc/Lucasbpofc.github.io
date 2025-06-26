@@ -56,12 +56,11 @@ O forcats é um pacote bastante simples. Basicamente, ele é composto por funç�
 
 ```{r}
 library(forcats)
-library(ggplot2)
 dados <- data.frame(
   categoria = factor(c("Lucas C", "Verônica", "Samantha", "Lucas C", "Verônica")),
   valor = c(10, 20, 30, 15, 25)
 )
-dados$categoria <- fct_relevel(dados$categoria, "Lucas C", "Verônica", "Samantha")
+dados$categoria <- fct_relevel(dados$categoria, "Lucas C", "Samantha", "Verônica")
 dados$categoria
 ```
 

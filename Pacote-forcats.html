@@ -419,15 +419,14 @@ fator. —</li>
 <div id="exemplo-1-reordenando-níveis-com-fct_relevel" class="section level2">
 <h2>Exemplo 1: Reordenando Níveis com fct_relevel()</h2>
 <pre class="r"><code>library(forcats)
-library(ggplot2)
 dados &lt;- data.frame(
   categoria = factor(c(&quot;Lucas C&quot;, &quot;Verônica&quot;, &quot;Samantha&quot;, &quot;Lucas C&quot;, &quot;Verônica&quot;)),
   valor = c(10, 20, 30, 15, 25)
 )
-dados$categoria &lt;- fct_relevel(dados$categoria, &quot;Lucas C&quot;, &quot;Verônica&quot;, &quot;Samantha&quot;)
+dados$categoria &lt;- fct_relevel(dados$categoria, &quot;Lucas C&quot;, &quot;Samantha&quot;, &quot;Verônica&quot;)
 dados$categoria</code></pre>
 <pre><code>## [1] Lucas C  Verônica Samantha Lucas C  Verônica
-## Levels: Lucas C Verônica Samantha</code></pre>
+## Levels: Lucas C Samantha Verônica</code></pre>
 <hr />
 </div>
 <div id="exemplo-2-reordenando-por-frequência-com-fct_infreq" class="section level2">
