@@ -10,7 +10,7 @@ dados <- data.frame(
   categoria = factor(c("Lucas C", "Verônica", "Samantha", "Lucas C", "Verônica")),
   valor = c(10, 20, 30, 15, 25)
 )
-dados$categoria <- fct_relevel(dados$categoria, "Lucas C", "Verônica", "Samantha")
+dados$categoria <- fct_relevel(dados$categoria, "Samantha","Lucas C", "Verônica")
 plot <- ggplot(dados, aes(categoria, valor)) +
   geom_bar(stat = "identity")
 plot
@@ -36,7 +36,7 @@ dados <- data.frame(
 )
 
 # Agrupando níveis menos frequentes
-dados$categoria <- fct_lump(dados$categoria, n = 2)
+dados$categoria <- fct_lump(dados$categoria, n = 1)
 dados$categoria
 # Visualização
 plot3 <- ggplot(dados, aes(categoria)) +
@@ -49,6 +49,7 @@ dados <- data.frame(
   categoria = factor(c("A", "B", "C", "D")),
   valor = c(10, 30, 20, 40)
 )
+dados$categoria
 
 # Reordenando por valor (decrescente)
 dados$categoria <- fct_reorder(dados$categoria, dados$valor, .desc = TRUE)
@@ -64,7 +65,9 @@ plot4
 fator <- factor(c("Ellie", "Joel", "Tommy", "Abby"))
 
 # Alterando apenas uma
-fct_recode(fator, carol = "Ellie")
+fct_recode(fator, "Carol" = "Ellie")
+
+#Fuciona tanto com ou sem aspas
 
 # Alterando todas
 fct_recode(fator,

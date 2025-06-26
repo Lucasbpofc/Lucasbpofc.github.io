@@ -62,9 +62,7 @@ dados <- data.frame(
   valor = c(10, 20, 30, 15, 25)
 )
 dados$categoria <- fct_relevel(dados$categoria, "Lucas C", "Verônica", "Samantha")
-plot <- ggplot(dados, aes(categoria, valor)) +
-  geom_bar(stat = "identity")
-plot
+dados$categoria
 ```
 
 
@@ -82,9 +80,7 @@ dados <- data.frame(
 dados$categoria <- fct_infreq(dados$categoria)
 dados$categoria
 # Visualização
-plot2 <- ggplot(dados, aes(categoria)) +
-  geom_bar()
-plot2
+
 ```
 
 **Resultado**: Os níveis são ordenados do mais frequente ("Brenda") ao menos frequente ("Renata").
@@ -102,10 +98,7 @@ dados <- data.frame(
 # Agrupando níveis menos frequentes
 dados$categoria <- fct_lump(dados$categoria, n = 2)
 dados$categoria
-# Visualização
-plot3 <- ggplot(dados, aes(categoria)) +
-  geom_bar()
-plot3
+
 ```
 
 ---
@@ -124,9 +117,6 @@ dados$categoria <- fct_reorder(dados$categoria, dados$valor, .desc = TRUE)
 dados$categoria
 
 # Visualização
-plot4 <- ggplot(dados, aes(categoria, valor)) +
-  geom_bar(stat = "identity")
-plot4
 ```
 
 ---
@@ -162,11 +152,6 @@ dados$genero <- fct_collapse(dados$genero,
                              "Outros" = "Comédia")
 print(dados$genero)
 
-# Visualização
-plot <- ggplot(dados, aes(genero, bilheteria)) +
-  geom_bar(stat = "identity") +
-  labs(title = "Bilheteria por Grupo de Gêneros", x = "Gênero", y = "Bilheteria (milhões)")
-plot
 ```
 
 ### Exemplo 7: Reordenando Níveis com lvls_reorder
@@ -189,10 +174,6 @@ dados <- data.frame(
 
 dados$Notas <- lvls_revalue(dados$Notas, c("A", "B", "C"))
 print(dados$Notas)
-plot <- ggplot(dados, aes(Notas, pontuacao)) +
-  geom_bar(stat = "identity") +
-  labs(title = "Situação final (Abreviada)", x = "Situação", y = "Pontuação")
-print(plot)
 ```
 
 
@@ -205,10 +186,7 @@ dados <- data.frame(
 )
 dados$nota <- lvls_expand(dados$nota, c("A", "B", "C", "D", "F"))
 print(dados$nota)
-plot <- ggplot(dados, aes(nota, frequencia)) +
-  geom_bar(stat = "identity") +
-  labs(title = "Frequência por Nota (Escala Completa)", x = "Nota", y = "Frequência")
-print(plot)
+
 ```
 ---
 
