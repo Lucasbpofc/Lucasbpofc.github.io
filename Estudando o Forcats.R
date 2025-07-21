@@ -123,10 +123,11 @@ dados <- data.frame(
   nota = factor(c("A", "B", "C", "B", "A")),
   frequencia = c(2, 3, 1, 2, 1)
 )
-dados$nota <- lvls_expand(dados$nota, c("A", "B", "C", "D", "F"))
+dados$nota <- lvls_expand(dados$nota, c("A", "B", "C", "D", "F","G"))
 print(dados$nota)
 plot <- ggplot(dados, aes(nota, frequencia)) +
   geom_bar(stat = "identity") +
   labs(title = "Frequência por Nota (Escala Completa)", x = "Nota", y = "Frequência")
 print(plot)
 
+plot(dados)
