@@ -18,11 +18,9 @@
 Aqui estão alguns dos meus pôsteres de trabalhos recentes, disponíveis para download:
 
 * [Modelagem da volatilidade condicional dos preços do café
-arábica](Lucasbpofc.github.io
-/RBRAS2024.pdf)
+arábica](Lucasbpofc.github.io/RBRAS2024.pdf)
 * [Utilizando o modelo APARCH para a modelagem da volatilidade dos preços da
-soja. ](Lucasbpofc.github.io
-/WORKSHOP_08_11_2024-2(1)[1].pdf)
+soja. ](Lucasbpofc.github.io/WORKSHOP_08_11_2024-2(1)[1].pdf)
 
 - 📫 Como entrar em contato comigo:
 <div>
