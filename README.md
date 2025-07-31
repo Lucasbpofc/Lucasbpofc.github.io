@@ -12,7 +12,18 @@
 - Estudo do pacote Forcats - (https://Lucasbpofc.github.io/Pacote-forcats.html)
 - Série de preços da soja - Em produção ...
 - Para informações mais detalhadas sobre os testes utilizados, elas podem ser encontradas em publicações referentes aos trabalhos recentes, disponíveis no ORCID.
- 
+
+### Meus Pôsteres
+
+Aqui estão alguns dos meus pôsteres de trabalhos recentes, disponíveis para download:
+
+* [Modelagem da volatilidade condicional dos preços do café
+arábica](Lucasbpofc.github.io
+/RBRAS2024.pdf)
+* [Utilizando o modelo APARCH para a modelagem da volatilidade dos preços da
+soja. ](Lucasbpofc.github.io
+/WORKSHOP_08_11_2024-2(1)[1].pdf)
+
 - 📫 Como entrar em contato comigo:
 <div>
 <a href="https://instagram.com/lucasbello_01" target="_blank"><img loading="lazy" src="https://img.shields.io/badge/-Instagram-%23E4405F?style=for-the-badge&logo=instagram&logoColor=white" target="_blank"></a>
