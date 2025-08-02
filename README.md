@@ -15,7 +15,7 @@
 
 ### Meus Pôsteres
 
-Aqui estão alguns dos meus pôsteres de trabalhos recentes, disponíveis para download:
+Aqui estão alguns dos meus pôsteres de trabalhos recentes, apresentados em alguns eventos acadêmicos:
 
 * [Modelagem da volatilidade condicional dos preços do café
 arábica](RBRAS2024.pdf)
