@@ -1,4 +1,4 @@
-# Criando um projeto inicial do zero utilizando pyton 
+# Criando um projeto inicial do zero utilizando python 
 
 # Para instalar bibliotecas utilize o comando a seguir no terminal
 # pip install nomedabiblioteca
