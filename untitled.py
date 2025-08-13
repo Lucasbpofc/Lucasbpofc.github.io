@@ -51,5 +51,3 @@ import matplotlib.pyplot as plt #importa a biblioteca
 housing.hist(bins=50, figsize=(20,15)) # bins defini o número de barras do histograma
 # figsize define o tamanho total da figura 
 plt.show()
-
-#### Criar um conjunto de teste 
