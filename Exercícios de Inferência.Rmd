@@ -1,0 +1,93 @@
+---
+title: "Exercícios de Inferência II"
+author: "Lucas Pereira Belo"
+date: "2025-08-13"
+output: html_document
+---
+
+## Revisão
+
+**Item i)** Mostre que $S^2 = \frac{1}{n-1}\sum_{i=1}^{n}\left(x_i - \bar{x}_n \right)^2$ é um estimador não viesado para $\sigma^2$.
+
+**Solução:**
+
+O valor esperado de $S^2$ é:
+$$E[S^2] = E\left[\frac{1}{n-1}\sum_{i=1}^{n}\left(x_i - \bar{x}_n \right)^2 \right] = \frac{1}{n-1}E \left[\sum_{i=1}^{n}\left(x_i - \bar{x}_n \right)^2\right]$$
+
+O objetivo é mostrar que, se tirarmos infinitas amostras de uma população e calcularmos a variância amostral para cada uma delas, a média de todas essas variâncias seria exatamente igual à variância da população. Em notação matemática, queremos provar que:
+$$E[S^2] = \sigma^2$$
+
+Onde:
+* $S^2$ é a variância amostral.
+* $\sigma^2$ é a variância populacional.
+Primeiro, vamos definir as fórmulas importantes:
+  * Variância Populacional $(\sigma^2)$: Mede a variância de toda a população.
+  * $\sigma^2 = \frac{\sum_{i=1}^{N}(x_i - \mu)^2}{N}$
+   Onde $N$ é o tamanho da população e $\mu$ é a média populacional.
+ Variância Amostral $(S^2)$: Por definição a variância da população a partir de uma amostra é dada por:
+   $S^2 = \frac{\sum_{i=1}^{n}(X_i - \bar{X})^2}{n-1}$
+   Onde $n$ é o tamanho da amostra, $X_i$ são os valores da amostra e $\bar{X}$ é a média da amostra.
+
+A demonstração então segue como sendo:
+$S^2 = \frac{1}{n-1} \sum_{i=1}^{n}(X_i - \bar{X})^2$
+O valor esperado é:
+$E[S^2] = E\left[ \frac{1}{n-1} \sum_{i=1}^{n}(X_i - \bar{X})^2 \right]$
+Como $\frac{1}{n-1}$ é uma constante, podemos tirá-la do valor esperado:
+$E[S^2] = \frac{1}{n-1} E\left[ \sum_{i=1}^{n}(X_i - \bar{X})^2 \right]$
+
+Expandindo o termo da soma:
+Um truque algébrico comumente utilizado na matemática será útil nessa etapa: adicionar e subtrair a média da população $(\mu)$ dentro do quadrado.
+$(X_i - \bar{X})^2 = ((X_i - \mu) - (\bar{X} - \mu))^2$
+
+Expandindo o quadrado $(a-b)^2 = a^2 - 2ab + b^2$:
+$(X_i - \bar{X})^2 = (X_i - \mu)^2 - 2(X_i - \mu)(\bar{X} - \mu) + (\bar{X} - \mu)^2$
+
+Aplicando o somatório $(\sum_{i=1}^{n})$ a expressão:
+$\sum(X_i - \bar{X})^2 = \sum(X_i - \mu)^2 - 2\sum(X_i - \mu)(\bar{X} - \mu) + \sum(\bar{X} - \mu)^2$
+
+Simplificando os termos:
+
+   * Termo 1: $\sum(X_i - \mu)^2$.
+   
+   * Termo 3: $(\bar{X} - \mu)^2$ é uma constante em relação ao somatório i, então $\sum_{i=1}^{n}(\bar{X} - \mu)^2 = n(\bar{X} - \mu)^2$.
+   
+   * Termo 2: O termo $(\bar{X} - \mu)$ pode sair do somatório: $-2(\bar{X} - \mu) \sum(X_i - \mu)$. Sabemos que $\sum(X_i - \mu) = \sum X_i - \sum \mu = n\bar{X} - n\mu = n(\bar{X} - \mu)$.
+   
+   Então, o termo 2 se torna $-2(\bar{X} - \mu) \cdot n(\bar{X} - \mu) = -2n(\bar{X} - \mu)^2$.
+
+Juntando tudo, a soma fica:
+$\sum(X_i - \bar{X})^2 = \sum(X_i - \mu)^2 - 2n(\bar{X} - \mu)^2 + n(\bar{X} - \mu)^2$
+$\sum(X_i - \bar{X})^2 = \sum(X_i - \mu)^2 - n(\bar{X} - \mu)^2$
+
+Passo 3: Aplicando o valor esperado
+$E\left[\sum(X_i - \bar{X})^2\right] = E\left[\sum(X_i - \mu)^2 - n(\bar{X} - \mu)^2\right]$
+
+Utilizando as propriedades do valor esperado, podemos separar os termos:
+$E\left[\sum(X_i - \bar{X})^2\right] = E\left[\sum(X_i - \mu)^2\right] - E\left[n(\bar{X} - \mu)^2\right]$
+
+Vamos analisar cada parte:
+ * $E\left[\sum(X_i - \mu)^2\right] = \sum E[(X_i - \mu)^2]$.
+ 
+ Por definição, $E[(X_i - \mu)^2]$ é a variância da população, $\sigma^2$. Como temos $n$ termos, a soma é $n\sigma^2$.
+ 
+ * $E\left[n(\bar{X} - \mu)^2\right] = n \cdot E[(\bar{X} - \mu)^2]$. O termo $E[(\bar{X} - \mu)^2]$ é, por definição, a variância da média amostral, $Var(\bar{X})$.
+ 
+ Sabemos que $Var(\bar{X}) = \frac{\sigma^2}{n}$. Portanto, $n \cdot E[(\bar{X} - \mu)^2] = n \cdot \frac{\sigma^2}{n} = \sigma^2$.
+   
+Substituindo esses resultados na equação:
+$E\left[\sum(X_i - \bar{X})^2\right] = n\sigma^2 - \sigma^2 = (n-1)\sigma^2$
+
+Por fim, voltamos à nossa fórmula original para $E[S^2]$:
+$E[S^2] = \frac{1}{n-1} E\left[ \sum(X_i - \bar{X})^2 \right]$
+
+Substituindo o resultado que encontramos no Passo 3:
+$E[S^2] = \frac{1}{n-1} \cdot (n-1)\sigma^2$
+$E[S^2] = \sigma^2$
+Como queríamos demonstrar.
+
+ * A demonstração nos mostra o motivo de usarmos $n-1$ graus de liberdade e não $n$ graus. Ao utilizarmos $n$ graus de liberdade a estimativa da variância fica viesada. 
+ * Viés: Se usássemos n no denominador, estaríamos calculando a média de uma soma que, em média, subestima a verdadeira dispersão dos dados. O estimador seria viesado, tendendo a produzir valores menores que a variância real $(\sigma^2)$.
+   * Se $S^2_n = \frac{\sum(X_i - \bar{X})^2}{n}, \text{então}~ E[S^2_n] = \frac{(n-1)\sigma^2}{n} < \sigma^2$.
+ * A Correção (Graus de Liberdade): A divisão por $n-1$ em vez de $n$ é chamada de Correção de Bessel. Ela "infla" ligeiramente o resultado para compensar a subestimação causada pelo uso de $\bar{X}$ em vez de $\mu$. O termo "graus de liberdade" $(n-1)$ surge porque, uma vez que a média amostral $\bar{X}$ é calculada, apenas $n-1$ valores da amostra podem variar livremente. O último valor fica "preso", pois a soma dos desvios $\sum(X_i - \bar{X})$ deve ser zero.
+Em resumo, dividimos por $n-1$ para corrigir o viés que surge ao usarmos a média da amostra como uma aproximação para a média da população, garantindo que nossa estimativa da variância seja precisa a longo prazo.
+
