@@ -21,6 +21,7 @@ Aqui estão alguns dos meus pôsteres de trabalhos recentes, apresentados em alg
 arábica](RBRAS2024.pdf)
 * [Utilizando o modelo APARCH para a modelagem da volatilidade dos preços da
 soja. ](WORKSHOP_08_11_2024-2(1)[1].pdf)
+* [Análise de sobrevivência aplicada ao melhoramento genético do cafeeiro](RBRAS2025.pdf)
 
 - 📫 Como entrar em contato comigo:
 <div>
