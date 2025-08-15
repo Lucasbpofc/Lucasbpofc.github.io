@@ -1,7 +1,7 @@
 # Olá, meu nome é Lucas Pereira Belo 👋
 
 <p align="center">
-  <em>Mestrando em Estatística Aplicada e Biometria pela <b>UFV</b>, com foco em Análise de Sobrevivência e Séries Temporais. Buscando oportunidades para aplicar minhas habilidades analíticas e de Machine Learning para resolver problemas complexos com dados.</em>
+  <em>Atualmente sou doutorando em Estatística Aplicada e Biometria pela <b>UFV</b>, com foco em Análise de Sobrevivência e Séries Temporais. Buscando oportunidades para aplicar minhas habilidades analíticas desenvolvidas durante a graduação e mestrado, para resolver problemas complexos na área de dados.</em>
 </p>
 
 ## 🛠️ Ferramentas e Tecnologias
