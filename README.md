@@ -1,39 +1,88 @@
-# Olá, me chamo Lucas ! 
-## Bem vindo ao meu perfil GitHub 👋
-<div align="center">
-    <img height="400em" src="https://raw.githubusercontent.com/Lucasbpofc/Lucasbpofc.github.io/refs/heads/main/1000265939.jpg">
-</div>
- 
-- 🔭 Atualmente, estou cursando Mestrado em estatística aplicada e biometria na universidade federal de Viçosa - UFV. Meu trabalho tem enfase em análise de sobrevivência e séries temporais.
-- 🌱 Em conjunto com minha pós graduação estou aprendendo um pouquinho mais sobre o Power BI e SQL na escola DNC.
-- 👯 Estou procurando colaborar em análises de dados em um ambito geral, a seguir scripts de trabalhos recentes:
-- Série de preços do café arábica - (https://Lucasbpofc.github.io/Post_caféarabica.html)
-- Mecanismos de Censura - (https://Lucasbpofc.github.io/Mecanismos-de-Censura.html)
-- Estudo do pacote Forcats - (https://Lucasbpofc.github.io/Pacote-forcats.html)
-- Série de preços da soja - Em produção ...
-- Para informações mais detalhadas sobre os testes utilizados, elas podem ser encontradas em publicações referentes aos trabalhos recentes, disponíveis no ORCID.
+# Olá, meu nome é Lucas Pereira Belo 👋
 
-### Meus Pôsteres
+<p align="center">
+  <em>Mestrando em Estatística Aplicada e Biometria pela <b>UFV</b>, com foco em Análise de Sobrevivência e Séries Temporais. Buscando oportunidades para aplicar minhas habilidades analíticas e de Machine Learning para resolver problemas complexos com dados.</em>
+</p>
 
-Aqui estão alguns dos meus pôsteres de trabalhos recentes, apresentados em alguns eventos acadêmicos:
+## 🛠️ Ferramentas e Tecnologias
 
-* [Modelagem da volatilidade condicional dos preços do café
-arábica](RBRAS2024.pdf)
-* [Utilizando o modelo APARCH para a modelagem da volatilidade dos preços da
-soja. ](WORKSHOP_08_11_2024-2(1)[1].pdf)
-* [Análise de sobrevivência aplicada ao melhoramento genético do cafeeiro](RBRAS2025.pdf)
+<p align="center">
+  <a href="https://www.r-project.org/" target="_blank" rel="noreferrer"> <img src="https://img.shields.io/badge/R-276DC3?style=for-the-badge&logo=r&logoColor=white" alt="R"/> </a>
+  <a href="https://posit.co/products/open-source/rstudio/" target="_blank" rel="noreferrer"> <img src="https://img.shields.io/badge/RStudio-75AADB?style=for-the-badge&logo=RStudio&logoColor=white" alt="RStudio"/> </a>
+  <a href="https://www.python.org" target="_blank" rel="noreferrer"> <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/> </a>
+  <a href="https://powerbi.microsoft.com/" target="_blank" rel="noreferrer"> <img src="https://img.shields.io/badge/PowerBI-F2C811?style=for-the-badge&logo=Power%20BI&logoColor=black" alt="Power BI"/> </a>
+  <a href="https://www.mysql.com/" target="_blank" rel="noreferrer"> <img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="SQL"/> </a>
+  <a href="https://www.latex-project.org/" target="_blank" rel="noreferrer"> <img src="https://img.shields.io/badge/LaTeX-008080?style=for-the-badge&logo=latex&logoColor=white" alt="LaTeX"/> </a>
+</p>
 
-- 📫 Como entrar em contato comigo:
-<div>
-<a href="https://instagram.com/lucasbello_01" target="_blank"><img loading="lazy" src="https://img.shields.io/badge/-Instagram-%23E4405F?style=for-the-badge&logo=instagram&logoColor=white" target="_blank"></a>
-<a href="mailto:contato@Lucas.p.belo019@gmail.com"><img loading="lazy" src="https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white" target="_blank"></a>
-<a href="https://www.linkedin.com/in/lucas-pereira-belo-3aa8a51a9" target="_blank"><img loading="lazy" src="https://img.shields.io/badge/-LinkedIn-%230077B5?style=for-the-badge&logo=linkedin&logoColor=white" target="_blank"></a>
-<a href="https://orcid.org/0009-0002-7189-514X" target="_blank"><img loading="lazy" src="https://img.shields.io/badge/-ORCID-A6CE39?style=for-the-badge&logo=orcid&logoColor=white" target="_blank"></a>
-</div>
+## 🚀 Projetos em Destaque
 
-- ⚡ Curiosidade: Ligeiragente apaixonado pelo Vasco da Gama, gosto de jogar xadrez e gosto bastante de séries temporais.
-<div>
-<a href="https://github.com/Lucasbpofc">
-<img loading="lazy" height="180em" src="https://github-readme-stats.vercel.app/api/top-langs/?username=Lucasbpofc&layout=compact&langs_count=7&theme=dracula"/>
-<img loading="lazy" height="180em" src="https://github-readme-stats.vercel.app/api?username=Lucasbpofc&show_icons=true&theme=dracula&include_all_commits=true&count_private=true"/>
-</div>
+<table>
+  <tr>
+    <td width="50%">
+      <h3>Análise de Séries Temporais - Preços do Café Arábica</h3>
+      <p>Análise da volatilidade condicional dos preços do café arábica utilizando modelos da família ARCH/GARCH.</p>
+      <p><strong>Tecnologias:</strong> R, Tidyverse, GARCH.</p>
+      <a href="https://Lucasbpofc.github.io/Post_caféarabica.html"><strong>Ver Análise Completa &rarr;</strong></a>
+    </td>
+    <td width="50%">
+      <h3>Estudo de Mecanismos de Censura em Análise de Sobrevivência</h3>
+      <p>Uma exploração teórica e prática dos diferentes tipos de censura (à direita, à esquerda, intervalar) e suas implicações em estudos de sobrevivência.</p>
+      <p><strong>Tecnologias:</strong> R, Survival, ggplot2.</p>
+      <a href="https://Lucasbpofc.github.io/Mecanismos-de-Censura.html"><strong>Ver Análise Completa &rarr;</strong></a>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>Estudo do Pacote Forcats</h3>
+      <p>Tutorial prático sobre a manipulação de variáveis categóricas (fatores) no R utilizando o poderoso pacote Forcats, parte do Tidyverse.</p>
+      <p><strong>Tecnologias:</strong> R, Tidyverse, Forcats.</p>
+      <a href="https://Lucasbpofc.github.io/Pacote-forcats.html"><strong>Ver Análise Completa &rarr;</strong></a>
+    </td>
+    <td width="50%">
+        <h3>Análise de Séries Temporais - Preços da Soja</h3>
+        <p>Modelagem da volatilidade dos preços da soja utilizando o modelo APARCH.</p>
+        <p><strong>Status:</strong> Em desenvolvimento 🚧</p>
+    </td>
+  </tr>
+</table>
+
+## 🎓 Apresentações Acadêmicas
+
+<p align="center">
+  <a href="RBRAS2024.pdf" target="_blank">
+    <img src="URL_DA_IMAGEM_DO_SEU_POSTER_1.png" width="250" alt="Pôster Modelagem da volatilidade condicional dos preços do café arábica">
+  </a>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="WORKSHOP_08_11_2024-2(1)[1].pdf" target="_blank">
+    <img src="URL_DA_IMAGEM_DO_SEU_POSTER_2.png" width="250" alt="Pôster Utilizando o modelo APARCH para a modelagem da volatilidade dos preços da soja">
+  </a>
+    &nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="RBRAS2025.pdf" target="_blank">
+    <img src="URL_DA_IMAGEM_DO_SEU_POSTER_3.png" width="250" alt="Pôster Análise de sobrevivência aplicada ao melhoramento genético do cafeeiro">
+  </a>
+</p>
+
+## 🔥 Minhas Estatísticas no GitHub
+
+<p align="center">
+  <a href="https://github.com/Lucasbpofc">
+    <img height="180em" src="https://github-readme-stats.vercel.app/api/top-langs/?username=Lucasbpofc&layout=compact&langs_count=7&theme=dracula"/>
+    <img height="180em" src="https://github-readme-stats.vercel.app/api?username=Lucasbpofc&show_icons=true&theme=dracula&include_all_commits=true&count_private=true"/>
+  </a>
+</p>
+
+<p align="center">
+  ⚡ <b>Curiosidade:</b> Ligeiramente apaixonado pelo Vasco da Gama, gosto de jogar xadrez e me aprofundar em séries temporais!
+</p>
+
+---
+
+## 📫 Entre em Contato
+
+<p align="center">
+  <a href="mailto:contato@Lucas.p.belo019@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white" target="_blank"></a>
+  <a href="https://www.linkedin.com/in/lucas-pereira-belo-3aa8a51a9" target="_blank"><img src="https://img.shields.io/badge/-LinkedIn-%230077B5?style=for-the-badge&logo=linkedin&logoColor=white" target="_blank"></a>
+  <a href="https://orcid.org/0009-0002-7189-514X" target="_blank"><img src="https://img.shields.io/badge/-ORCID-A6CE39?style=for-the-badge&logo=orcid&logoColor=white" target="_blank"></a>
+  <a href="https://instagram.com/lucasbello_01" target="_blank"><img src="https://img.shields.io/badge/-Instagram-%23E4405F?style=for-the-badge&logo=instagram&logoColor=white" target="_blank"></a>
+</p>
