@@ -1,0 +1,12 @@
+name: Exercicio1
+title: Exercicio1
+username: lucasbpofc
+account: lucasbpofc
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 15299984
+bundleId: 10834018
+url: https://lucasbpofc.shinyapps.io/Exercicio1/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
