@@ -4,109 +4,87 @@
 ########            TEOTEO - AM                 #################
 #################################################################
 
-rm(list = ls())
-rm()
-# Carregando os dados
-library(readxl)
-TEOTEO <- read_excel("TEOTEO.xlsx")
-dados<-TEOTEO
-head(dados); tail(dados)
-
-# Tratamento dos dados
-library(readxl)
-library(dplyr)
-library(forcats)
-library(ggplot2)
-library(lubridate)
-
-# Antes dessa etapa eu eliminei as linhas de 1 a 9 com informações 
-# desnecessárias no Excel, posteriormente importei a tabela e contuei o processo
-# aqui no R
-names(dados)
-
-dados_temperatura_precip <- dados[, c(
-  "Data Medicao",
-  "Hora Medicao",
-  "PRECIPITACAO TOTAL, HORARIO(mm)",
-  "TEMPERATURA DA CPU"
-)]
-
-# 2. (Opcional, mas recomendado) Renomear as colunas para facilitar o uso
-names(dados_temperatura_precip) <- c(
-  "DATA",
-  "HORA",
-  "PRECIP",
-  "TEMPERATURA"
-)
-
-# 3. (Recomendado) Converter a coluna de data para o formato de data/hora do R, se ainda não estiver
-# A formatação precisa corresponder ao formato da sua coluna "Data Medicao" (ex: "YYYY-MM-DD")
-# Se você tiver a hora também e quiser um objeto POSIXct (data e hora), use:
-# dados_temperatura_precip$Data_Medicao <- as.POSIXct(dados_temperatura_precip$Data_Medicao, format = "%Y-%m-%d %H:%M:%S")
-# Se for apenas data:
-# dados_temperatura_precip$Data_Medicao <- as.Date(dados_temperatura_precip$Data_Medicao, format = "%Y-%m-%d")
-
-y = ts(dados$PRECIP, start = c(2006,1), end = c(2023,12), freq = 365)
-plot(y, xlab= c("Tempo"),ylab = c("Precipitação"))
-
-n = length(y) #tamanho da amostra
-acf(y, n)
-# Para verificar a estrutura do novo data frame
-str(dados_temperatura_precip)
-head(dados_temperatura_precip)
-dados<-dados_temperatura_precip
-
-# Renomeando colunas
-colnames(dados) <- c("DATA","HORA" ,"PRECIP","TEMPERATURA")
-print(dados)
-#View(dados)
-str(dados)
-# Transformando a primeira coluna no tipo DATA
-# Utilizando a função as_date do pacote lubridate
-
-year=seq(2006,2024,1)
-dados$DATA <- as_date(dados$DATA)
-
-str(dados)
-dados$PRECIP<-as.numeric(dados$PRECIP)
-dados$TEMPERATURA<-as.numeric(dados$TEMPERATURA)
-str(dados)
-
-plot_precip <- ggplot(dados$PRECIP, aes(x = as.factor(ano), y = PRECIP)) +
-  geom_bar(stat = "identity") +
-  labs(title = "Maior Precipitação por Ano", x = "Ano", y = "Precipitação (mm)")
-print(plot_precip)
+# É uma boa prática carregar todos os pacotes necessários no início.
+library(readxl)    # Para ler arquivos Excel (.xlsx)
+library(dplyr)     # Para manipulação de dados (mutate, group_by, etc.)
+library(lubridate) # Para funções de data (as_date, year, quarter)
+library(hms)       # Para funções de tempo (as_hms)
 
 
-# Extraindo o ano e criando a nova tabela com os maiores valores de PREC por ano
-# Aqui eu utilizei a biblioteca dplr e a função pipe %>%
+# ===================================================================
+# 2. CARREGAMENTO E LIMPEZA COMPLETA DOS DADOS
+# ===================================================================
 
-dados_max_precip <- dados %>%
-  mutate(ano = year(DATA)) %>%  # Extrai o ano
-  group_by(ano) %>%             # Agrupa por ano
-  slice(which.max(PRECIP)) %>%  # Seleciona a linha com o maior valor de PRECIP
-  ungroup()                     # Remove o agrupamento
-View(dados2)
+# Carrega os dados do arquivo Excel
+# (Opcional: use o argumento 'skip = 9' para pular as 9 primeiras linhas se elas não forem necessárias)
+dados_brutos <- read_excel("TEOTEO.xlsx")
+tail(dados_brutos)
+head(dados_brutos)
+# Limpeza e transformação em um único passo usando o pipe (%>%)
+dados_limpos <- dados_brutos %>%
+  # Renomeia as colunas para nomes mais simples e sem espaços
+  rename(
+    DATA = 1,        # Renomeia a 1ª coluna
+    HORA = 2,        # Renomeia a 2ª coluna
+    PRECIP = 3,      # Renomeia a 3ª coluna
+    TEMPERATURA = 4  # Renomeia a 4ª coluna
+  ) %>%
+  # Converte os tipos de cada coluna para o formato correto
+  mutate(
+    DATA = as_date(DATA),
+    HORA = as_hms(HORA),
+    # CORREÇÃO: Dentro do mutate, use os nomes das colunas diretamente
+    PRECIP = as.numeric(PRECIP),
+    TEMPERATURA = as.numeric(TEMPERATURA)
+  )
 
-dados2<-dados_max_precip
-print(dados2)
-length(dados2$PRECIP)
+# Verifique a estrutura final dos dados limpos para garantir que tudo está correto
+cat("--- Estrutura dos Dados Após a Limpeza ---\n")
+glimpse(dados_limpos)
 
 
-library(dplyr)
-library(lubridate)
+# ===================================================================
+# 3. ANÁLISES A PARTIR DOS DADOS LIMPOS
+# ===================================================================
 
-dados_max_precip_trimestral <- dados %>%
+# --- 3.1 Análise de Máximos Anuais (Block Maxima) ---
+dados_max_anuais <- dados_limpos %>%
+  mutate(ano = year(DATA)) %>%
+  group_by(ano) %>%
+  slice(which.max(PRECIP)) %>%
+  ungroup()
+
+cat("\n--- Tabela com a Precipitação Máxima de Cada Ano ---\n")
+print(dados_max_anuais)
+
+
+# --- 3.2 Análise de Máximos Trimestrais ---
+# CORREÇÃO: A análise deve partir dos dados já limpos ('dados_limpos')
+dados_max_trimestrais <- dados_limpos %>%
   mutate(
     ano = year(DATA),
-    trimestre = quarter(DATA) # Simplesmente use a função quarter()
+    trimestre = quarter(DATA)
   ) %>%
   group_by(ano, trimestre) %>%
   slice(which.max(PRECIP)) %>%
   ungroup()
 
-View(dados_max_precip_trimestral)
+cat("\n--- Tabela com a Precipitação Máxima de Cada Trimestre ---\n")
+print(dados_max_trimestrais)
 
+
+# --- 3.3 Análise da Série Temporal Diária Completa ---
+# Criando o objeto de série temporal a partir dos dados limpos
+ts_precip_diaria <- ts(dados_limpos$PRECIP, start = c(2006, 1), frequency = 365.25)
+
+# Plot da série temporal completa
+plot(ts_precip_diaria, 
+     xlab = "Tempo", 
+     ylab = "Precipitação (mm)",
+     main = "Série Temporal de Precipitação Diária")
+
+# Plot da Função de Autocorrelação (ACF)
+acf(ts_precip_diaria, main = "Função de Autocorrelação para Precipitação Diária")
 # Visualização
 
 dados<-dados_max_precip_trimestral
@@ -116,9 +94,6 @@ plot_precip <- ggplot(dados, aes(x = as.factor(DATA), y = PRECIP)) +
   labs(title = "Maior Precipitação por Ano", x = "Ano", y = "Precipitação (mm)")
 print(plot_precip)
 
-hist(dados$PRECIP, breaks = 15)
-
-dados$PRECIP
 
 # Cria o vetor 'PRECIP' com os dados fornecidos
 PRECIP <- c(13.6, 40.2, 29.8,  8.2,  5.0, 15.2, 35.4, 15.0,  9.2, 52.0, 27.8, 44.2,
@@ -134,9 +109,6 @@ print(PRECIP)
 
 length(PRECIP)
 
-year=seq(a, b, c)
-
-
 # 1. Seu vetor de dados (com 75 observações)
 PRECIP <- c(13.6, 40.2, 29.8,  8.2,  5.0, 15.2, 35.4, 15.0,  9.2, 52.0, 27.8, 44.2,
             5.4, 37.2, 31.4, 26.0,  5.2, 45.8, 16.6, 19.6,  6.0, 45.2, 13.0, 38.6,
@@ -146,9 +118,6 @@ PRECIP <- c(13.6, 40.2, 29.8,  8.2,  5.0, 15.2, 35.4, 15.0,  9.2, 52.0, 27.8, 44
             37.6, 12.2,  5.6,  2.4, 45.2, 22.2, 25.2, 29.0, 39.0, 58.6, 11.0,  2.4,
             46.0, 18.0, 12.0)
 
-# 2. Crie o objeto de série temporal trimestral
-#    - start = c(2006, 4) significa 4º trimestre de 2006
-#    - frequency = 4 significa dados trimestrais
 precip_trimestral_ts <- ts(PRECIP, start = c(2006, 4), frequency = 4)
 
 # 3. Plote a série temporal
@@ -165,11 +134,11 @@ pacf(precip_trimestral_ts)
 
 
 # Criando o gráfico
-ggplot(dados_precip, aes(x = Ano, y = Precipitacao)) +
+ggplot(dados_max_trimestrais, aes(x = dados_max_trimestrais$DATA, y = PRECIP)) +
   geom_line(color = "blue", size = 1) +
   geom_point(color = "darkred", size = 2) +
   labs(
-    title = "Série temporal de precipitação máxima anual",
+    title = "Série temporal de precipitação máxima trimestral",
     x = "Ano",
     y = "Precipitação (mm)"
   ) +
@@ -184,18 +153,18 @@ library(ggplot2)
 library(dplyr)
 
 # Seleciona os 10 maiores valores
-top10 <- dados_precip %>%
-  arrange(desc(Precipitacao)) %>%
+top10 <- dados_max_trimestrais %>%
+  arrange(desc(PRECIP)) %>%
   slice(1:4)
 
 # Gráfico com os rótulos nos 10 maiores valores
-ggplot(dados_precip, aes(x = Ano, y = Precipitacao)) +
+ggplot(dados_max_trimestrais, aes(x = DATA, y = PRECIP)) +
   geom_line(color = "blue", size = 1) +
   geom_point(color = "darkred", size = 2) +
   # Adiciona os rótulos
   geom_text(
     data = top10,
-    aes(label = round(Precipitacao, 1)),
+    aes(label = round(PRECIP, 1)),
     vjust = -0.8, color = "black", size = 3.5
   ) +
   labs(
@@ -222,10 +191,9 @@ Box.test(precip_trimestral_ts, type = "Ljung-Box")
 # Os gráficos darão um retorno visual corroborando com o teste.
 
 # Gráficos de ACF e PACF
-acf(precip_ts)
-pacf(precip_ts)
+acf(precip_trimestral_ts)
+pacf(precip_trimestral_ts)
 
-# Supondo que sua série é chamada precip_ts
 # Se ainda não estiver carregada:
 # precip_ts <- ts(dados)
 
@@ -236,15 +204,12 @@ options(OutDec = ",")
 par(mfrow = c(2, 2), mar = c(4, 4, 1, 1))
 
 # Plot ACF
-acf(precip_ts, main = "",
+acf(precip_trimestral_ts, main = "",
     ylab = "Autocorrelação", xlab = "Defasagem")
 
 # Plot PACF
-pacf(precip_ts, main = "",
+pacf(precip_trimestral_ts, main = "",
      ylab = "Autocorrelação Parcial", xlab = "Defasagem")
-
-
-
 
 # Teste de aleatoriedade
 library(tseries)
@@ -254,17 +219,14 @@ precip_binary <- ifelse(PRECIP >= median_precip, 1, 0)
 
 # Aplicando o runs test
 resultado <- runs.test(as.factor(precip_binary))
+resultado
 
 # teste de tendência
 library(randtests)
 cox.stuart.test(precip_trimestral_ts)
 # H0: A série não apresenta tendência 
 
-# Teste de estacionariedade
-#library(tseries)
-adf.test(precip_trimestral_ts)
-# H0: A série é não estacionária
-
+# teste de estacionariedade com componente de tendencia
 library(urca)
 adf_trend <- ur.df(precip_trimestral_ts, type = "trend", selectlags = "AIC")
 summary(adf_trend)
@@ -276,9 +238,9 @@ hist(PRECIP, breaks = 12, col = "lightblue",
 # Teste de normalidade 
 library(extRemes)
 library(stats)
-# Kolmogorov-Smirnov
 
-ks.test(precip_trimestral_ts,mode = "GEV", mean = mean(precip_trimestral_ts), sd = sd(precip_trimestral_ts))
+# Kolmogorov-Smirnov
+ks.test(precip_trimestral_ts, mode = "GEV", mean = mean(precip_trimestral_ts), sd = sd(precip_trimestral_ts))
 help(ks.test)
 library(evd)
 library(randtests)
@@ -304,12 +266,6 @@ ks.test(precip_trimestral_ts, function(q) pgev_manual(q,
                                            loc = A$estimate[1], 
                                            scale = A$estimate[2], 
                                            shape = A$estimate[3]))
-
-
-
-
-
-
 
 
 # Estimando os parâmetros da distribuição via função
@@ -405,8 +361,6 @@ yrfun(A,25)
 yrfun(A,50)
 yrfun(A,100)
 
-# Estimando os parâmetros da distribuição 
-
 library(ismev)
 gev.fit(precip_trimestral_ts)
 # ξ=0, a GEV vira uma distribuição de Gumbel.
@@ -450,10 +404,10 @@ retorno<-{
 library(extRemes)
 fit1 <- fevd(PRECIP, units = "mm"); fit1
 par(mfrow=c(2,2))
-b1<-ci(fit1, method = "proflik", xrange = c(100, 140), verbose = TRUE,, return.period = c(10))
-b2<-ci(fit1, method = "proflik", xrange = c(115, 190), verbose = TRUE,, return.period = c(25))
-b3<-ci(fit1, method = "proflik", xrange = c(125, 240), verbose = TRUE,, return.period = c(50))
-b4<-ci(fit1, method = "proflik", xrange = c(140, 310), verbose = TRUE,, return.period = c(100))
+b1<-ci(fit1, method = "proflik", xrange = c(10, 30), verbose = TRUE,, return.period = c(2))
+b2<-ci(fit1, method = "proflik", xrange = c(30, 65), verbose = TRUE,, return.period = c(8))
+b3<-ci(fit1, method = "proflik", xrange = c(40, 85), verbose = TRUE,, return.period = c(16))
+b4<-ci(fit1, method = "proflik", xrange = c(45, 170), verbose = TRUE,, return.period = c(32))
 
 
 citation("tseries")
@@ -464,15 +418,15 @@ citation("readxl")
 citation("tidyverse")
 
 # Dados
-mu <- 68.7604590
-sigma <- 18.2952731
-PRECIP <- c(98.7, 79.7, 46.6, 85.4, 70.0, 75.6, 68.0, 76.8, 66.0, 107.2, 
-            148.4, 108.0, 53.4, 95.0, 72.4, 54.8, 63.6, 88.6, 91.2, 102.0, 
-            50.6, 88.6, 118.0, 74.0, 118.6, 165.8, 63.0, 63.0, 85.6, 52.0, 
-            110.6, 134.8, 50.0, 95.0, 50.4, 80.0, 53.4, 63.6, 90.2, 86.8, 
-            83.0, 60.8, 58.1, 77.4, 47.2, 85.4, 58.0, 89.3, 60.0, 52.0, 
-            75.8, 155.8, 90.6, 73.0, 52.8, 76.2, 65.6, 90.0, 64.6, 116.8, 
-            90.6, 59.0, 101.4, 73.8, 87.4)
+mu <- 14.5868110
+sigma <- 12.3026203
+PRECIP <- c(13.6, 40.2, 29.8,  8.2,  5.0, 15.2, 35.4, 15.0,  9.2, 52.0, 27.8, 44.2,
+            5.4, 37.2, 31.4, 26.0,  5.2, 45.8, 16.6, 19.6,  6.0, 45.2, 13.0, 38.6,
+            9.8, 54.2, 33.8, 23.8,  6.8, 22.4, 15.4, 23.4,  6.6, 21.0, 30.4, 36.0,
+            3.2, 41.6, 32.6, 13.0,  5.4, 17.8, 12.0,  4.4, 19.0,  1.4,  4.0,  3.2,
+            27.6, 33.2, 14.8,  4.8, 19.0, 62.2, 41.2,  8.8, 36.4, 51.8,  1.4,  2.8,
+            37.6, 12.2,  5.6,  2.4, 45.2, 22.2, 25.2, 29.0, 39.0, 58.6, 11.0,  2.4,
+            46.0, 18.0, 12.0)
 
 # Função de densidade da Gumbel
 dgumbel <- function(x, mu, sigma) {
@@ -481,12 +435,12 @@ dgumbel <- function(x, mu, sigma) {
 }
 
 # Sequência para a curva
-x_vals <- seq(40, 180, length.out = 500)
+x_vals <- seq(10, 80, length.out = 500)
 y_vals <- dgumbel(x_vals, mu, sigma)
 
 # Histograma com densidade
 hist(PRECIP, breaks = 6, freq = FALSE, col = "lightblue",
-     xlim = c(40, 180), ylim = c(0, 0.020),
+     xlim = c(10, 80), ylim = c(0, 0.030),
      main = "Histograma e Curva da Gumbel",
      xlab = "Precipitação", ylab = "Densidade")
 
@@ -503,7 +457,6 @@ points(PRECIP, rep(0, length(PRECIP)), pch = 16, col = "black")
 
 # Grade opcional
 grid()
-
 
 library(ggplot2)
 library(patchwork)
