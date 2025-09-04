@@ -1,0 +1,56 @@
+```{r data_generation, echo = FALSE, results = "hide"}
+# --- Geração dos Dados ---
+# Parâmetros da população
+mu <- sample(450:550, 1)      # Média da população (ex: 500g)
+sigma <- sample(8:15, 1)        # Desvio padrão da população (ex: 10g)
+n <- sample(c(36, 49, 64, 81, 100), 1) # Tamanho da amostra
+
+# Valor de interesse para a média amostral
+# Gerar um valor um pouco acima da média
+valor_interesse <- mu + round(runif(1, 2, 5), 1)
+
+# --- Solução ---
+# 1. Calcular o erro padrão da média
+erro_padrao <- sigma / sqrt(n)
+
+# 2. Padronizar (calcular o Z-score)
+z_score <- (valor_interesse - mu) / erro_padrao
+
+# 3. Calcular a probabilidade P(Z > z_score)
+probabilidade_final <- pnorm(z_score, lower.tail = FALSE)
+```
+
+Question
+========
+Uma máquina industrial enche pacotes de café. O peso de cada pacote individual varia seguindo uma distribuição desconhecida, mas um longo histórico de produção indica que a média de peso ($\mu$) é de **`r mu`g** e o desvio padrão ($\sigma$) é de **`r sigma`g**.
+
+Se um inspetor de qualidade selecionar uma amostra aleatória de **`r n`** pacotes, qual é a probabilidade percentual de que o **peso médio** dessa amostra seja **maior que `r valor_interesse`g**?
+
+*(Forneça a resposta em porcentagem, com 2 casas decimais. Ex: 5.29)*
+
+Solution
+========
+O Teorema Central do Limite (TCL) nos permite aproximar a distribuição da média amostral ($\bar{X}$) por uma distribuição Normal.
+
+1.  **Definir a Distribuição da Média Amostral:**
+    Pelo TCL, $\bar{X}$ segue aproximadamente uma distribuição Normal com:
+    * Média: $E(\bar{X}) = \mu = `r mu`$
+    * Erro Padrão (desvio padrão da média): $SE(\bar{X}) = \frac{\sigma}{\sqrt{n}} = \frac{`r sigma`}{\sqrt{`r n`}} \approx `r round(erro_padrao, 4)`$
+
+2.  **Padronizar o Valor de Interesse (Calcular o Z-score):**
+    Convertemos o valor de `r valor_interesse`g para a escala da Normal Padrão:
+    $$Z = \frac{\bar{X} - \mu}{SE(\bar{X})} = \frac{`r valor_interesse` - `r mu`}{`r round(erro_padrao, 4)`} \approx `r round(z_score, 4)`$$
+
+3.  **Calcular a Probabilidade:**
+    A pergunta $P(\bar{X} > `r valor_interesse`)$ se torna $P(Z > `r round(z_score, 2)`)$.
+    Usando a função `pnorm()` do R, calculamos a área à direita de Z:
+    `pnorm(`r round(z_score, 4)`, lower.tail = FALSE)` resulta em `r round(probabilidade_final, 4)`.
+
+    Convertendo para porcentagem, a probabilidade é de **`r round(probabilidade_final * 100, 2)`%**.
+
+Meta-information
+================
+exname: TCL Probabilidade da Média
+extype: num
+exsolution: `r round(probabilidade_final * 100, 2)`
+extol: 0.01
