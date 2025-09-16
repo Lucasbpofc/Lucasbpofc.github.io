@@ -1,0 +1,32 @@
+```{r data_generation, echo = FALSE, results = "hide"}
+# --- Geração dos dados ---
+# Gera parâmetros aleatórios para a população
+pop_mean <- sample(100:200, 1)
+pop_sd <- sample(10:30, 1)
+n <- sample(c(50, 64, 81, 100, 144), 1)
+
+# Calcula a resposta correta
+correct_answer <- pop_sd / sqrt(n)
+```
+
+Question
+========
+  
+Uma amostra aleatória de tamanho **`r n`** é retirada de uma população com média `r pop_mean` e desvio padrão `r pop_sd`. De acordo com o Teorema Central do Limite, qual é o desvio padrão da distribuição das médias amostrais (também conhecido como erro padrão da média)?
+
+Solution
+========
+O Teorema Central do Limite (TCL) afirma que o desvio padrão da distribuição das médias amostrais (conhecido como erro padrão) é o desvio padrão da população ($\sigma$) dividido pela raiz quadrada do tamanho da amostra ($n$).
+
+A fórmula é:
+$$\text{Erro Padrão} = \frac{\sigma}{\sqrt{n}}$$
+
+Substituindo os valores gerados para este exercício:
+$$\text{Erro Padrão} = \frac{`r pop_sd`}{\sqrt{`r n`}} = `r round(correct_answer, 4)`$$
+  
+Meta-information
+================
+exname: Erro Padrão do TCL
+extype: num
+exsolution: `r round(correct_answer, 3)`
+extol: 0.01

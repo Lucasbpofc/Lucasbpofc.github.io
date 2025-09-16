@@ -3,6 +3,10 @@
 #############      autor: Lucas Pereira Belo                        ############              
 ################################################################################
 
+#
+rm(list=ls())
+ls()
+
 #Bibliotecas utilizadas
 
 library(readxl)      # Importação dos dados
