@@ -2,7 +2,7 @@
 #############                 Lucas Pereira Belo - 94074           #############
 #############                 Questão 11 e 7                       #############
 ################################################################################
-
+install.packages("languageserver")
 library(survival)
 
 # Parâmetros para a simulação

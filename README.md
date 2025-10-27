@@ -40,7 +40,7 @@
       <p><strong>Tecnologias:</strong> R, GEV, Análise de Dados Climáticos.</p>
       <br>
       <a href="Eventos_extremos.pdf" target="_blank">
-        <img src="URL_DA_IMAGEM_DA_CAPA.png" alt="Capa da Apresentação sobre Precipitação" width="100%">
+        <img src="extremos.png" alt="Capa da Apresentação sobre Precipitação" width="100%">
       </a>
     </td>
     <td width="50%" valign="top">
@@ -74,6 +74,10 @@
     &nbsp;&nbsp;&nbsp;&nbsp;
   <a href="RBRAS2025.pdf" target="_blank">
     <img src="coffee.jpeg" width="250" alt="Pôster Análise de sobrevivência aplicada ao melhoramento genético do cafeeiro">
+  </a>
+      &nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="MGEST.pdf" target="_blank">
+    <img src="extremos.jpeg" width="250" alt="Pôster Modelagem da precipitação máxima esperada na cidade de Lavras-MG utilizando a Distribuição Generalizada de Valores Extremos (GEV)">
   </a>
 </p>
 

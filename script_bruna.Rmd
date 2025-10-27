@@ -1,0 +1,202 @@
+---
+title: "Abordagem Longitudinal para Análise da Altura de Plantas em População F2 de Café"
+author: "Iara Gonçalves dos Santos"
+date: "2024-12-03"
+output: 
+  rmdformats::readthedown
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+knitr::opts_knit$set(root.dir = "C:/GIT/bruna")
+```
+
+## **Introdução**
+Descreva aqui seus dados, seu experimento, os objetivos, etc ... A análise de medidas repeidas precisa considerar a correlação entre medidas tomadas no mesmo indivíduo em tempos distintos, para isso, vamos especificar um modelo de variância do erro para o conjunto de dados. O ASReml possui uma gama de modelos de variâncias distintas. Vamos comparar nesse relatório, 5 modelos comumente utilizados na análise de medidas repetidas, utilizando o BIC como parâmetro.
+
+## **Bibliotecas**
+```{r}
+library(ggplot2)
+library(asreml)
+library(ggpubr)
+library(agriutilities)
+library(tidyr)
+library(dplyr)
+library(tibble)
+library(qtl)
+```
+
+## **Dados Fenotípicos**
+```{r}
+data <- xlsx::read.xlsx("dadosbruna.xlsx", header = TRUE, sheetIndex = 10,startRow = 1, endRow = 919, colIndex = 1:4)
+data$Trat[data$Trat == '23'|data$Trat == '22'] <- 'F2'
+data$Pl <- rep(c(1:153),each = 6)
+
+data <- within(data, {
+  check <- ifelse(data$Trat == "T1"|data$Trat == "T2", 1, 0)
+})
+
+str(data)
+factors <- c(colnames(data)[c(1:3,5,6)]); factors
+data[,factors] <- lapply(data[,factors], as.factor)
+
+table(data$Trat)
+table(data$Pl)
+table(data$Bl)
+table(data$Ano)
+table(data$check)
+table(data$Trat,data$Pl)
+```
+
+## **Visualização dos Dados**
+```{r}
+ggplot(data, aes(x=Ano,y=Altura, group = Pl, colour=Pl))+
+  geom_line()+
+  facet_wrap(~Pl, nrow = 10) +
+  theme_minimal(base_size = 15) +
+  theme(legend.position = 'none')
+```
+
+## **Modelo Uniforme**
+Assume que as correlações entre medidas de altura de um mesmo indivíduo são constantes ao longo do tempo
+```{r}
+ans.uniform <- asreml(Altura ~ Trat + Ano + Trat:Ano,
+                      random = ~ Bl + at(check,"0"):Pl:Ano,
+                      residual = ~ Pl:corv(Ano),
+                      data = data)
+summary(ans.uniform)$varcomp
+```
+
+## **Modelo Exponencial**
+Assume que as correlações decrescem de forma linear à medida em que o tempo entre medidas aumenta
+```{r}
+ans.power <- asreml(Altura ~ Trat + Ano + Trat:Ano,
+                    random = ~ Bl + at(check,"0"):Pl:Ano,
+                    residual = ~ Pl:exp(Ano),
+                    data = data)
+summary(ans.power)$varcomp
+plot(data$Ano,ans.power$residuals)
+```
+
+O gráfico dos resíduos mostra que as variâncias residuais mudam com o tempo, por isso, vamos incluir uma matriz heterogênea para ajustar os dados
+
+## **Modelo Exponencial Heterogêneo**
+```{r}
+ans.hetpower <- asreml(Altura ~ Trat + Ano + Trat:Ano,
+                       random = ~ Bl + at(check,"0"):Pl:Ano,
+                       residual = ~ Pl:exph(Ano),
+                       data = data)
+summary(ans.hetpower)$varcomp
+```
+
+## **Modelo de Antedependência de Ordem 1**
+Permite que as correlações mudem ao longo do tempo
+```{r}
+ans.ante <- asreml(Altura ~ Trat + Ano + Trat:Ano,
+                   random = ~ Bl + at(check,"0"):Pl:Ano,
+                   residual = ~ Pl:ante(Ano),
+                   data = data)
+summary(ans.ante)$varcomp
+```
+
+## **Modelo Não Estruturado**
+Permite que todas as correlações entre tempos sejam únicas, mas o número de parâmetros é muito superior
+```{r}
+ans.uns <- asreml(Altura ~ Trat + Ano + Trat:Ano,
+                  random = ~ Bl + at(check,"0"):Pl:Ano,
+                  residual = ~ Pl:us(Ano),
+                  data = data)
+summary(ans.uns)$varcomp
+```
+
+## **Escolha do modelo mais parcimonioso**
+Critério: BIC
+```{r}
+summary(ans.uniform)$bic
+summary(ans.power)$bic
+summary(ans.hetpower)$bic
+summary(ans.ante)$bic
+summary(ans.uns)$bic
+```
+
+A comparação entre os diferentes valores de BIC mostra que o Modelo Exponencial Heterogeneo foi o que melhor se ajustou aos dados, a partir dele faremos as estimações e predições.
+
+## **Teste Wald**
+
+Vamos usar o teste Wald para testar a significância dos efeitos fixos do modelo **ans.hetpower**
+
+```{r}
+wald(ans.ante)
+```
+
+Interpretações: Os tratamentos (T1, T2 e F2) possuem estimativas de alturas diferentes entre si (p-valor = 2.561e-05), as estimativas médias de alturas nos diferentes anos diferem entre si (p-valor = < 2.2e-16). A interação entre tratamentos e anos é não-significativa (p-valor = 0.3934), ou seja, não há evidências de que os tratamentos crescem em padrões diferentes ao longo do tempo (ex:F2 cresce a uma mesma taxa que o T1 e que o T2).
+
+## **Estimativas de efeitos fixos**
+Podemos obter as estimativas (BLUEs) para cada efeito fixo
+```{r}
+BLUES.trat    <- predict(ans.ante, classify = "Trat")$pvals;BLUES.trat
+BLUES.ano     <- predict(ans.ante, classify = "Ano")$pvals;BLUES.ano
+BLUES.TratAno <- predict(ans.ante, classify = "Trat:Ano")$pvals;BLUES.TratAno
+
+xlsx::write.xlsx2(BLUES.trat, paste0("genetic_parameters.xlsx"), sheetName = "BLUES.trat")
+xlsx::write.xlsx2(BLUES.ano, paste0("genetic_parameters.xlsx"), sheetName = "BLUES.ano", append = T)
+xlsx::write.xlsx2(BLUES.TratAno, paste0("genetic_parameters.xlsx"), sheetName = "BLUES.TratAno", append = T)
+```
+
+## **Teste Razão de Verossimilhança - LRT**
+Vamos testar a significância dos componentes de variância de planta. Para isso vamos obter o modelo reduzido para posterior comparação.
+```{r}
+ans.ante.red <- asreml(Altura ~ Trat + Ano + Trat:Ano,
+                   random = ~ Bl, 
+                   residual = ~ Pl:exph(Ano),
+                   data = data)
+lrt.asreml(ans.ante,ans.ante.red)
+```
+
+Interpretação: Há variação de altura entre plantas na população F2 nos diferentes anos (p-valor = 5.883e-05).
+
+## **Predição de valores genéticos**
+Podemos obter as predições de cada genótipo (BLUPs) dentro de cada ano.
+```{r}
+pred <- predict(ans.ante, classify = "check:Pl:Ano", levels = list(check = '0'))$pvals; pred
+xlsx::write.xlsx2(pred, paste0("genetic_parameters.xlsx"), sheetName = "BLUPs", append = T)
+```
+
+## **Visualização dos valores genéticos preditos**
+```{r}
+ggplot(pred, aes(x=Ano,y=predicted.value, group = Pl, colour=Pl))+
+  geom_line()+
+  facet_grid() +
+  theme_minimal(base_size = 15) +
+  theme(legend.position = 'none')
+```
+
+## **Análise de Marca Individual**
+Vamos agora investigar a associação entre os marcadores V16099 (M1) e V1190 (M2) e a altura da população.
+```{r}
+popF2 <- read.cross(format = "csv", file = "bruna - Sheet1.csv", genotypes = c("0","1","2"), crosstype = "f2")
+map <- est.map(popF2, error.prob = 0, map.function = "kosambi")
+popF2 <- replace.map(popF2, map)
+
+plotPXG(popF2, "M1")
+plotPXG(popF2, "M2")
+```
+
+```{r}
+popF2.mr <- scanone(popF2, pheno.col = "ano1", method = "mr")
+popF2.mr
+
+summary(popF2.mr, threshold = 3)
+plot(popF2.mr, ylab = "LOD score", type = "p")
+```
+
+```{r}
+popF2 <- sim.geno(popF2)
+popF2.qtl <- makeqtl(popF2, chr = 0, pos = 0)
+popF2.fit <- fitqtl(popF2, pheno.col = "ano1", qtl = popF2.qtl, formula = y ~ Q1, get.ests = TRUE)
+summary(popF2.fit)
+```
+
+Parece não haver associação dos marcadores!
