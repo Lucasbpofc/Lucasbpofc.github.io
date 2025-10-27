@@ -79,6 +79,12 @@
   <a href="MGEST.pdf" target="_blank">
     <img src="extremos.jpeg" width="250" alt="Pôster Modelagem da precipitação máxima esperada na cidade de Lavras-MG utilizando a Distribuição Generalizada de Valores Extremos (GEV)">
   </a>
+      &nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="MGEST_2.pdf" target="_blank">
+    <img src="extremos_rs.jpeg" width="250" alt="Pôster Distribuição generalizada de valores extremos: um estudo
+ aplicado à precipitação e temperatura máxima na cidade
+ de Porto Alegre-RS">
+  </a>
 </p>
 
 ## 🔥 Minhas Estatísticas no GitHub
