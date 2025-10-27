@@ -68,7 +68,7 @@
     <img src="coffee2.jpeg" width="250" alt="Pôster Modelagem da volatilidade condicional dos preços do café arábica">
   </a>
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="WORKSHOP_08_11_2024-2(1)[1].pdf" target="_blank">
+  <a href="WORKSHOP_UFV.pdf" target="_blank">
     <img src="soja.jpeg" width="250" alt="Pôster Utilizando o modelo APARCH para a modelagem da volatilidade dos preços da soja">
   </a>
     &nbsp;&nbsp;&nbsp;&nbsp;
