@@ -1,0 +1,68 @@
+```{r data_generation, echo = FALSE, results = "hide"}
+# --- Parâmetros do Cenário ---
+# O número médio de clientes por dia segue uma Poisson.
+# Lambda (λ) é a média e também a variância da Poisson.
+lambda_por_dia <- sample(10:20, 1)
+dias_no_periodo <- 250 # Dias úteis em um ano, por exemplo
+
+# --- Aplicação do TCL ---
+# Para a SOMA de 'n' variáveis Poisson(λ) i.i.d., a distribuição da soma T = X1 + ... + Xn
+# pode ser aproximada por uma Normal.
+# Média da Soma: E(T) = n * λ
+# Variância da Soma: Var(T) = n * λ
+n <- dias_no_periodo
+media_soma <- n * lambda_por_dia
+variancia_soma <- n * lambda_por_dia
+dp_soma <- sqrt(variancia_soma)
+
+# Valor de interesse para a soma total
+# Gerar um valor um pouco acima da média esperada da soma
+valor_interesse <- media_soma + round(runif(1, 1.5, 2.5) * dp_soma)
+
+# --- Solução ---
+# Padronizar o valor de interesse (Z-score)
+z_score <- (valor_interesse - media_soma) / dp_soma
+
+# Calcular a probabilidade P(T < valor_interesse)
+# Usamos uma correção de continuidade (subtrair 0.5) porque estamos aproximando
+# uma distribuição discreta (Poisson) com uma contínua (Normal).
+z_score_corrigido <- (valor_interesse - 0.5 - media_soma) / dp_soma
+probabilidade_final <- pnorm(z_score_corrigido, lower.tail = TRUE)
+```
+
+Question
+========
+Uma livraria especializada em itens raros recebe, em média, **`r lambda_por_dia` clientes por dia**. O número de clientes que chegam a cada dia é independente dos outros dias.
+
+Considerando um período de **`r dias_no_periodo` dias** de funcionamento, qual é a probabilidade aproximada de que o **número total de clientes** recebidos nesse período seja **menor que `r valor_interesse`**?
+
+*(Use a aproximação Normal via Teorema Central do Limite e forneça a resposta em formato decimal com 4 casas. Ex: 0.8765)*
+
+Solution
+========
+Este é um problema de duas camadas. Primeiro, reconhecemos que o número de clientes por dia, sendo um evento de contagem em um intervalo fixo, pode ser modelado por uma distribuição de Poisson com $\lambda = `r lambda_por_dia`$. Em uma Poisson, a média e a variância são iguais a $\lambda$.
+
+Em seguida, queremos encontrar a distribuição do **número total de clientes** em `r dias_no_periodo` dias. Seja $T$ o total de clientes, temos $T = X_1 + X_2 + \ldots + X_{`r dias_no_periodo`}$, onde cada $X_i$ é uma variável aleatória Poisson($\lambda=`r lambda_por_dia`$) independente e identicamente distribuída.
+
+Pelo **Teorema Central do Limite**, a soma de um grande número de variáveis aleatórias i.i.d. pode ser aproximada por uma distribuição Normal.
+
+1.  **Parâmetros da Distribuição Normal:**
+    * **Média da Soma:** $E(T) = n \times \lambda = `r dias_no_periodo` \times `r lambda_por_dia` = `r media_soma`$
+    * **Variância da Soma:** $\text{Var}(T) = n \times \lambda = `r dias_no_periodo` \times `r lambda_por_dia` = `r variancia_soma`$
+    * **Desvio Padrão da Soma:** $\sigma_T = \sqrt{`r variancia_soma`} \approx `r round(dp_soma, 4)`$
+    Portanto, $T \approx N(`r media_soma`, `r variancia_soma`)$.
+
+2.  **Calcular a Probabilidade:**
+    Queremos encontrar $P(T < `r valor_interesse`)$. Como estamos usando uma distribuição contínua (Normal) para aproximar uma discreta (Poisson), aplicamos uma **correção de continuidade**, usando $P(T \le `r valor_interesse - 1`)$, que na aproximação se torna $P(T < `r valor_interesse - 0.5`)$.
+
+    Padronizamos o valor corrigido:
+    $$Z = \frac{(`r valor_interesse` - 0.5) - `r media_soma`}{`r round(dp_soma, 4)`} \approx `r round(z_score_corrigido, 4)`$$
+
+    A probabilidade é $P(Z < `r round(z_score_corrigido, 4)`)$, que pode ser encontrada com `pnorm(`r round(z_score_corrigido, 4)`)`. O resultado é aproximadamente **`r round(probabilidade_final, 4)`**.
+
+Meta-information
+================
+exname: Poisson para TCL
+extype: num
+exsolution: `r round(probabilidade_final, 4)`
+extol: 0.005

@@ -1,0 +1,12 @@
+name: TCL1
+title: TCL1
+username: lucasbpofc
+account: lucasbpofc
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 15300128
+bundleId: 10834080
+url: https://lucasbpofc.shinyapps.io/TCL1/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

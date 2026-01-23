@@ -1,0 +1,22 @@
+
+Question
+========
+O Teorema Central do Limite é um dos resultados mais importantes da estatística, mas sua aplicação depende de certas condições. Qual das seguintes alternativas **NÃO** é uma condição necessária para a versão clássica do TCL?
+
+Answerlist
+----------
+* A amostra deve ser grande o suficiente.
+* A população original deve ter média e variância finitas.
+* As observações na amostra devem ser independentes e identicamente distribuídas (i.i.d.).
+* A população original deve seguir uma distribuição Normal.
+
+Solution
+========
+A resposta correta é que a população original **não precisa** seguir uma distribuição Normal. O poder e a beleza do Teorema Central do Limite residem justamente no fato de que ele é válido para populações com qualquer distribuição (desde que tenham média e variância finitas). As outras três opções são condições necessárias para o teorema.
+
+Meta-information
+================
+exname: TCL Condições
+extype: schoice
+exsolution: 0001
+exshuffle: TRUE

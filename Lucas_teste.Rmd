@@ -1,0 +1,66 @@
+# Olá, me chamo Lucas! 👋
+
+## Bem-vindo ao meu perfil GitHub!
+
+### Analista de Dados | Estatístico Aplicado | Especialista em Análise de Sobrevivência e Séries Temporais
+
+<div align="center">
+    <img height="400em" src="https://raw.githubusercontent.com/Lucasbpofc/Lucasbpofc.github.io/refs/heads/main/1000265939.jpg" alt="Foto de Perfil do Lucas">
+</div>
+
+---
+
+### Sobre Mim
+
+- 🔭 Atualmente, estou cursando **Mestrado em Estatística Aplicada e Biometria** na Universidade Federal de Viçosa (UFV), com foco em **Análise de Sobrevivência e Séries Temporais**.
+- 🌱 Em paralelo à pós-graduação, estou aprimorando minhas habilidades em **Power BI e SQL** na Escola DNC.
+
+---
+
+### Minhas Habilidades
+
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![R](https://img.shields.io/badge/R-276DC3?style=for-the-badge&logo=rstudio&logoColor=white)
+![SQL](https://img.shields.io/badge/SQL-4479A1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Power BI](https://img.shields.io/badge/Power%20BI-F2C811?style=for-the-badge&logo=powerbi&logoColor=black)
+![LaTeX](https://img.shields.io/badge/LaTeX-47A141?style=for-the-badge&logo=latex&logoColor=white)
+---
+
+### Projetos em Destaque
+
+Estou buscando colaborar em análises de dados em um âmbito geral. Conheça alguns dos meus trabalhos recentes:
+
+- **Série de Preços do Café Arábica:** Análise exploratória e modelagem de séries temporais para prever o comportamento do mercado de café. [Acessar Projeto](https://Lucasbpofc.github.io/Post_cafearabica.html)
+- **Mecanismos de Censura:** Estudo detalhado sobre os diferentes tipos de censura em análise de sobrevivência e suas implicações. [Acessar Projeto](https://Lucasbpofc.github.io/Mecanismos-de-Censura.html)
+- **Estudo do Pacote Forcats:** Guia prático sobre a manipulação e organização de variáveis categóricas utilizando o pacote `forcats` em R. [Acessar Projeto](https://Lucasbpofc.github.io/Pacote-forcats.html)
+- **Série de Preços da Soja:** *(Em produção - Análise e modelagem de dados históricos de preços da soja no mercado brasileiro.)*
+
+Para informações mais detalhadas sobre os testes utilizados, elas podem ser encontradas em publicações referentes aos trabalhos recentes, disponíveis no meu ORCID.
+
+---
+
+### Vamos Conectar!
+
+Estou sempre aberto a novas conexões e colaborações em projetos de análise de dados. Fique à vontade para entrar em contato:
+
+<div align="center">
+<a href="https://instagram.com/lucasbello_01" target="_blank"><img loading="lazy" src="https://img.shields.io/badge/-Instagram-%23E4405F?style=for-the-badge&logo=instagram&logoColor=white" target="_blank" alt="Instagram"></a>
+<a href="mailto:contato@Lucas.p.belo019@gmail.com"><img loading="lazy" src="https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white" target="_blank" alt="Gmail"></a>
+<a href="https://www.linkedin.com/in/lucas-pereira-belo-3aa8a51a9" target="_blank"><img loading="lazy" src="https://img.shields.io/badge/-LinkedIn-%230077B5?style=for-the-badge&logo=linkedin&logoColor=white" target="_blank" alt="LinkedIn"></a>
+<a href="https://orcid.org/0009-0002-7189-514X" target="_blank"><img loading="lazy" src="https://img.shields.io/badge/-ORCID-A6CE39?style=for-the-badge&logo=orcid&logoColor=white" target="_blank" alt="ORCID"></a>
+</div>
+
+---
+
+### Curiosidades
+
+- ⚡ Ligeiramente apaixonado pelo Vasco da Gama!
+- ♟️ Gosto de jogar xadrez.
+- 📊 Tenho grande interesse em séries temporais.
+
+<div align="center">
+<a href="https://github.com/Lucasbpofc">
+<img loading="lazy" height="180em" src="https://github-readme-stats.vercel.app/api/top-langs/?username=Lucasbpofc&layout=compact&langs_count=7&theme=dracula" alt="Estatísticas de Linguagens do Lucas"/>
+<img loading="lazy" height="180em" src="https://github-readme-stats.vercel.app/api?username=Lucasbpofc&show_icons=true&theme=dracula&include_all_commits=true&count_private=true" alt="Estatísticas do GitHub do Lucas"/>
+</a>
+</div>

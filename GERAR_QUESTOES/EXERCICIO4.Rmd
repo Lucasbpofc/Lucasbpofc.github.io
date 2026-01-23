@@ -1,0 +1,34 @@
+
+```{r data_generation, echo = FALSE, results = "hide"}
+# Parâmetros
+x_bar <- sample(10:20, 1)
+s2 <- sample(20:40, 1)
+n <- sample(c(50, 100, 200), 1)
+
+# Solução via Método Delta
+# g(mu) = log(mu) => g'(mu) = 1/mu
+g_prime_hat <- 1 / x_bar
+var_x_bar <- s2 / n
+correct_answer <- (g_prime_hat^2) * var_x_bar
+```
+
+Question
+========
+Suponha que a média amostral de `r n` observações seja $\bar{X}_n = `r x_bar`$ e a variância amostral seja $s^2 = `r s2`$. Usando o Método Delta, estime a variância aproximada da transformação logarítmica da média, $\text{Var}(\log(\bar{X}_n))$.
+
+Solution
+========
+A função de transformação é $g(\mu) = \log(\mu)$. A derivada é $g'(\mu) = 1/\mu$.
+A fórmula do Método Delta para a variância é: $\text{Var}(g(\bar{X}_n)) \approx [g'(\mu)]^2 \cdot \text{Var}(\bar{X}_n)$.
+
+Estimamos os parâmetros com os valores da amostra:
+1.  **Estimativa da derivada:** $g'(\bar{x}) = 1/`r x_bar` \approx `r round(g_prime_hat, 4)`$.
+2.  **Estimativa da variância da média:** $\text{Var}(\bar{X}_n) = s^2/n = `r s2`/`r n` \approx `r round(var_x_bar, 4)`$.
+3.  **Variância via Método Delta:** $(`r round(g_prime_hat, 4)`)^2 \times `r round(var_x_bar, 4)` = `r round(correct_answer, 6)`$.
+
+Meta-information
+================
+exname: Método Delta Log
+extype: num
+exsolution: `r round(correct_answer, 6)`
+extol: 0.0001

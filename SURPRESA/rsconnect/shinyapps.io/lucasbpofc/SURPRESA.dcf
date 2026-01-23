@@ -1,0 +1,12 @@
+name: SURPRESA
+title: SURPRESA
+username: lucasbpofc
+account: lucasbpofc
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 16361999
+bundleId: 11383062
+url: https://lucasbpofc.shinyapps.io/SURPRESA/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

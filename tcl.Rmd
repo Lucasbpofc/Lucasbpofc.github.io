@@ -1,0 +1,31 @@
+```{r data_generation, echo = FALSE, results = "hide"}
+# --- Geração dos dados ---
+# Gera parâmetros aleatórios para a população
+pop_mean <- sample(100:200, 1)
+pop_sd <- sample(10:30, 1)
+n <- sample(c(50, 64, 81, 100, 144), 1)
+
+# Calcula a resposta correta
+correct_answer <- pop_sd / sqrt(n)
+
+**2. O Script R para Gerar o Teste:**
+```R
+# Carregue o pacote R/exams
+library(exams)
+
+# Defina uma semente para garantir que o resultado seja reprodutível
+set.seed(42)
+
+# Crie uma lista com o(s) arquivo(s) do seu exercício
+meus_exercicios <- list("tcl.Rmd")
+
+# --- Gere a saída ---
+
+# 1. Gerar um PDF com 3 versões diferentes da mesma questão
+exams2pdf(meus_exercicios, n = 3, name = "prova_tcl")
+
+# 2. Gerar um arquivo para importar no Moodle
+exams2moodle(meus_exercicios, name = "quiz_tcl_moodle")
+
+# 3. Gerar um arquivo HTML para visualização rápida
+exams2html(meus_exercicios, name = "preview_tcl")

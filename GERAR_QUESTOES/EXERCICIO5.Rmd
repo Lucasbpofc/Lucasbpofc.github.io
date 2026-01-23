@@ -1,0 +1,64 @@
+
+
+```{r data_generation, echo = FALSE, results = "hide"}
+# Parâmetros
+n1 <- 100
+n2 <- 100
+sucessos1 <- sample(65:75, 1)
+sucessos2 <- sample(45:55, 1)
+
+# Estimativas
+p1 <- sucessos1 / n1
+p2 <- sucessos2 / n2
+or_hat <- (p1 / (1-p1)) / (p2 / (1-p2))
+
+# Solução via Método Delta
+var_log_or <- (1/(n1*p1*(1-p1))) + (1/(n2*p2*(1-p2)))
+se_log_or <- sqrt(var_log_or)
+z <- qnorm(0.975)
+li_log <- log(or_hat) - z * se_log_or
+ls_log <- log(or_hat) + z * se_log_or
+ic_or <- exp(c(li_log, ls_log))
+
+# Gera alternativas incorretas dinamicamente
+opts <- list(
+  sol = paste0("[", round(ic_or[1], 2), ", ", round(ic_or[2], 2), "]"),
+  err1 = "[0.95, 1.05]",
+  err2 = paste0("[", round(ic_or[1] * 0.7, 2), ", ", round(ic_or[2] * 0.7, 2), "]"),
+  err3 = paste0("[", round(ic_or[1] + 0.5, 2), ", ", round(ic_or[2] + 0.5, 2), "]")
+)
+# Embaralha as opções
+shuffled_opts <- sample(opts)
+# Encontra a posição da resposta correta
+correct_pos <- which(sapply(shuffled_opts, function(x) x == opts$sol))
+# Cria o exsolution
+exsolution <- rep(0, 4)
+exsolution[correct_pos] <- 1
+exsolution <- paste(exsolution, collapse = "")
+```
+
+Question
+========
+Em um estudo, o Grupo A teve `r sucessos1` sucessos em `r n1` tentativas, enquanto o Grupo B teve `r sucessos2` sucessos em `r n2` tentativas. O Odds Ratio (OR) é usado para comparar as chances de sucesso entre os grupos. Usando o Método Delta para encontrar o erro padrão do logaritmo do OR, qual é o intervalo de confiança de 95\% aproximado para o Odds Ratio?
+
+Answerlist
+----------
+* `r shuffled_opts[[1]]`
+* `r shuffled_opts[[2]]`
+* `r shuffled_opts[[3]]`
+* `r shuffled_opts[[4]]`
+
+Solution
+========
+1.  **Proporções:** $\hat{p}_A = `r sucessos1`/`r n1` = `r p1`$ e $\hat{p}_B = `r sucessos2`/`r n2` = `r p2`$.
+2.  **Odds Ratio (OR):** $OR = (\hat{p}_A/(1-\hat{p}_A)) / (\hat{p}_B/(1-\hat{p}_B)) \approx `r round(or_hat, 2)`$.
+3.  **Variância do log(OR) (via Método Delta):**
+    $$ \text{Var}(\log(\widehat{OR})) \approx \frac{1}{n_A \hat{p}_A(1-\hat{p}_A)} + \frac{1}{n_B \hat{p}_B(1-\hat{p}_B)} \approx `r round(var_log_or, 4)` $$
+4.  **Intervalo de Confiança:** Construímos o IC de 95\% para o log(OR) e depois aplicamos a exponencial para obter o IC do OR. O resultado é [`r round(ic_or[1], 2)`, `r round(ic_or[2], 2)`]. Como este intervalo não contém o valor 1, o resultado é estatisticamente significativo.
+
+Meta-information
+================
+exname: Método Delta OR
+extype: schoice
+exsolution: `r exsolution`
+exshuffle: 4

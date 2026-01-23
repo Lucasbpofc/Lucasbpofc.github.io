@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+
+
+<question type="category">
+<category>
+<text>$course$/quiz_prova_completa_tcl_delta1_moodle/Exercise 1</text>
+</category>
+</question>
+
+
+<question type="numerical">
+<name>
+<text> Q1 : EXERCICIO1 </text>
+</name>
+<questiontext format="html">
+<text><![CDATA[
+<style type="text/css" rel="stylesheet">
+/* tables with alternating shading */
+.table_shade {
+    border-collapse: collapse;
+    border-spacing: 0;
+    border:1px solid #FFFFFF;
+    background-color: #FFFFFF;
+}
+.table_shade th {
+    border:1px solid #FFFFFF;
+    background: #D5D5D5;
+}
+.table_shade td {
+    border:1px solid #FFFFFF;
+}
+.table_shade .odd {
+    background: #EEEEEE;
+}
+.table_shade .even {
+    background: #FBFBFB;
+}
+</style>
+<p>
+<p>Uma máquina industrial enche pacotes de café. O peso de cada pacote individual varia seguindo uma distribuição desconhecida, mas um longo histórico de produção indica que a média de peso (<span class="math inline">\(\mu\)</span>) é de <strong>518g</strong> e o desvio padrão (<span class="math inline">\(\sigma\)</span>) é de <strong>11g</strong>.</p>
+<p>Se um inspetor de qualidade selecionar uma amostra aleatória de <strong>49</strong> pacotes, qual é a probabilidade percentual de que o <strong>peso médio</strong> dessa amostra seja <strong>maior que 521.9g</strong>?</p>
+<p><em>(Forneça a resposta em porcentagem, com 2 casas decimais. Ex: 5.29)</em></p>
+</p>]]></text>
+</questiontext>
+<generalfeedback format="html">
+<text><![CDATA[<p>
+<p>O Teorema Central do Limite (TCL) nos permite aproximar a distribuição da média amostral (<span class="math inline">\(\bar{X}\)</span>) por uma distribuição Normal.</p>
+<ol style="list-style-type: decimal">
+<li><p><strong>Definir a Distribuição da Média Amostral:</strong>
+Pelo TCL, <span class="math inline">\(\bar{X}\)</span> segue aproximadamente uma distribuição Normal com:</p>
+<ul>
+<li>Média: <span class="math inline">\(E(\bar{X}) = \mu = 518\)</span></li>
+<li>Erro Padrão (desvio padrão da média): <span class="math inline">\(SE(\bar{X}) = \frac{\sigma}{\sqrt{n}} = \frac{11}{\sqrt{49}} \approx 1.5714\)</span></li>
+</ul></li>
+<li><p><strong>Padronizar o Valor de Interesse (Calcular o Z-score):</strong>
+Convertemos o valor de 521.9g para a escala da Normal Padrão:
+<span class="math display">\[Z = \frac{\bar{X} - \mu}{SE(\bar{X})} = \frac{521.9 - 518}{1.5714} \approx 2.4818\]</span></p></li>
+<li><p><strong>Calcular a Probabilidade:</strong>
+A pergunta <span class="math inline">\(P(\bar{X} &gt; 521.9)\)</span> se torna <span class="math inline">\(P(Z &gt; 2.48)\)</span>.
+Usando a função <code>pnorm()</code> do R, calculamos a área à direita de Z:
+<code>pnorm(2.4818, lower.tail = FALSE)</code> resulta em 0.0065.</p>
+<p>Convertendo para porcentagem, a probabilidade é de <strong>0.65%</strong>.</p></li>
+</ol>
+</p>]]></text>
+</generalfeedback>
+<penalty>0</penalty>
+<defaultgrade>1</defaultgrade>
+<answer fraction="100" format="moodle_auto_format">
+<text>0.65</text>
+<tolerance>0.01</tolerance>
+</answer>
+</question>
+
+
+<question type="category">
+<category>
+<text>$course$/quiz_prova_completa_tcl_delta1_moodle/Exercise 2</text>
+</category>
+</question>
+
+
+<question type="multichoice">
+<name>
+<text> Q2 : EXERCICIO2 </text>
+</name>
+<questiontext format="html">
+<text><![CDATA[
+<style type="text/css" rel="stylesheet">
+/* tables with alternating shading */
+.table_shade {
+    border-collapse: collapse;
+    border-spacing: 0;
+    border:1px solid #FFFFFF;
+    background-color: #FFFFFF;
+}
+.table_shade th {
+    border:1px solid #FFFFFF;
+    background: #D5D5D5;
+}
+.table_shade td {
+    border:1px solid #FFFFFF;
+}
+.table_shade .odd {
+    background: #EEEEEE;
+}
+.table_shade .even {
+    background: #FBFBFB;
+}
+</style>
+<p>
+<p>O Teorema Central do Limite é um dos resultados mais importantes da estatística, mas sua aplicação depende de certas condições. Qual das seguintes alternativas <strong>NÃO</strong> é uma condição necessária para a versão clássica do TCL?</p>
+</p>]]></text>
+</questiontext>
+<generalfeedback format="html">
+<text><![CDATA[<p>
+<p>A resposta correta é que a população original <strong>não precisa</strong> seguir uma distribuição Normal. O poder e a beleza do Teorema Central do Limite residem justamente no fato de que ele é válido para populações com qualquer distribuição (desde que tenham média e variância finitas). As outras três opções são condições necessárias para o teorema.</p>
+</p>]]></text>
+</generalfeedback>
+<penalty>0</penalty>
+<defaultgrade>1</defaultgrade>
+<shuffleanswers>false</shuffleanswers>
+<single>true</single>
+<answernumbering>abc</answernumbering>
+<answer fraction="100" format="html">
+<text><![CDATA[<p>
+A população original deve seguir uma distribuição Normal.
+</p>]]></text>
+</answer>
+<answer fraction="0" format="html">
+<text><![CDATA[<p>
+A amostra deve ser grande o suficiente.
+</p>]]></text>
+</answer>
+<answer fraction="0" format="html">
+<text><![CDATA[<p>
+A população original deve ter média e variância finitas.
+</p>]]></text>
+</answer>
+<answer fraction="0" format="html">
+<text><![CDATA[<p>
+As observações na amostra devem ser independentes e identicamente distribuídas (i.i.d.).
+</p>]]></text>
+</answer>
+</question>
+
+
+<question type="category">
+<category>
+<text>$course$/quiz_prova_completa_tcl_delta1_moodle/Exercise 3</text>
+</category>
+</question>
+
+
+<question type="numerical">
+<name>
+<text> Q3 : EXERCICIO3 </text>
+</name>
+<questiontext format="html">
+<text><![CDATA[
+<style type="text/css" rel="stylesheet">
+/* tables with alternating shading */
+.table_shade {
+    border-collapse: collapse;
+    border-spacing: 0;
+    border:1px solid #FFFFFF;
+    background-color: #FFFFFF;
+}
+.table_shade th {
+    border:1px solid #FFFFFF;
+    background: #D5D5D5;
+}
+.table_shade td {
+    border:1px solid #FFFFFF;
+}
+.table_shade .odd {
+    background: #EEEEEE;
+}
+.table_shade .even {
+    background: #FBFBFB;
+}
+</style>
+<p>
+<p>Uma livraria especializada em itens raros recebe, em média, <strong>17 clientes por dia</strong>. O número de clientes que chegam a cada dia é independente dos outros dias.</p>
+<p>Considerando um período de <strong>250 dias</strong> de funcionamento, qual é a probabilidade aproximada de que o <strong>número total de clientes</strong> recebidos nesse período seja <strong>menor que 4396</strong>?</p>
+<p><em>(Use a aproximação Normal via Teorema Central do Limite e forneça a resposta em formato decimal com 4 casas. Ex: 0.8765)</em></p>
+</p>]]></text>
+</questiontext>
+<generalfeedback format="html">
+<text><![CDATA[<p>
+<p>Este é um problema de duas camadas. Primeiro, reconhecemos que o número de clientes por dia, sendo um evento de contagem em um intervalo fixo, pode ser modelado por uma distribuição de Poisson com <span class="math inline">\(\lambda = 17\)</span>. Em uma Poisson, a média e a variância são iguais a <span class="math inline">\(\lambda\)</span>.</p>
+<p>Em seguida, queremos encontrar a distribuição do <strong>número total de clientes</strong> em 250 dias. Seja <span class="math inline">\(T\)</span> o total de clientes, temos <span class="math inline">\(T = X_1 + X_2 + \ldots + X_{250}\)</span>, onde cada <span class="math inline">\(X_i\)</span> é uma variável aleatória Poisson(<span class="math inline">\(\lambda=17\)</span>) independente e identicamente distribuída.</p>
+<p>Pelo <strong>Teorema Central do Limite</strong>, a soma de um grande número de variáveis aleatórias i.i.d. pode ser aproximada por uma distribuição Normal.</p>
+<ol style="list-style-type: decimal">
+<li><p><strong>Parâmetros da Distribuição Normal:</strong></p>
+<ul>
+<li><strong>Média da Soma:</strong> <span class="math inline">\(E(T) = n \times \lambda = 250 \times 17 = 4250\)</span></li>
+<li><strong>Variância da Soma:</strong> <span class="math inline">\(\text{Var}(T) = n \times \lambda = 250 \times 17 = 4250\)</span></li>
+<li><strong>Desvio Padrão da Soma:</strong> <span class="math inline">\(\sigma_T = \sqrt{4250} \approx 65.192\)</span>
+Portanto, <span class="math inline">\(T \approx N(4250, 4250)\)</span>.</li>
+</ul></li>
+<li><p><strong>Calcular a Probabilidade:</strong>
+Queremos encontrar <span class="math inline">\(P(T &lt; 4396)\)</span>. Como estamos usando uma distribuição contínua (Normal) para aproximar uma discreta (Poisson), aplicamos uma <strong>correção de continuidade</strong>, usando <span class="math inline">\(P(T \le 4395)\)</span>, que na aproximação se torna <span class="math inline">\(P(T &lt; 4395.5)\)</span>.</p>
+<p>Padronizamos o valor corrigido:
+<span class="math display">\[Z = \frac{(4396 - 0.5) - 4250}{65.192} \approx 2.2319\]</span></p>
+<p>A probabilidade é <span class="math inline">\(P(Z &lt; 2.2319)\)</span>, que pode ser encontrada com <code>pnorm(2.2319)</code>. O resultado é aproximadamente <strong>0.9872</strong>.</p></li>
+</ol>
+</p>]]></text>
+</generalfeedback>
+<penalty>0</penalty>
+<defaultgrade>1</defaultgrade>
+<answer fraction="100" format="moodle_auto_format">
+<text>0.9872</text>
+<tolerance>0.005</tolerance>
+</answer>
+</question>
+
+
+<question type="category">
+<category>
+<text>$course$/quiz_prova_completa_tcl_delta1_moodle/Exercise 4</text>
+</category>
+</question>
+
+
+<question type="numerical">
+<name>
+<text> Q4 : EXERCICIO4 </text>
+</name>
+<questiontext format="html">
+<text><![CDATA[
+<style type="text/css" rel="stylesheet">
+/* tables with alternating shading */
+.table_shade {
+    border-collapse: collapse;
+    border-spacing: 0;
+    border:1px solid #FFFFFF;
+    background-color: #FFFFFF;
+}
+.table_shade th {
+    border:1px solid #FFFFFF;
+    background: #D5D5D5;
+}
+.table_shade td {
+    border:1px solid #FFFFFF;
+}
+.table_shade .odd {
+    background: #EEEEEE;
+}
+.table_shade .even {
+    background: #FBFBFB;
+}
+</style>
+<p>
+<p>Suponha que a média amostral de 50 observações seja <span class="math inline">\(\bar{X}_n = 17\)</span> e a variância amostral seja <span class="math inline">\(s^2 = 40\)</span>. Usando o Método Delta, estime a variância aproximada da transformação logarítmica da média, <span class="math inline">\(\text{Var}(\log(\bar{X}_n))\)</span>.</p>
+</p>]]></text>
+</questiontext>
+<generalfeedback format="html">
+<text><![CDATA[<p>
+<p>A função de transformação é <span class="math inline">\(g(\mu) = \log(\mu)\)</span>. A derivada é <span class="math inline">\(g&#39;(\mu) = 1/\mu\)</span>.
+A fórmula do Método Delta para a variância é: <span class="math inline">\(\text{Var}(g(\bar{X}_n)) \approx [g&#39;(\mu)]^2 \cdot \text{Var}(\bar{X}_n)\)</span>.</p>
+<p>Estimamos os parâmetros com os valores da amostra:
+1. <strong>Estimativa da derivada:</strong> <span class="math inline">\(g&#39;(\bar{x}) = 1/17 \approx 0.0588\)</span>.
+2. <strong>Estimativa da variância da média:</strong> <span class="math inline">\(\text{Var}(\bar{X}_n) = s^2/n = 40/50 \approx 0.8\)</span>.
+3. <strong>Variância via Método Delta:</strong> <span class="math inline">\((0.0588)^2 \times 0.8 = 0.002768\)</span>.</p>
+</p>]]></text>
+</generalfeedback>
+<penalty>0</penalty>
+<defaultgrade>1</defaultgrade>
+<answer fraction="100" format="moodle_auto_format">
+<text>0.002768</text>
+<tolerance>1e-04</tolerance>
+</answer>
+</question>
+
+
+<question type="category">
+<category>
+<text>$course$/quiz_prova_completa_tcl_delta1_moodle/Exercise 5</text>
+</category>
+</question>
+
+
+<question type="multichoice">
+<name>
+<text> Q5 : EXERCICIO5 </text>
+</name>
+<questiontext format="html">
+<text><![CDATA[
+<style type="text/css" rel="stylesheet">
+/* tables with alternating shading */
+.table_shade {
+    border-collapse: collapse;
+    border-spacing: 0;
+    border:1px solid #FFFFFF;
+    background-color: #FFFFFF;
+}
+.table_shade th {
+    border:1px solid #FFFFFF;
+    background: #D5D5D5;
+}
+.table_shade td {
+    border:1px solid #FFFFFF;
+}
+.table_shade .odd {
+    background: #EEEEEE;
+}
+.table_shade .even {
+    background: #FBFBFB;
+}
+</style>
+<p>
+<p>Em um estudo, o Grupo A teve 68 sucessos em 100 tentativas, enquanto o Grupo B teve 51 sucessos em 100 tentativas. O Odds Ratio (OR) é usado para comparar as chances de sucesso entre os grupos. Usando o Método Delta para encontrar o erro padrão do logaritmo do OR, qual é o intervalo de confiança de 95% aproximado para o Odds Ratio?</p>
+</p>]]></text>
+</questiontext>
+<generalfeedback format="html">
+<text><![CDATA[<p>
+<ol style="list-style-type: decimal">
+<li><strong>Proporções:</strong> <span class="math inline">\(\hat{p}_A = 68/100 = 0.68\)</span> e <span class="math inline">\(\hat{p}_B = 51/100 = 0.51\)</span>.</li>
+<li><strong>Odds Ratio (OR):</strong> <span class="math inline">\(OR = (\hat{p}_A/(1-\hat{p}_A)) / (\hat{p}_B/(1-\hat{p}_B)) \approx 2.04\)</span>.</li>
+<li><strong>Variância do log(OR) (via Método Delta):</strong>
+<span class="math display">\[ \text{Var}(\log(\widehat{OR})) \approx \frac{1}{n_A \hat{p}_A(1-\hat{p}_A)} + \frac{1}{n_B \hat{p}_B(1-\hat{p}_B)} \approx 0.086 \]</span></li>
+<li><strong>Intervalo de Confiança:</strong> Construímos o IC de 95% para o log(OR) e depois aplicamos a exponencial para obter o IC do OR. O resultado é [1.15, 3.63]. Como este intervalo não contém o valor 1, o resultado é estatisticamente significativo.</li>
+</ol>
+</p>]]></text>
+</generalfeedback>
+<penalty>0</penalty>
+<defaultgrade>1</defaultgrade>
+<shuffleanswers>false</shuffleanswers>
+<single>true</single>
+<answernumbering>abc</answernumbering>
+<answer fraction="0" format="html">
+<text><![CDATA[<p>
+[0.8, 2.54]
+</p>]]></text>
+</answer>
+<answer fraction="0" format="html">
+<text><![CDATA[<p>
+[0.95, 1.05]
+</p>]]></text>
+</answer>
+<answer fraction="0" format="html">
+<text><![CDATA[<p>
+[1.65, 4.13]
+</p>]]></text>
+</answer>
+<answer fraction="100" format="html">
+<text><![CDATA[<p>
+[1.15, 3.63]
+</p>]]></text>
+</answer>
+</question>
+
+</quiz>
