@@ -7,7 +7,9 @@ attach(EXTREMOS)
 summarise(EXTREMOS)
 summary(EXTREMOS)
 
-# Para acessar a segunda folha, referente ao mês de fevereiro, deve-se utilizar
+#### CHUVA ####
+{
+# Para acessar a segunda folha, referente ao m??s de fevereiro, deve-se utilizar
 # folhas duplas.
 attach(EXTREMOS)
 CHUVA<-EXTREMOS$PRECIP
@@ -19,14 +21,14 @@ hist(CHUVA)
 # Importa especificamente a folha 2
 folha2 <- read_excel("EXTREMOS.xlsx", sheet = 2)
 # O comando sheet indica qual folha o R esta lendo
-# Define as variáveis baseadas nessa nova folha
+# Define as variC!veis baseadas nessa nova folha
 
 CHUVA2 <- folha2$PRECIP   
 year <- seq(1968, 2022, 1)
 
 # Plota
 par(mfrow=c(1,2))
-plot(CHUVA2 ~ year, type="b", main="Folha 2 (Fev)", ylab="Precipitação")
+plot(CHUVA2 ~ year, type="b", main="Folha 2 (Fev)", ylab="PrecipitaC'C#o")
 hist(CHUVA2, main="Histograma Folha 2")
 
 gev.loglik=function(theta){
@@ -72,7 +74,7 @@ for(i in 1:length(model)){
   model[i]=GEV.DF(ordered[i],A$est[1],A$est[2],A$est[3])}
 
 
-plot(model~empirical,main='Gráfico de probabilidade')
+plot(model~empirical,main='GrC!fico de probabilidade')
 abline(0,1)
 
 model.quantile=vector('numeric',length(dataset))
@@ -88,7 +90,7 @@ for(i in 1:length(model.quantile)){
 }
 
 
-plot(model.quantile~ordered,main='Gráfico quantil-quantil')
+plot(model.quantile~ordered,main='GrC!fico quantil-quantil')
 abline(0,1)
 
 
@@ -112,7 +114,7 @@ yrfun=function(A,r){
   del.transpose=t(del)
   return(c(round(nlm(gev.loglik,theta,hessian=T)$estimate[1]+ ((nlm(gev.loglik,theta,hessian=T)$estimate[2])/(nlm(gev.loglik,theta,hessian=T)$estimate[3]))*((-log(1 - (r)^(-1)))^(-(nlm(gev.loglik,theta,hessian=T)$estimate[3])) - 1),4),round(sqrt(del.transpose%*%varcovar%*%del),4)))}
 
-# Aqui c utiliza a matriz o comando yrfun(A,r) r é nível de retorno que vc quer. 
+# Aqui c utiliza a matriz o comando yrfun(A,r) r C) nC-vel de retorno que vc quer. 
 
 library("ismev")
 B=gev.fit(CHUVA)
@@ -120,7 +122,7 @@ gev.diag(B)
 
 par(mfrow=c(1,2))
 
-# Deve-se ajustar esses valores até encontrar os máximos 
+# Deve-se ajustar esses valores atC) encontrar os mC!ximos 
 gev.prof(B,xlow=75,xup=160,10)  
 gev.prof(B,xlow=110,xup=180,100)
 
@@ -131,8 +133,8 @@ ci(fit1, method = "proflik", xrange = c(55, 90), verbose = TRUE,, return.period 
 ci(fit1, method = "proflik", xrange = c(80, 160), verbose = TRUE,, return.period = c(10))
 ci(fit1, method = "proflik", xrange = c(100, 220), verbose = TRUE,, return.period = c(20))
 
-# Pode-se obter os valores dos intervalos nos gráficos
-# Basta nomear alguma das variáveis de interesse.  
+# Pode-se obter os valores dos intervalos nos grC!ficos
+# Basta nomear alguma das variC!veis de interesse.  
 
 
 library("ismev")
@@ -186,7 +188,7 @@ for(i in 1:length(model)){
   model[i]=GEV.DF(ordered[i],A$est[1],A$est[2],A$est[3])}
 
 
-plot(model~empirical,main='Gráfico de probabilidade')
+plot(model~empirical,main='GrC!fico de probabilidade')
 abline(0,1)
 
 model.quantile=vector('numeric',length(dataset))
@@ -202,7 +204,7 @@ for(i in 1:length(model.quantile)){
 }
 
 
-plot(model.quantile~ordered,main='Gráfico quantil-quantil')
+plot(model.quantile~ordered,main='GrC!fico quantil-quantil')
 abline(0,1)
 
 y10=-log(1-(1/10))
@@ -225,7 +227,7 @@ yrfun=function(A,r){
   del.transpose=t(del)
   return(c(round(nlm(gev.loglik,theta,hessian=T)$estimate[1]+ ((nlm(gev.loglik,theta,hessian=T)$estimate[2])/(nlm(gev.loglik,theta,hessian=T)$estimate[3]))*((-log(1 - (r)^(-1)))^(-(nlm(gev.loglik,theta,hessian=T)$estimate[3])) - 1),4),round(sqrt(del.transpose%*%varcovar%*%del),4)))}
 
-# Aqui c utiliza a matriz o comando yrfun(A,r) r é nível de retorno que vc quer. 
+# Aqui c utiliza a matriz o comando yrfun(A,r) r C) nC-vel de retorno que vc quer. 
 
 library("ismev")
 B=gev.fit(wassaw)
@@ -233,14 +235,24 @@ gev.diag(B)
 
 par(mfrow=c(1,2))
 
-# Deve-se ajustar esses valores até encontrar os máximos 
+# Deve-se ajustar esses valores atC) encontrar os mC!ximos 
 gev.prof(B,xlow=12,xup=26,100)  
 gev.prof(B,xlow=12,xup=26,1000)
 
 library(extRemes)
-fit1 <- fevd(wassaw, units = "pés")
+fit1 <- fevd(wassaw, units = "pC)s")
 par(mfrow=c(1,2))
 ci(fit1, method = "proflik", xrange = c(12, 28), verbose = TRUE,, return.period = c(100))
 ci(fit1, method = "proflik", xrange = c(12, 28), verbose = TRUE,, return.period = c(1000))
-# Pode-se obter os valores dos intervalos nos gráficos
-# Basta nomear alguma das variáveis de interesse.  
+# Pode-se obter os valores dos intervalos nos grC!ficos
+# Basta nomear alguma das variC!veis de interesse.  
+}
+
+#### TEMPERATURA ####
+TEMP_MAX<-EXTREMOS$TEMP
+year=seq(1968,2022,1)
+par(mfrow=c(1,2))
+plot(TEMP_MAX~year,type="b")
+hist(TEMP_MAX)
+
+ad
