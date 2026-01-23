@@ -35,7 +35,7 @@
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <h3>Precipitaçãoo máxima esperada na cidade de Lavras-MG via distribuição generalizada de valores extremos</h3>
+      <h3>Precipitação máxima esperada na cidade de Lavras-MG via distribuição generalizada de valores extremos</h3>
       <p>Modelagem da precipitação máxima esperada utilizando a Distribuição Generalizada de Valores Extremos (GEV) para estimar períodos de retorno de eventos climáticos.</p>
       <p><strong>Tecnologias:</strong> R, GEV, Análise de Dados Climáticos.</p>
       <br>
@@ -50,16 +50,20 @@
       <a href="https://Lucasbpofc.github.io/Pacote-forcats.html"><strong>Ver Análise Completa &rarr;</strong></a>
     </td>
   </tr>
-    <tr>
+  <tr>
     <td width="50%" valign="top">
         <h3>Análise de Séries Temporais - Preços da Soja</h3>
         <p>Modelagem da volatilidade dos preços da soja utilizando o modelo APARCH.</p>
         <p><strong>Status:</strong> Em desenvolvimento 🚧</p>
     </td>
-    <td width-="50%">
-      </td>
+    <td width="50%" valign="top">
+      <h3>Extremos climáticos na cidade de Viçosa - MG</h3>
+      <p>Análise de precipitação e temperaturas extremas na cidade de Viçosa.</p>
+      <p><strong>Tecnologias:</strong> R, extRemes, ismev, Distribuição Generalizada de Valores Extremos.</p>
+      <a href="https://Lucasbpofc.github.io/TESE/VICOSA_MD.html"><strong>Ver Análise Completa &rarr;</strong></a>
+    </td>
   </tr>
-</table>
+</table> 
 
 ## 🎓 Apresentações Acadêmicas
 
@@ -81,9 +85,7 @@
   </a>
       &nbsp;&nbsp;&nbsp;&nbsp;
   <a href="MGEST_2.pdf" target="_blank">
-    <img src="extremos_rs.jpeg" width="250" alt="Pôster Distribuição generalizada de valores extremos: um estudo
- aplicado à precipitação e temperatura máxima na cidade
- de Porto Alegre-RS">
+    <img src="extremos_rs.jpeg" width="250" alt="Pôster Distribuição generalizada de valores extremos: um estudo aplicado à precipitação e temperatura máxima na cidade de Porto Alegre-RS">
   </a>
 </p>
 
@@ -105,9 +107,9 @@
 ## 📫 Entre em Contato
 
 <p align="center">
-  <a href="mailto:contato@Lucas.p.belo019@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white" target="_blank"></a>
-  <a href="https://www.linkedin.com/in/lucas-pereira-belo-3aa8a51a9" target="_blank"><img src="https://img.shields.io/badge/-LinkedIn-%230077B5?style=for-the-badge&logo=linkedin&logoColor=white" target="_blank"></a>
-  <a href="https://orcid.org/0009-0002-7189-514X" target="_blank"><img src="https://img.shields.io/badge/-ORCID-A6CE39?style=for-the-badge&logo=orcid&logoColor=white" target="_blank"></a>
-  <a href="https://instagram.com/lucasbello_01" target="_blank"><img src="https://img.shields.io/badge/-Instagram-%23E4405F?style=for-the-badge&logo=instagram&logoColor=white" target="_blank"></a>
+  <a href="mailto:Lucas.p.belo019@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white" target="_blank"></a>
+  <a href="https://www.linkedin.com/in/lucas-pereira-belo-3aa8a51a9" target="_blank"><img src="https://img.shields.io/badge/-LinkedIn-%230077B5?style=for-the-badge&logo=linkedin&logoColor=white" target="_blank"></a>
+  <a href="https://orcid.org/0009-0002-7189-514X" target="_blank"><img src="https://img.shields.io/badge/-ORCID-A6CE39?style=for-the-badge&logo=orcid&logoColor=white" target="_blank"></a>
+  <a href="https://instagram.com/lucasbello_01" target="_blank"><img src="https://img.shields.io/badge/-Instagram-%23E4405F?style=for-the-badge&logo=instagram&logoColor=white" target="_blank"></a>
   <a href="https://wa.me/5531995426266" target="_blank"><img src="https://img.shields.io/badge/WhatsApp-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" target="_blank"></a>
 </p>
