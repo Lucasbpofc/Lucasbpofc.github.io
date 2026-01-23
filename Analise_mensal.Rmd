@@ -1,0 +1,189 @@
+---
+title: "Análise Anual de Valores Extremos: Viçosa-MG"
+subtitle: "Monitoramento Climático Mensal (1968-2022)"
+author: "Lucas Pereira Belo"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
+    number_sections: true
+    code_folding: show
+    df_print: paged
+---
+
+<style>
+body {
+  text-align: justify;
+  font-family: 'Helvetica', sans-serif;
+}
+.alert-info {
+  background-color: #e7f3fe;
+  border-left: 6px solid #2196F3;
+  color: #0c5460;
+  padding: 10px;
+  margin-bottom: 15px;
+}
+.main-container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+h1, h2, h3 {
+  color: #2c3e50;
+  font-weight: bold;
+}
+</style>
+
+```{r setup, include=FALSE}
+# Configuração Global
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = "center", fig.width = 10, fig.height = 6)
+
+# Carregamento de Pacotes
+library(readxl)
+library(dplyr)
+library(tseries)
+library(trend)
+library(randtests)
+library(extRemes)
+library(urca)
+library(DT)
+library(ggplot2)
+```
+
+# Metodologia e Estrutura
+
+Este relatório apresenta uma análise automatizada para os 12 meses do ano. Para cada mês, são realizados os seguintes procedimentos para as variáveis Precipitação e Temperatura Máxima:
+
+Análise Exploratória: Séries temporais e histogramas.
+
+Testes de Estacionariedade: Teste Augmented Dickey-Fuller (ADF) via pacote urca (considerando tendência).
+
+Modelagem GEV: Ajuste da Distribuição Generalizada de Valores Extremos e cálculo dos níveis de retorno (4, 10 e 20 anos).
+
+```{r}
+# ==============================================================================
+# FUNÇÃO AUTOMATIZADA DE ANÁLISE
+# Esta função recebe os dados de um mês e gera todo o relatório visual e estatístico
+# ==============================================================================
+
+executar_analise_mes <- function(dados, nome_mes) {
+  
+  # Definição das variáveis
+  chuva <- dados$PRECIP
+  temp  <- dados$TEMP
+  anos  <- seq(1968, 1968 + length(chuva) - 1, 1) 
+  
+  # ---------------------------------------------------------
+  # BLOCO 1: PRECIPITAÇÃO
+  # ---------------------------------------------------------
+  cat(paste0("\n### Precipitação - ", nome_mes, "\n"))
+  
+  # Gráficos Exploratórios (Chuva)
+  par(mfrow=c(1,2))
+  plot(chuva ~ anos, type="b", main=paste("Série: Precipitação (", nome_mes, ")"), 
+       ylab="mm", xlab="Ano", col="#2980b9", pch=19, lwd=1.5)
+  hist(chuva, main=paste("Hist: Precipitação (", nome_mes, ")"), 
+       xlab="mm", col="#3498db", border="white", prob=TRUE)
+  lines(density(chuva, na.rm=TRUE), col="red", lwd=2)
+  
+  # Teste ADF (Chuva)
+  cat("\n**Diagnóstico de Estacionariedade (ADF - Chuva):**\n")
+  try({
+    teste_urca <- ur.df(chuva, type = "trend", selectlags = "AIC")
+    print(summary(teste_urca))
+  }, silent = TRUE)
+  
+  # Ajuste GEV (Chuva)
+  cat("\n**Modelagem GEV e Níveis de Retorno (Chuva):**\n")
+  # Tenta ajustar o modelo, se der erro (ex: dados constantes), avisa
+  fit_chuva <- try(fevd(chuva, units = "mm"), silent=TRUE)
+  
+  if(!inherits(fit_chuva, "try-error")){
+      # Plot de Retorno GEV (CORRIGIDO PARA type="rl")
+      par(mfrow=c(1,1))
+      plot(fit_chuva, type="rl", main=paste("Níveis de Retorno - Chuva (", nome_mes, ")"))
+      
+      # Tabela de Retorno Simplificada
+      retornos_c <- return.level(fit_chuva, return.period = c(10, 50, 100))
+      cat("\n> **Previsão de Retorno (Chuva):** 10 anos =", round(retornos_c[1], 1), "mm | 100 anos =", round(retornos_c[3], 1), "mm\n")
+  } else {
+      cat("\n> Erro ao ajustar modelo GEV para Chuva (verifique se há variação nos dados).\n")
+  }
+
+  cat("\n---\n") # Separador visual
+  
+  # ---------------------------------------------------------
+  # BLOCO 2: TEMPERATURA
+  # ---------------------------------------------------------
+  cat(paste0("\n### Temperatura - ", nome_mes, "\n"))
+  
+  # Gráficos Exploratórios (Temp)
+  par(mfrow=c(1,2))
+  plot(temp ~ anos, type="b", main=paste("Série: Temperatura (", nome_mes, ")"), 
+       ylab="ºC", xlab="Ano", col="#c0392b", pch=19, lwd=1.5)
+  hist(temp, main=paste("Hist: Temperatura (", nome_mes, ")"), 
+       xlab="ºC", col="#e74c3c", border="white", prob=TRUE)
+  lines(density(temp, na.rm=TRUE), col="blue", lwd=2)
+  
+  # Teste ADF (Temp)
+  cat("\n**Diagnóstico de Estacionariedade (ADF - Temperatura):**\n")
+  try({
+    teste_urca_t <- ur.df(temp, type = "trend", selectlags = "AIC")
+    print(summary(teste_urca_t))
+  }, silent = TRUE)
+  
+  # Ajuste GEV (Temp)
+  cat("\n**Modelagem GEV e Níveis de Retorno (Temperatura):**\n")
+  fit_temp <- try(fevd(temp, units = "deg C"), silent=TRUE)
+  
+  if(!inherits(fit_temp, "try-error")){
+      # Plot de Retorno GEV (CORRIGIDO PARA type="rl")
+      par(mfrow=c(1,1))
+      plot(fit_temp, type="rl", main=paste("Níveis de Retorno - Temperatura (", nome_mes, ")"))
+  } else {
+      cat("\n> Erro ao ajustar modelo GEV para Temperatura.\n")
+  }
+  
+  cat("\n\n") # Espaço final
+}
+```
+
+# Análise Mensal Detalhada {.tabset .tabset-pills}
+Selecione o mês abaixo para visualizar os resultados completos.
+
+```{r}
+# Lista de Meses para as abas
+lista_meses <- c("Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                 "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro")
+
+# Loop de 1 a 12
+for(i in 1:12){
+  
+  # 1. Cria a Aba do Mês
+  cat(paste0("\n## ", lista_meses[i], " \n\n"))
+  
+  # 2. Tenta ler a aba correspondente no Excel (Sheet 1 = Jan, Sheet 2 = Fev...)
+  # Se der erro (ex: planilha incompleta), ele avisa e pula para o próximo
+  check_data <- try({
+    read_excel("EXTREMOS.xlsx", sheet = i)
+  }, silent = TRUE)
+  
+  if(inherits(check_data, "try-error")) {
+    cat(paste0("\n> **Aviso:** Não foi possível ler os dados para ", lista_meses[i], ". Verifique se a aba ", i, " existe no arquivo Excel.\n"))
+  } else {
+    # 3. Se leu com sucesso, roda a função de análise
+    executar_analise_mes(check_data, lista_meses[i])
+  }
+  
+  # 4. Encerra a aba
+  cat("\n\n")
+}
+```
+
+# Conclusão Geral
+Este relatório automatizado permite a identificação rápida de padrões sazonais e tendências climáticas no município de Viçosa, fornecendo subsídios estatísticos para o planejamento hídrico e agrícola local.
