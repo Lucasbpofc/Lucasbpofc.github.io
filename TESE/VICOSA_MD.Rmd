@@ -406,7 +406,7 @@ ci(fit1, method = "proflik", xrange = c(80, 160), verbose = TRUE, return.period 
 ci(fit1, method = "proflik", xrange = c(120, 470), verbose = TRUE, return.period = 100)
 ```
 
-As estimativas indicam que um evento de precipitação de 71,5 mm possui um tempo de recorrência de 4 anos para o mês de janeiro. Para períodos de retorno mais longos, de 10 e 100 anos, os volumes estimados são de 103 mm e 131 mm, respectivamente. Estatisticamente, isso implica que tais magnitudes devem ser igualadas ou superadas, em média, uma vez a cada intervalo de tempo considerado.
+As estimativas indicam que um evento de precipitação de 78,94 mm possui um tempo de recorrência de 5 anos para o mês de janeiro. Para períodos de retorno mais longos, de 10 e 100 anos, os volumes estimados são de 103 mm e 215,865 mm, respectivamente. Estatisticamente, isso implica que tais magnitudes devem ser igualadas ou superadas, em média, uma vez a cada intervalo de tempo considerado.
 
 #### Temperatura máxima
 # Análise de Temperaturas Máximas
