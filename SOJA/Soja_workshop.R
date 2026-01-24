@@ -79,8 +79,8 @@ summary(ur.df(y1, type = "trend", selectlags = "AIC"))
 summary(ur.pp(y1, type = "Z-tau", model = "trend", lags = "short"))
 
 ############## Teste de Dependência Longa
-#install.packages("pracma")
-#install.packages("fracdiff")
+install.packages("pracma")
+install.packages("fracdiff")
 library("pracma")
 library("fracdiff")
 

@@ -1,0 +1,409 @@
+---
+title: "Modelagem da Volatilidade dos Preços da Soja"
+subtitle: "Análise de Séries Temporais e Modelos da Família GARCH"
+author: "Lucas Pereira Belo"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = "center", fig.width = 10, fig.height = 6)
+
+# Carregamento de Pacotes
+library(readxl)      # Importação
+library(ggplot2)     # Gráficos
+library(tseries)     # Testes de Estacionariedade
+library(fracdiff)    # Memória Longa
+library(forecast)    # Modelagem ARIMA
+library(descomponer) # Periodograma
+library(TSA)         # Periodograma
+library(lmtest)      # Testes de Coeficientes
+library(arfima)      # ARFIMA
+library(moments)     # Estatísticas descritivas
+library(randtests)   # Cox-Stuart
+library(urca)        # Testes de Raiz Unitária Avançados
+library(pracma)      # Hurst
+library(uroot)       # HEGY e CH
+library(fGarch)      # Modelagem GARCH (pacote 1)
+library(rugarch)     # Modelagem GARCH (pacote 2 - mais robusto)
+```
+
+# Introdução e Preparação dos Dados
+
+Este arquivo tem como objetivo modelar a volatilidade dos preços da soja (em R$), utilizando dados semanais entre 2011 e 2023. A análise percorre desde a decomposição da série, verificação de estacionariedade e memória longa, até a modelagem da média (ARIMA) e da variância condicional (GARCH/APARCH). Os dados utilizados são oriundos do site https://br.investing.com/ e tem como intuito orientar e servir de modelos para situações semelhantes.
+
+```{r import_data}
+# Importação dos Dados
+soja_semanal <- read_excel("soja_semanal.xlsx")
+soja <- soja_semanal
+  
+# Criação do Objeto de Série Temporal (Preço)
+y <- ts(soja$dolar, start = c(2011,1), end = c(2023,12), freq = 52)
+  
+# Criação da Série de Log-Retornos
+# r = ln[y_t/y_(t-1)]
+y1 <- ts(diff(log(y)), start = c(2011,1), end = c(2023,12), freq = 52)
+```
+
+Fundamentação: A Escolha pelos Log-Retornos na modelagem financeira, raramente trabalha-se com os preços brutos ($P_t$), pois estes geralmente apresentam tendências estocásticas (não-estacionariedade), o que viola premissas básicas dos modelos econométricos. A solução padrão é a utilização dos Log-Retornos ($r_t$).Matematicamente, o log-retorno é definido como a diferença dos logaritmos naturais de preços consecutivos:$$ r_t = \ln\left(\frac{P_t}{P_{t-1}}\right) = \ln(P_t) - \ln(P_{t-1}) $$A preferência por esta transformação deve-se a propriedades estatísticas fundamentais como a aditividade temporal e a indução de estacionariedade. Ao remover a tendência dos preços, isolamos o fenômeno dos Aglomerados de Volatilidade (Volatility Clustering), onde períodos de alta variância tendem a se agrupar no tempo. É esse comportamento que os modelos GARCH buscam capturar.
+
+A visualização das séries abaixo, permite compararmos a evolução do preço bruto (não-estacionário) com a série de log-retornos (estacionária em média, mas com variância heterocedástica).
+
+```{r}
+par(mfrow = c(2,1))
+
+# Gráfico 1: Preços (Nível)
+plot(y, xlab= "Tempo", ylab = "Preço (R$)", main = "Evolução do Preço da Soja (Nível)", col = "darkgreen", lwd=1.5)
+grid()
+
+# Gráfico 2: Log-Retornos (Volatilidade)
+plot(y1, xlab= "Tempo", ylab = "Log-retorno", main = "Série de Log-Retornos (Volatilidade)", col = "blue", lwd=1)
+grid()
+```
+
+## Análise de Autocorrelação (ACF e PACF)
+
+A identificação da estrutura de dependência temporal é realizada através das Funções de Autocorrelação (ACF) e Autocorrelação Parcial (PACF). Estas ferramentas visuais (correlogramas) são fundamentais para dois diagnósticos: verificar a estacionariedade e sugerir possívis valores para a ordem dos processos autoregressivos (AR) e de médias móveis (MA).
+
+**Interpretação Esperada:**
+* **Série em Nível ($y$):** Em séries não estacionárias (com tendência ou raiz unitária), a ACF tende a apresentar um decaimento linear muito lento, permanecendo significativa por vários *lags*.
+* **Série de Retornos ($y_1$):** Após a diferenciação, espera-se que a ACF decaia rapidamente para zero (corte abrupto), oscilando dentro do intervalo de confiança (faixas pontilhadas azuis), o que indica estacionariedade.
+
+Abaixo, os gráficos confirmam este comportamento:
+
+```{r acf_pacf_plots, fig.height=8, fig.width=10}
+par(mfrow = c(2,2))
+n = length(y)
+
+# Gráficos da Série em Nível (Preço)
+# Usamos stats::acf para evitar conflito com o pacote TSA
+stats::acf(y, main="ACF - Preço (Nível)", lag.max=36, ylim=c(-0.5, 1))
+stats::pacf(y, main="PACF - Preço (Nível)", lag.max=36, ylim=c(-0.5, 1))
+
+# Gráficos da Série Diferenciada (Retornos)
+stats::acf(y1, main="ACF - Log-Retornos", lag.max=36, ylim=c(-0.5, 1))
+stats::pacf(y1, main="PACF - Log-Retornos", lag.max=36, ylim=c(-0.5, 1))
+```
+Observa-se claramente no primeiro gráfico (ACF - Nível) a persistência da autocorrelação, característica de séries com "memória longa" ou raiz unitária. Já nos gráficos inferiores, referentes aos log-retornos, a maioria das autocorrelações situa-se dentro dos limites de significância (95%), indicando que a transformação foi eficaz em remover a tendência estocástica. Picos isolados na ACF ou PACF dos retornos ajudarão a determinar a ordem $p$ e $q$ dos modelos ARMA/GARCH subsequentes.
+
+2. Testes de Estacionariedade e Tendência
+Para modelar a série via ARIMA-GARCH, precisamos garantir que a série de retornos seja estacionária.
+
+Teste de Tendência (Cox-Stuart)
+```{r}
+print(cox.stuart.test(y1))
+
+# Verificação linear simples
+model_t = tslm(y1 ~ trend)
+summary(model_t)
+```
+
+Testes de Raiz Unitária
+Aplicamos os testes ADF (Augmented Dickey-Fuller) e PP (Phillips-Perron) para verificar a presença de raiz unitária.
+
+```{r}
+# Teste ADF e PP (Pacote tseries)
+print(adf.test(y1))
+print(pp.test(y1))
+
+# Testes Avançados (Pacote urca)
+summary(ur.df(y1, type = "trend", selectlags = "AIC"))
+summary(ur.pp(y1, type = "Z-tau", model = "trend", lags = "short"))
+```
+
+Sazonalidade (HEGY e Canova-Hansen)
+Verificação de raízes unitárias sazonais.
+
+```{r}
+# Expoente de Hurst
+hurst = hurstexp(y1)
+d = hurst[[1]] - 0.5
+
+# Fracdiff
+frac_model <- fracdiff(y1)
+print(frac_model)
+
+# Série Diferenciada Fracionariamente (Visualização)
+y2 = ts(diffseries(y1, d = 0.01173613), start = c(2008,1), end = c(2023,12), frequency = 52)
+
+par(mfrow = c(3,1))
+plot.ts(y, main="Nível"); plot.ts(y1, main="Log-Retornos"); plot.ts(y2, main="Diff Fracionária")
+```
+
+3. Análise Espectral e Ciclos
+Utilizamos o periodograma para identificar periodicidades ocultas na série.
+
+```{r}
+dt = 1
+n = length(y1)
+k = seq(0, n - 1, 1)
+fk = (k/(n*dt)) # frequência de Fourier
+TDF = fft(y1)   # Transformada Discreta de Fourier
+MAG2 = Mod(TDF)^2 # Magnitude
+periodograma = cbind(fk[1:((n-1)/2)], MAG2[1:((n-1)/2)])
+
+plot(periodograma, type = "h", ylab = "Magnitude", xlab = "Frequência", main="Periodograma")
+
+# Identificação da frequência dominante
+max_fk = periodograma[,1][periodograma[,2] == max(periodograma[,2])]
+max_fk
+
+# 1. Definindo a Função do Teste
+fisher.g.test.manual <- function(x) {
+  # Tamanho da série
+  n <- length(x)
+  
+  # Cálculo do Periodograma (via FFT)
+  # I(w) = |FFT(x)|^2 / n
+  I <- Mod(fft(x))^2 / n
+  
+  # Selecionamos apenas as frequências fundamentais (até n/2)
+  # Descartamos a freq 0 (média) e pegamos a primeira metade
+  m <- floor((n - 1) / 2)
+  I_vals <- I[2:(m + 1)]
+  
+  # Estatística g (Razão entre o máximo e a soma total)
+  g_stat <- max(I_vals) / sum(I_vals)
+  
+  # Frequência onde ocorre o máximo (para identificar o ciclo)
+  idx_max <- which.max(I_vals)
+  freq_max <- (idx_max) / n  # Frequência normalizada
+  
+  # Cálculo do P-valor (Fórmula exata de Fisher, 1929)
+  # P(G > g) = Somatório de termos alternados
+  p_val <- 0
+  k <- 1
+  
+  # O loop continua enquanto (1 - k*g) for positivo
+  while ((1 - k * g_stat) > 0) {
+    term <- (-1)^(k - 1) * choose(m, k) * (1 - k * g_stat)^(m - 1)
+    p_val <- p_val + term
+    k <- k + 1
+  }
+  
+  # Retorna uma lista com os resultados
+  return(list(
+    statistic = g_stat,
+    p.value = p_val,
+    dominant.freq = freq_max,
+    period = 1/freq_max,
+    n_freqs = m
+  ))
+}
+
+# 2. Aplicando o teste na série 'y2'
+# H0: A série é Ruído Branco (Gaussian White Noise)
+# H1: Existe uma periodicidade determinística adicionada
+resultado_fisher <- fisher.g.test.manual(y2)
+
+# 3. Exibindo os Resultados
+cat("----------------------------------------------------\n")
+cat("                  TESTE G DE FISHER                 \n")
+cat("----------------------------------------------------\n")
+cat("Estatística G:       ", round(resultado_fisher$statistic, 5), "\n")
+cat("P-valor:             ", format.pval(resultado_fisher$p.value, digits=4), "\n")
+cat("Frequência Dominante:", round(resultado_fisher$dominant.freq, 4), "\n")
+cat("Período Estimado:    ", round(resultado_fisher$period, 2), "semanas\n")
+cat("----------------------------------------------------\n")
+
+if(resultado_fisher$p.value < 0.05){
+  cat("CONCLUSÃO: Rejeita-se H0. Há evidência estatística de periodicidade significativa.\n")
+} else {
+  cat("CONCLUSÃO: Não se rejeita H0. A série comporta-se como Ruído Branco (sem ciclos determinísticos claros).\n")
+}
+```
+
+# 4. Seleção Automatizada do Modelo (Grid Search Completo)
+
+Considerando a estacionariedade da série de log-retornos ($d=0$), mas a incerteza quanto à necessidade de diferenciação sazonal ($D$) e à ordem dos componentes AR e MA (sazonais e não sazonais), optou-se por uma varredura exaustiva (**Grid Search**).
+
+O espaço de busca foi definido da seguinte forma:
+* **Parte Não-Sazonal:** $p, q \in \{0, 1, 2\}$; $d=0$.
+* **Parte Sazonal:** $P, Q \in \{0, 1, 2\}$; $D \in \{0, 1\}$.
+* **Período:** $S=52$ (Semanal).
+
+O critério de seleção permanece o **BIC**, priorizando a parcimônia em um espaço amostral vasto.
+
+```{r grid_search_full, results='asis'}
+# 1. Preparação dos Dados
+y1_clean <- y1[!is.na(y1) & !is.infinite(y1)]
+y1_final <- ts(y1_clean, frequency = 52, start = start(y1))
+
+# 2. Grid de Parâmetros
+# Mantemos o grid otimizado para evitar problemas de convergência
+grid_params <- expand.grid(
+  p = 0:2, q = 0:2, 
+  P = 0:1, Q = 0:1, 
+  D = 0:1
+)
+
+tabela_resultados <- data.frame()
+total <- nrow(grid_params)
+
+# 3. Loop de Estimação
+for(i in 1:total){
+  par <- grid_params[i, ]
+  tryCatch({
+    # Ajuste com CSS-ML para obter métricas válidas
+    fit_temp <- Arima(y1_final, 
+                      order = c(par$p, 0, par$q), 
+                      seasonal = list(order = c(par$P, par$D, par$Q), period = 52), 
+                      include.mean = FALSE,
+                      method = "CSS-ML") 
+    
+    if(!is.na(fit_temp$bic)){
+      tabela_resultados <- rbind(tabela_resultados, data.frame(
+        Modelo = paste0("SARIMA(", par$p, ",0,", par$q, ")(", par$P, ",", par$D, ",", par$Q, ")[52]"),
+        p = par$p, q = par$q, P = par$P, D = par$D, Q = par$Q,
+        AIC = fit_temp$aic,
+        BIC = fit_temp$bic,
+        AICc = fit_temp$aicc,     # Incluindo AICc
+        LogLik = fit_temp$loglik, # Apenas informativo
+        stringsAsFactors = FALSE
+      ))
+    }
+  }, error = function(e) { return(NULL) })
+}
+
+# 4. Lógica de Votação (Majority Vote)
+if(nrow(tabela_resultados) > 0){
+  
+  # Identifica o melhor valor (mínimo) para cada métrica
+  min_aic <- min(tabela_resultados$AIC)
+  min_bic <- min(tabela_resultados$BIC)
+  min_aicc <- min(tabela_resultados$AICc)
+  
+  # Cria coluna de votos (inicia com 0)
+  tabela_resultados$Votos <- 0
+  
+  # Adiciona voto se o modelo tiver o melhor AIC
+  tabela_resultados$Votos <- tabela_resultados$Votos + (tabela_resultados$AIC == min_aic)
+  # Adiciona voto se o modelo tiver o melhor BIC
+  tabela_resultados$Votos <- tabela_resultados$Votos + (tabela_resultados$BIC == min_bic)
+  # Adiciona voto se o modelo tiver o melhor AICc
+  tabela_resultados$Votos <- tabela_resultados$Votos + (tabela_resultados$AICc == min_aicc)
+  
+  # Ordenação: 1º Por Votos (Desc), 2º Por BIC (Asc - Desempate)
+  tabela_resultados <- tabela_resultados[order(-tabela_resultados$Votos, tabela_resultados$BIC), ]
+  
+  # Exibição
+  library(knitr)
+  kable(head(tabela_resultados, 10), 
+        row.names = FALSE, 
+        digits = 2, 
+        caption = "Top 10 Modelos (Ordenados por Votos nas métricas AIC, BIC e AICc)")
+  
+} else {
+  cat("**Aviso:** Nenhum modelo convergiu.")
+}
+```
+
+
+Ajuste do Melhor Modelo Selecionado
+Com base na tabela acima, selecionamos o modelo que minimizou os critérios de informação (preferencialmente o BIC para evitar overfitting).
+
+```{r}
+# Extraindo os parâmetros do melhor modelo (primeira linha da tabela ordenada)
+melhor_modelo_nome <- tabela_resultados$Modelo[1]
+
+# Reajustando o modelo vencedor para análise
+# (Aqui extraímos os números do nome do modelo string, ex: "SARIMA(1,0,1)...")
+params <- as.numeric(unlist(regmatches(melhor_modelo_nome, gregexpr("[0-9]+", melhor_modelo_nome))))
+# params[1] = p, params[2] = d, params[3] = q
+
+sarima_final <- Arima(y1,
+                 order = c(params[1], 0, params[3]),
+                 seasonal = c(0, 1, 1),
+                 include.mean = FALSE)
+
+cat(paste("Modelo Selecionado:", melhor_modelo_nome, "\n\n"))
+coeftest(sarima_final) # Teste de significância dos coeficientes
+
+# Visualização do Ajuste
+y_hat = sarima_final$fitted
+plot(y1, col = "gray80", type = "l", main=paste("Ajuste", melhor_modelo_nome, "vs Observado"), ylab="Retornos")
+lines(y_hat, col = "darkred", lwd=1.5)
+legend("topleft", legend=c("Observado", "Fitted"), col=c("gray80", "darkred"), lty=1, bty="n")
+```
+
+Diagnóstico dos Resíduos (Pré-GARCH)
+Antes de prosseguir para a modelagem da volatilidade, verificamos se o modelo ARIMA removeu a correlação linear, restando apenas a heterocedasticidade condicional.
+
+```{r}
+residuos <- residuals(sarima_final)
+
+par(mfrow=c(1,2))
+# 1. ACF dos Resíduos (Usando stats::acf para evitar conflito com TSA)
+stats::acf(residuos, main="ACF dos Resíduos (Média)", lag.max=36, ylim=c(-0.2, 0.2))
+
+# 2. ACF dos Resíduos ao Quadrado
+stats::acf(residuos^2, main="ACF Resíduos^2 (Volatilidade)", lag.max=36)
+```
+
+5. Modelagem da Volatilidade (Família GARCH)
+Como detectamos efeito ARCH, testaremos diferentes especificações para a variância.
+
+Testes Iniciais (fGarch)
+
+```{r}
+# Modelo ARCH(1)
+model_arch = garchFit(~garch(1, 0), include.mean = TRUE, data = residuos, trace = FALSE, cond.dist = "sstd")
+# Modelo GARCH(1,1)
+model_garch = garchFit(~ garch(1,1), include.mean = F, data = residuos, trace = F, cond.dist = "snorm")
+
+summary(model_garch)
+```
+
+Comparativo de Modelos Avançados (rugarch)
+Testaremos modelos assimétricos (EGARCH e apARCH) com diferentes distribuições, pois a distribuição Normal geralmente falha em capturar as caudas pesadas financeiras.
+
+Modelo EGARCH (Exponencial)
+
+```{r}
+spec_egarch <- ugarchspec(
+  variance.model = list(model = "eGARCH", garchOrder = c(1,1)),
+  mean.model = list(armaOrder = c(1,1), include.mean = TRUE),
+  distribution.model = "snorm"
+)
+
+fit_egarch <- ugarchfit(spec = spec_egarch, data = residuos)
+print(fit_egarch)
+```
+
+Modelo apARCH (Asymmetric Power ARCH)
+O modelo apARCH é mais flexível e captura assimetria e potência da volatilidade.
+
+```{r}
+# Especificação: apARCH com distribuição 'snorm' (Skew Normal) ou 'sged'
+spec_aparch <- ugarchspec(
+  variance.model = list(model = "apARCH", garchOrder = c(1, 1)), 
+  mean.model = list(armaOrder = c(1, 1), include.mean = TRUE),
+  distribution.model = "snorm" # Testado: sged apresentou melhores métricas
+)
+
+fit_aparch <- ugarchfit(spec = spec_aparch, data = residuos)
+fit_aparch
+
+# Plot dos resultados
+plot(fit_aparch, which=3) # Volatilidade Condicional
+```
+
+Seleção do Melhor Modelo
+Comparativo baseado nos critérios de informação (AIC/BIC) observados durante a modelagem manual:
+
+Distribuição,AIC,BIC,Log-Likelihood
+Norm,-4.2836,-4.2276,1370.187
+SNorm,-4.2921,-4.2290,1373.873
+STD,-4.2873,-4.2243,1372.373
+SSTD,-4.2928,-4.2228,1375.111
+GED,-4.2894,-4.2264,1373.039
+SGED,-4.2940,-4.2239,1375.491
+
+Conclusão: O modelo apARCH(1,1) com distribuição SGED (Skewed Generalized Error Distribution) apresentou o menor AIC e maior Log-Likelihood, sendo o mais eficiente para capturar a heterocedasticidade e a assimetria da volatilidade dos preços da soja.

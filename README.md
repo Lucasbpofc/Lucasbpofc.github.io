@@ -1,8 +1,12 @@
-# Olá, meu nome é Lucas Pereira Belo 👋
+<div align="center">
+  <img src="https://github.com/Lucasbpofc.png" width="150px" style="border-radius: 50%;">
+  
+  <h1>Olá, meu nome é Lucas Pereira Belo 👋</h1>
 
-<p align="center">
-  <em>Atualmente sou doutorando em Estatística Aplicada e Biometria pela <b>UFV</b>, com foco em Análise de Sobrevivência e Séries Temporais. Buscando oportunidades para aplicar minhas habilidades analíticas desenvolvidas durante a graduação e mestrado, para resolver problemas complexos na área de dados.</em>
-</p>
+  <p>
+    <em>Atualmente sou doutorando em Estatística Aplicada e Biometria pela <b>UFV</b>, com foco em Análise de Sobrevivência e Séries Temporais. Buscando oportunidades para aplicar minhas habilidades analíticas desenvolvidas durante a graduação e mestrado, para resolver problemas complexos na área de dados.</em>
+  </p>
+</div>
 
 ## 🛠️ Ferramentas e Tecnologias
 
