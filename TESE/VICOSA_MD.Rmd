@@ -1,34 +1,69 @@
 ---
-title: "Relatório de Análise de Valores Extremos - Viçosa"
-author: "Lucas"
+title: "Análise de Valores Extremos na cidade de Viçosa-Mg: Precipitação e Temperatura"
+subtitle: "Estudo de Caso: Viçosa - MG (1968-2022)"
+author: "Lucas Pereira Belo"
 date: "`r Sys.Date()`"
 output: 
   html_document:
+    theme: flatly
+    highlight: tango
     toc: true
-    toc_float: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
     number_sections: true
-    theme: cerulean
+    code_folding: show
+    df_print: paged
 ---
 
+<style>
+body {
+  text-align: justify;
+  font-family: 'Helvetica', sans-serif;
+}
+.alert-info {
+  background-color: #e7f3fe;
+  border-left: 6px solid #2196F3;
+  color: #0c5460;
+  padding: 10px;
+  margin-bottom: 15px;
+}
+.alert-warning {
+  background-color: #fff3cd;
+  border-left: 6px solid #ffc107;
+  color: #856404;
+  padding: 10px;
+  margin-bottom: 15px;
+}
+h1, h2 {
+  color: #2c3e50;
+  font-weight: bold;
+}
+</style>
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = "center")
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = "center", fig.width = 10, fig.height = 6)
 ```
 
 # 1. Introdução
 
-## 1.1 Caracterização da Área de Estudo
+## Caracterização da Área de Estudo
 
 O município de Viçosa está localizado na mesorregião da Zona da Mata do estado de Minas Gerais, a aproximadamente 230 km a sudeste da capital, Belo Horizonte. Com altitude média de 649 metros, o município ocupa uma área territorial de cerca de 300 km², dos quais 18 km² compreendem o perímetro urbano. Para o ano de 2025, a população foi estimada em 79.517 habitantes.
 
-## 1.2 Base de Dados e Metodologia
+```{r, echo=FALSE, fig.align='center', fig.cap="Figura 1: Vista da praça municipal de Viçosa-MG", out.width="90%"}
+knitr::include_graphics("VICOSA.jpg")
+```
 
-Este relatório sintetiza a análise das precipitações máximas diárias históricas ocorridas exclusivamente nos meses de janeiro. A série temporal abrange o período de **1968 a 2022**, totalizando 55 observações anuais, um tamanho amostral considerado suficiente para garantir a robustez estatística das estimativas.
+## Base de Dados e Metodologia
+
+Esta introdução sintetiza a análise das precipitações máximas diárias históricas ocorridas exclusivamente no mese de janeiro, posteriormente a análise será expandida para os demais mêses. A série temporal abrange o período de **1968 a 2022**, totalizando 55 observações anuais, um tamanho amostral considerado suficiente para garantir a robustez estatística das estimativas.
 
 Os dados pluviométricos foram obtidos a partir das estações do **Instituto Nacional de Meteorologia (INMET)** e do banco de dados do Boletim Meteorológico do **Programa de Pós-Graduação em Meteorologia Aplicada da Universidade Federal de Viçosa (UFV)**.
 
 Para a estruturação dos dados, adotou-se a metodologia de **Máximos de Blocos**, onde, para cada mês de janeiro da série histórica (bloco de 31 dias), selecionou-se o evento de maior precipitação diária acumulada.
 
-## 1.3 Abordagem Estatística
+## Abordagem Estatística
 
 A modelagem probabilística foi realizada utilizando a **Distribuição Generalizada de Valores Extremos (GEV)**. A consistência da série temporal e a adequação do modelo foram verificadas através das seguintes etapas:
 
@@ -45,31 +80,56 @@ library(readxl)
 library(purrr)
 library(dplyr)
 library(tseries)   # ADF Test
-library(trend)     # Non-parametric trend tests
+library(trend)     # Testes não-paramétricos
 library(randtests) # Cox-Stuart
-library(goftest)   # Goodness-of-fit (AD test)
-library(extRemes)  # GEV modeling
-library(ismev)     # GEV diagnostics
+library(goftest)   # Bondade de ajuste (AD test)
+library(extRemes)  # Modelagem GEV
+library(ismev)     # Diagnósticos GEV
+library(urca)      # Teste de Raiz Unitária Avançado
+library(DT)        # Tabelas Interativas
+
 ```
 
 ```{r import_data}
-# Leitura do Arquivo
+# Leitura e Definições
 EXTREMOS <- read_excel("EXTREMOS.xlsx")
 CHUVA <- EXTREMOS$PRECIP
 year <- seq(1968, 2022, 1)
-summary(EXTREMOS)
+
+# 1. Encontrando os índices (posições) dos extremos
+idx_max <- which.max(CHUVA) # Posição da maior chuva
+idx_min <- which.min(CHUVA) # Posição da menor chuva
+
+# 2. Exibindo os Destaques com 'cat'
+cat(paste0("---------------------------------------------------\n",
+           "RESUMO DOS EXTREMOS (1968-2022):\n",
+           "---------------------------------------------------\n",
+           "⬆ MAIOR valor observado: ", CHUVA[idx_max], " mm (Ano: ", year[idx_max], ")\n",
+           "⬇ MENOR valor observado: ", CHUVA[idx_min], " mm (Ano: ", year[idx_min], ")\n",
+           "---------------------------------------------------\n\n"))
+
+# 3. Resumo Estatístico Padrão
+summary(EXTREMOS$PRECIP)
+
+# 4. Tabela Interativa
+datatable(EXTREMOS, options = list(pageLength = 5, scrollX = TRUE), 
+          caption = "Tabela 1: Série Histórica de Extremos (Viçosa)")
+
 ```
+Históricamente, o mês de janeiro é marcado por uma média de 58.58 milímitros de chuva, para as máximas no mês. A maior chuva ocorreu em 1986 com um montante de 184,80 milímetros em um único dia. O ano que teve a menor máxima foi em 1989 com 15,10 milímetros em um período de 24 horas.
 
 # Análise Exploratória e Testes de Estacionariedade
 
 A análise inicia-se com uma abordagem descritiva dos dados: visualização da série histórica e histograma de frequências.
 
 ```{r exploratoria, fig.width=10, fig.height=5}
-par(mfrow=c(1,2))
-plot(CHUVA ~ year, type="b", main="Série Histórica (Jan)", 
-     ylab="Precipitação (mm)", xlab="Ano", pch=19, col="darkblue")
-hist(CHUVA, main="Histograma (Jan)", 
-     xlab="Precipitação (mm)", col="lightblue")
+plot(CHUVA ~ year, type="b", main="Série Histórica: Precipitação (Jan)", 
+     ylab="Precipitação (mm)", xlab="Ano", pch=19, col="#2980b9", lwd=2)
+grid()
+
+hist(CHUVA, main="Distribuição de Frequências", 
+     xlab="Precipitação (mm)", col="#3498db", border="white", prob=TRUE)
+lines(density(CHUVA), col="#c0392b", lwd=2)
 ```
 
 ## Análise da Folha 2 (Fevereiro)
@@ -158,8 +218,13 @@ $$DF_{\tau} = \frac{\hat{\gamma}}{SE(\hat{\gamma})}$$
 No entanto, sob a hipótese nula de raiz unitária, essa estatística **não** segue uma distribuição t-Student padrão, mas sim a distribuição assintótica de Dickey-Fuller. Se a estatística calculada for menor (mais negativa) que o valor crítico da tabela de Dickey-Fuller (ou se o p-valor < 0.05), rejeita-se $H_0$, concluindo-se pela estacionariedade da série.
 
 ```{r testes_estatisticos}
-# 1. Teste Augmented Dickey-Fuller (Estacionariedade)
-adf.test(CHUVA)
+teste_completo <- ur.df(CHUVA, type = "trend", selectlags = "AIC")
+summary(teste_completo)
+
+# DICA DE INTERPRETAÇÃO:
+# Olhe para o valor de "t-statistic" na linha "tau3".
+# Se o valor for MENOR (mais negativo) que o "critical value" de 5pct,
+# então rejeita-se a Raiz Unitária (é Estacionária).
 
 # 2. Teste de Cox-Stuart (Tendência)
 cox.stuart.test(CHUVA)
@@ -325,20 +390,20 @@ print(ad_result)
 
 ## Estimativa de Níveis de Retorno
 
-Por fim, foram calculados os níveis de retorno para 4, 10 e 20 anos com intervalos de confiança baseados em Perfil de Verossimilhança (*Profile Likelihood*), que são mais precisos para extremos.
+Por fim, foram calculados os níveis de retorno para 5, 10 e 20 anos com intervalos de confiança baseados em Perfil de Verossimilhança (*Profile Likelihood*), que são mais precisos para extremos.
 
 ```{r return_levels, fig.width=10, fig.height=5}
 par(mfrow=c(1,3))
 
 # Nota: O argumento 'xrange' foi ajustado visualmente para cobrir a região de verossimilhança
-# 4 Anos
-ci(fit1, method = "proflik", xrange = c(55, 100), verbose = FALSE, return.period = 4)
+# 5 Anos
+ci(fit1, method = "proflik", xrange = c(65, 100), verbose = TRUE, return.period = 5)
 
 # 10 Anos
-ci(fit1, method = "proflik", xrange = c(80, 160), verbose = FALSE, return.period = 10)
+ci(fit1, method = "proflik", xrange = c(80, 160), verbose = TRUE, return.period = 10)
 
-# 20 Anos
-ci(fit1, method = "proflik", xrange = c(100, 220), verbose = FALSE, return.period = 20)
+# 100 Anos
+ci(fit1, method = "proflik", xrange = c(120, 470), verbose = TRUE, return.period = 100)
 ```
 
 As estimativas indicam que um evento de precipitação de 71,5 mm possui um tempo de recorrência de 4 anos para o mês de janeiro. Para períodos de retorno mais longos, de 10 e 100 anos, os volumes estimados são de 103 mm e 131 mm, respectivamente. Estatisticamente, isso implica que tais magnitudes devem ser igualadas ou superadas, em média, uma vez a cada intervalo de tempo considerado.
@@ -358,15 +423,16 @@ TEMP_MAX <- EXTREMOS$TEMP
 year <- seq(1968, 2022, 1)
 
 # Plotagem
-par(mfrow=c(1,2))
 plot(TEMP_MAX ~ year, type="b", main="Série Histórica: Temperatura (Jan)", 
-     ylab="Temperatura (ºC)", xlab="Ano", col="firebrick", pch=19)
-hist(TEMP_MAX, main="Histograma: Temperatura (Jan)", 
-     xlab="Temperatura (ºC)", col="salmon", border="white")
+     ylab="Temperatura (ºC)", xlab="Ano", col="#c0392b", pch=19, lwd=2)
+grid()
+hist(TEMP_MAX, main="Distribuição de Frequências", 
+     xlab="Temperatura (ºC)", col="#e74c3c", border="white", prob=TRUE)
+lines(density(TEMP_MAX), col="#2c3e50", lwd=2)
 # 1. Teste Augmented Dickey-Fuller (Estacionariedade)
 # H0: Série Não-Estacionária | H1: Série Estacionária
-print(adf.test(TEMP_MAX))
-
+teste_completo2 <- ur.df(TEMP_MAX, type = "trend", selectlags = "AIC")
+summary(teste_completo2)
 # 2. Teste de Cox-Stuart (Tendência)
 # H0: Sem tendência | H1: Com tendência
 print(cox.stuart.test(TEMP_MAX))
@@ -426,4 +492,34 @@ ci(fit2, method = "proflik", xrange = c(34, 38), verbose = FALSE, return.period 
 
 # Nível de Retorno: 20 Anos
 ci(fit2, method = "proflik", xrange = c(35, 41), verbose = FALSE, return.period = 20, main = "Retorno 20 Anos")
+```
+
+# Referências Bibliográficas
+
+## Literatura e Fontes de Dados
+
+* **UNIVERSIDADE FEDERAL DE VIÇOSA – UFV**. Departamento de Engenharia Agrícola. Estação Climatológica Principal de Viçosa. **Boletim meteorológico 2023**. Viçosa-MG: UFV, 2023.
+* MOOD, A. M.; GRAYBILL, F. A.; BOES, D. C. **Introduction to the Theory of Statistics.** 3rd. ed. [S.l.]: McGraw-Hill,1974.
+* **INSTITUTO NACIONAL DE METEOROLOGIA (INMET)**. Banco de Dados Meteorológicos. Brasília. Disponível em: <https://portal.inmet.gov.br/>. Acesso em: `r format(Sys.Date(), "%d %b. %Y")`.
+
+## Softwares e Pacotes Utilizados
+
+A análise estatística foi conduzida no ambiente R. Abaixo estão as citações oficiais dos softwares e bibliotecas aplicadas neste estudo:
+
+```{r references, echo=FALSE, results='asis'}
+# 1. Citação do R Base
+print(citation(), style = "text")
+cat("\n\n")
+
+# 2. Citação dos Pacotes Específicos
+pacotes_principais <- c("extRemes", "urca", "trend", "tseries")
+
+for(pkg in pacotes_principais){
+  if(require(pkg, character.only = TRUE, quietly = TRUE)){
+    cit <- citation(pkg)
+    # Seleciona a primeira citação (caso haja múltiplas) para manter a lista limpa
+    print(cit[1], style = "text")
+    cat("\n\n")
+  }
+}
 ```
