@@ -57,19 +57,28 @@ knitr::include_graphics("VICOSA.jpg")
 
 ## Base de Dados e Metodologia
 
-Esta introdução sintetiza a análise das precipitações máximas diárias históricas ocorridas exclusivamente no mese de janeiro, posteriormente a análise será expandida para os demais mêses. A série temporal abrange o período de **1968 a 2022**, totalizando 55 observações anuais, um tamanho amostral considerado suficiente para garantir a robustez estatística das estimativas.
+Inicialmente, vamos analisar as precipitações máximas diárias históricas ocorridas exclusivamente no mêses de janeiro, posteriormente a análise será expandida para os demais mêses chuvosos do ano. A série temporal abrange o período de **1968 a 2022**, totalizando 55 observações anuais, um tamanho amostral considerado adequado para garantir a robustez estatística das estimativas.
 
 Os dados pluviométricos foram obtidos a partir das estações do **Instituto Nacional de Meteorologia (INMET)** e do banco de dados do Boletim Meteorológico do **Programa de Pós-Graduação em Meteorologia Aplicada da Universidade Federal de Viçosa (UFV)**.
 
-Para a estruturação dos dados, adotou-se a metodologia de **Máximos de Blocos**, onde, para cada mês de janeiro da série histórica (bloco de 31 dias), selecionou-se o evento de maior precipitação diária acumulada.
+Para a estruturação dos dados, adotou-se a metodologia de **Máximos de Blocos**, onde, para cada mês de janeiro da série histórica (bloco de 31 dias), selecionou-se o evento de maior precipitação diária acumulada. 
 
 ## Abordagem Estatística
 
 A modelagem probabilística foi realizada utilizando a **Distribuição Generalizada de Valores Extremos (GEV)**. A consistência da série temporal e a adequação do modelo foram verificadas através das seguintes etapas:
 
-1.  **Testes de Pressupostos:** Aplicação do teste de **Cox-Stuart** para verificação de tendência e do teste **Augmented Dickey-Fuller (ADF)** para confirmação da estacionariedade da série.
-2.  **Ajuste e Validação:** Estimativa dos parâmetros da GEV via Máxima Verossimilhança e validação da aderência do modelo aos dados empíricos através do teste de **Kolmogorov-Smirnov**.
-3.  **Projeção de Risco:** Estimativa dos níveis de retorno (precipitação máxima esperada) para períodos de recorrência de 4, 10 e 100 anos.
+## 1. Verificação de Pressupostos e Estrutura de Dependência
+
+A modelagem de valores extremos exige uma compreensão rigorosa do comportamento estocástico da série temporal. A aplicação dos testes a seguir visa diagnosticar a presença de tendência e dependência serial, orientando a escolha entre uma abordagem estacionária (parâmetros constantes) ou não-estacionária (parâmetros variáveis no tempo):
+
+* **Teste de Cox-Stuart:** Aplicado para verificar a existência de tendências determinísticas (monotonicidade). A detecção de tendência não invalida a análise, mas indica a necessidade de incorporar o tempo como covariável nos parâmetros da distribuição GEV (modelagem não-estacionária) ou proceder com a remoção da tendência para garantir a estacionariedade.
+
+* **Teste Augmented Dickey-Fuller (ADF):** Utilizado para testar a hipótese de raiz unitária e confirmar o grau de estacionariedade da série. Este diagnóstico é crucial para definir se a modelagem deve ser realizada na série em nível ou em suas diferenças.
+
+* **Análise de Autocorrelação (FAC e FACP):** As Funções de Autocorrelação (FAC) e Autocorrelação Parcial (FACP) foram examinadas para avaliar a independência e autocorrelação presentes na série.
+
+2.  **Ajuste e Validação:** Estimativa dos parâmetros da GEV via máxima verossimilhança e validação da aderência do modelo aos dados empíricos através do teste de **Kolmogorov-Smirnov**.
+3.  **Projeção de Risco:** Estimativa dos níveis de retorno (precipitação máxima esperada) para períodos de recorrência de 5, 10 e 100 anos.
 
 # Carregamento e Preparação
 
@@ -87,7 +96,6 @@ library(extRemes)  # Modelagem GEV
 library(ismev)     # Diagnósticos GEV
 library(urca)      # Teste de Raiz Unitária Avançado
 library(DT)        # Tabelas Interativas
-
 ```
 
 ```{r import_data}
@@ -116,11 +124,11 @@ datatable(EXTREMOS, options = list(pageLength = 5, scrollX = TRUE),
           caption = "Tabela 1: Série Histórica de Extremos (Viçosa)")
 
 ```
-Históricamente, o mês de janeiro é marcado por uma média de 58.58 milímitros de chuva, para as máximas no mês. A maior chuva ocorreu em 1986 com um montante de 184,80 milímetros em um único dia. O ano que teve a menor máxima foi em 1989 com 15,10 milímetros em um período de 24 horas.
+Historicamente, a série de precipitações máximas diárias para o mês de janeiro apresenta uma média de 58,58 mm. O evento extremo de maior magnitude foi registrado em 1986, com um acumulado de 184,80 mm. Em contrapartida, o ano de 1989 apresentou o menor valor para uma máxima anual, com apenas 15,10 mm em 24 horas.
 
 # Análise Exploratória e Testes de Estacionariedade
 
-A análise inicia-se com uma abordagem descritiva dos dados: visualização da série histórica e histograma de frequências.
+A análise inicia-se com uma abordagem descritiva dos dados, compreendendo a visualização da série histórica e a análise da distribuição através do histograma de frequências.
 
 ```{r exploratoria, fig.width=10, fig.height=5}
 plot(CHUVA ~ year, type="b", main="Série Histórica: Precipitação (Jan)", 
@@ -149,7 +157,7 @@ hist(CHUVA2, main="Histograma (Fev)", col="lightgreen")
 
 ## Testes Formais
 
-Verificamos a existência de tendência e/ou estacionariedade nas séries. Como a análise principal foca nos máximos semre do mesmo mês, não houve necessidade de analisar sazonalidade.
+Verificamos a existência de tendência e/ou estacionariedade nas séries bem como o teste de sequência para verificar a independência. Como a análise principal foca nos máximos semre do mesmo mês, não houve necessidade de analisar sazonalidade.
 
 ### Definição Teórica: Teste de Tendência de Cox-Stuart
 
@@ -217,17 +225,107 @@ $$DF_{\tau} = \frac{\hat{\gamma}}{SE(\hat{\gamma})}$$
 
 No entanto, sob a hipótese nula de raiz unitária, essa estatística **não** segue uma distribuição t-Student padrão, mas sim a distribuição assintótica de Dickey-Fuller. Se a estatística calculada for menor (mais negativa) que o valor crítico da tabela de Dickey-Fuller (ou se o p-valor < 0.05), rejeita-se $H_0$, concluindo-se pela estacionariedade da série.
 
-```{r testes_estatisticos}
-teste_completo <- ur.df(CHUVA, type = "trend", selectlags = "AIC")
-summary(teste_completo)
+## Teste de Sinal (Sign Test)
 
-# DICA DE INTERPRETAÇÃO:
-# Olhe para o valor de "t-statistic" na linha "tau3".
-# Se o valor for MENOR (mais negativo) que o "critical value" de 5pct,
-# então rejeita-se a Raiz Unitária (é Estacionária).
+O Teste de Sinal é um dos procedimentos não paramétricos mais antigos e fundamentais para a inferência estatística. Ele é utilizado principalmente para testar hipóteses sobre a mediana populacional ($\theta$) de uma distribuição contínua, servindo como uma alternativa robusta ao Teste-t quando a suposição de normalidade dos dados não é atendida ou quando a distribuição apresenta assimetria severa e *outliers*.
 
-# 2. Teste de Cox-Stuart (Tendência)
+### Formulação das Hipóteses
+
+Seja $X_1, X_2, \dots, X_n$ uma amostra aleatória de tamanho $n$ proveniente de uma população contínua com mediana $\theta$. O objetivo é testar se a mediana populacional é igual a um valor hipotético $\theta_0$. As hipóteses podem ser formuladas da seguinte maneira:
+
+* **Bilateral:** $H_0: \theta = \theta_0$ contra $H_1: \theta \neq \theta_0$
+* **Unilateral à Direita:** $H_0: \theta \leq \theta_0$ contra $H_1: \theta > \theta_0$
+* **Unilateral à Esquerda:** $H_0: \theta \geq \theta_0$ contra $H_1: \theta < \theta_0$
+
+### Estatística do Teste
+
+A construção da estatística do teste baseia-se nas diferenças entre as observações e a mediana hipotética: $D_i = X_i - \theta_0$.
+
+Sob a hipótese nula ($H_0$), a probabilidade de uma observação ser maior que a mediana é igual à probabilidade de ser menor, ou seja, $P(X_i > \theta_0) = P(X_i < \theta_0) = 0,5$.
+
+Definimos a variável indicadora $\psi_i$ tal que:
+
+$$
+\psi_i = \begin{cases} 
+1, & \text{se } X_i > \theta_0 \quad (\text{sinal positivo}) \\
+0, & \text{se } X_i < \theta_0 \quad (\text{sinal negativo})
+\end{cases}
+$$
+
+*Nota: Observações onde $X_i = \theta_0$ são, por convenção, descartadas da análise, reduzindo o tamanho amostral $n$.*
+
+A estatística do teste, denotada por $S$, é o número total de diferenças positivas (sucessos):
+
+$$
+S = \sum_{i=1}^{n} \psi_i
+$$
+
+### Distribuição Amostral e Regra de Decisão
+
+Como $S$ é uma soma de variáveis de Bernoulli independentes, sob $H_0$, a estatística $S$ segue uma **Distribuição Binomial** com parâmetros $n$ e $p=0,5$:
+
+$$
+S \sim \text{Bin}(n; 0,5)
+$$
+
+A decisão estatística depende do tamanho da amostra:
+
+**1. Para pequenas amostras ($n \leq 20$):**
+Utiliza-se a probabilidade exata da distribuição Binomial. O $p$-valor é calculado somando-se as probabilidades das caudas correspondentes ao valor observado de $S$.
+
+$$
+P(S = k) = \binom{n}{k} (0,5)^n
+$$
+
+**2. Aproximação para grandes amostras ($n > 20$):**
+Pelo Teorema Central do Limite, a distribuição de $S$ aproxima-se de uma Distribuição Normal. Para melhorar a precisão da aproximação de uma variável discreta por uma contínua, aplica-se a **correção de continuidade**.
+
+A estatística padronizada $Z$ é dada por:
+
+$$
+Z = \frac{S - E[S]}{\sqrt{Var(S)}} = \frac{(S \pm 0,5) - \frac{n}{2}}{\frac{\sqrt{n}}{2}}
+$$
+
+Onde:
+* $E[S] = np = \frac{n}{2}$ (Esperança sob $H_0$)
+* $Var(S) = np(1-p) = \frac{n}{4}$ (Variância sob $H_0$)
+* O termo $\pm 0,5$ refere-se à correção de continuidade (subtrai-se 0,5 se $S > n/2$ e soma-se 0,5 se $S < n/2$).
+
+Se $|Z| > Z_{\alpha/2}$ (para teste bilateral), rejeita-se a hipótese nula ao nível de significância $\alpha$.
+
+---
+
+> **Relação com o Teste de Cox-Stuart:** O teste de Cox-Stuart, utilizado na verificação de tendência desta análise, é uma aplicação direta do Teste de Sinal. Nele, a série temporal é dividida em duas metades e o Teste de Sinal é aplicado às diferenças pareadas ($X_{i+c} - X_i$), testando se a "mediana das diferenças" difere de zero, o que evidenciaria uma tendência determinística.
+
+```{r testes_estatisticos, echo=TRUE, message=FALSE, warning=FALSE, fig.cap="Gráficos de Autocorrelação (ACF) e Autocorrelação Parcial (PACF).", fig.height=4, fig.width=8}
+
+# 1. Análise Visual de Dependência (ACF e PACF)
+# Configura a área de plotagem para 1 linha e 2 colunas
+par(mfrow = c(1, 2)) 
+
+acf(CHUVA, main = "Função de Autocorrelação (FAC)", ylab = "ACF")
+pacf(CHUVA, main = "Autocorrelação Parcial (FACP)", ylab = "PACF")
+
+# Retorna a configuração gráfica ao padrão (1x1)
+par(mfrow = c(1, 1)) 
+
+# 2. Teste de Estacionariedade (Augmented Dickey-Fuller)
+# type = "trend" considera intercepto e tendência na equação do teste
+teste_adf <- ur.df(CHUVA, type = "trend", selectlags = "AIC")
+summary(teste_adf)
+
+# NOTA DE INTERPRETAÇÃO (ADF):
+# Compare a estatística de teste (tau3) com os valores críticos (Critical Values).
+# H0: Existe Raiz Unitária (Não estacionária).
+# Se t-statistic < Critical Value (5%), rejeita-se H0 (Série é Estacionária).
+
+# 3. Teste de Tendência (Cox-Stuart)
+# H0: Não existe tendência monotônica.
 cox.stuart.test(CHUVA)
+
+# 4. Teste de Aleatoriedade (Runs Test)
+# H0: A série é aleatória.
+runs.test(CHUVA)
 ```
 
 ---
