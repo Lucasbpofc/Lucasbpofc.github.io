@@ -1,0 +1,455 @@
+---
+title: "Análise de Valores Extremos na cidade de Viçosa-MG"
+subtitle: "Estudo Comparativo: Meses de Janeiro, Fevereiro e Dezembro (1968-2022)"
+author: "Lucas Pereira Belo"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
+    number_sections: true
+    code_folding: show
+    df_print: paged
+bibliography: [referencias.bib, pacotes.bib]
+csl: associacao-brasileira-de-normas-tecnicas.csl
+link-citations: yes
+---
+
+<style>
+body {
+  text-align: justify;
+  font-family: 'Helvetica', sans-serif;
+}
+.alert-info {
+  background-color: #e7f3fe;
+  border-left: 6px solid #2196F3;
+  color: #0c5460;
+  padding: 10px;
+  margin-bottom: 15px;
+}
+h1, h2 {
+  color: #2c3e50;
+  font-weight: bold;
+}
+</style>
+
+```{r gerar_bib_pacotes, include=FALSE}
+# Gera arquivo de bibliografia dos pacotes automaticamente
+meus_pacotes <- c("base", "extRemes", "urca", "trend", "tseries", "ismev")
+knitr::write_bib(meus_pacotes, file = "pacotes.bib")
+```
+
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = "center", fig.width = 10, fig.height = 6)
+```
+
+#Introdução
+
+##Caracterização da Área de Estudo
+
+O município de Viçosa está localizado na mesorregião da Zona da Mata do estado de Minas Gerais. A análise a seguir foca nos eventos extremos de precipitação durante a estação chuvosa (Janeiro, Fevereiro e Dezembro), utilizando uma série temporal de 1968 a 2022 ($n=55$). Este tamanho amostral é considerado robusto para a estabilidade dos parâmetros da GEV conforme @cai_hames_2011 e @roslan_2020. 
+
+Os dados foram obtidos junto ao INMET [@inmet_dados] e UFV [@ufv2023]. Metodologia automatizada para garantir a consistência da comparação entre os meses, foi desenvolvida uma rotina computacional padronizada que aplica, para cada mês: Análise Descritiva e Visualização; Testes de Estacionariedade (ADF) e Tendência (Cox-Stuart); Ajuste da Distribuição GEV via Máxima Verossimilhança; Diagnóstico do Modelo (KS e Anderson-Darling); Cálculo dos Níveis de Retorno (5, 10, 50, 100 anos). A fundamentação teórica baseia-se em @jenkinson1955 para a GEV e @coles2001 para a inferência estatística.
+
+```{r}
+library(readxl)
+library(dplyr)
+library(tseries)   
+library(trend)     
+library(randtests) 
+library(goftest)   
+library(extRemes)  
+library(ismev)     
+library(urca)      
+library(DT)
+library(kableExtra)
+```
+
+
+```{r function_definition}
+# ==============================================================================
+# FUNÇÃO MESTRE BLINDADA (PARA CHUVA E TEMPERATURA)
+# ==============================================================================
+analisar_clima <- function(dados, ano_vec, nome_mes, cor_tema, 
+                           tipo_analise="Precipitação", unidade="mm") {
+  
+  if(!require(kableExtra)) install.packages("kableExtra")
+  if(!require(trend)) install.packages("trend")
+  
+  # 1. LIMPEZA DOS DADOS (CRUCIAL PARA TEMPERATURA)
+  df_temp <- data.frame(Ano = ano_vec, Valor = dados)
+  df_temp <- na.omit(df_temp) # Remove anos sem dados
+  dados_limpos <- df_temp$Valor
+  anos_limpos <- df_temp$Ano
+  
+  cat(paste0("\n### Análise Descritiva: ", nome_mes, "\n"))
+  
+  # --- Descritiva e Gráficos ---
+  idx_max <- which.max(dados_limpos)
+  cat(paste0("**Evento Máximo:** ", round(dados_limpos[idx_max], 2), " ", unidade, " em ", anos_limpos[idx_max], "\n\n"))
+  
+  par(mfrow=c(2,2))
+  plot(Valor ~ Ano, data = df_temp, type="b", main=paste("Série -", nome_mes), 
+       ylab=paste(tipo_analise, "(", unidade, ")"), xlab="Ano", pch=19, col=cor_tema, lwd=1.5)
+  grid()
+  hist(dados_limpos, main=paste("Histograma -", nome_mes), 
+       xlab=unidade, col=cor_tema, border="white", prob=TRUE)
+  lines(density(dados_limpos), col="black", lwd=2)
+  acf(dados_limpos, main="ACF", col=cor_tema, lag.max = 15)
+  pacf(dados_limpos, main="PACF", col=cor_tema, lag.max = 15)
+  par(mfrow=c(1,1)) 
+  
+  # --- Função de Badge ---
+  criar_badge <- function(texto, cor) {
+    paste0("<span style='display: block; padding: 2px 8px; border-radius: 4px; ",
+           "color: white; background-color: ", cor, "; font-weight: bold; text-align: center;'>", 
+           texto, "</span>")
+  }
+  
+  # --- 2. Bateria de Testes (Usando dados_limpos) ---
+  cat("\n#### Diagnóstico da Série Temporal\n")
+  
+  # Cox-Stuart
+  cs_test <- cox.stuart.test(dados_limpos)
+  
+  # Mann-Kendall
+  mk_test <- trend::mk.test(dados_limpos)
+  status_mk <- if(mk_test$p.value >= 0.05) criar_badge("Sem Tendência", "#27ae60") else criar_badge("Tendência (MK)", "#e67e22")
+  
+  # Pettitt
+  pt_test <- trend::pettitt.test(dados_limpos)
+  p_pt <- pt_test$p.value
+  ano_quebra <- if(p_pt < 0.05) paste0(" (Em ", anos_limpos[pt_test$estimate], ")") else ""
+  status_pt <- if(p_pt >= 0.05) criar_badge("Homogênea", "#27ae60") else criar_badge(paste0("Quebra", ano_quebra), "#c0392b")
+
+  # ADF (Com tryCatch para evitar erro de singularidade em temperatura)
+  adf_res <- tryCatch({
+    tseries::adf.test(dados_limpos, alternative = "stationary")
+  }, error = function(e) list(p.value = 0.99, statistic = 0)) # Retorno seguro se falhar
+  
+  status_adf <- if(adf_res$p.value < 0.05) criar_badge("Estacionária", "#27ae60") else criar_badge("Não Estacionária", "#c0392b")
+  
+  # Ljung-Box
+  lb_check <- Box.test(dados_limpos, type = "Ljung-Box", lag = 10)
+  status_lb <- if(lb_check$p.value >= 0.05) criar_badge("Independente", "#27ae60") else criar_badge("Dependência", "#c0392b")
+  
+  # Tabela Diagnóstico
+  df_pre <- data.frame(
+    Teste = c("Cox-Stuart", "Mann-Kendall", "Pettitt", "ADF", "Ljung-Box"),
+    P_Valor = c(format.pval(cs_test$p.value, digits=4, eps=0.001), 
+                format.pval(mk_test$p.value, digits=4, eps=0.001), 
+                format.pval(p_pt, digits=4, eps=0.001), 
+                format.pval(adf_res$p.value, digits=4, eps=0.001), 
+                format.pval(lb_check$p.value, digits=4, eps=0.001)),
+    Diagnostico = c(
+      if(cs_test$p.value >= 0.05) criar_badge("Sem Tendência", "#27ae60") else criar_badge("Tendência", "#e67e22"),
+      status_mk, status_pt, status_adf, status_lb
+    )
+  )
+  
+  tabela_html_pre <- df_pre %>%
+    kbl(caption = paste("Tabela A: Diagnóstico -", nome_mes), align = "c", escape = FALSE, row.names = FALSE) %>%
+    kable_styling(bootstrap_options = c("hover", "condensed"), full_width = F, position = "left") %>%
+    column_spec(1, bold = T) %>%
+    column_spec(3, width = "180px")
+    
+  cat(tabela_html_pre)
+  cat("\n\n")
+  
+  # --- 3. Ajuste GEV ---
+  cat("\n#### Modelagem GEV e Validação\n")
+  
+  # Ajuste
+  fit <- fevd(dados_limpos, type = "GEV", units = as.character(unidade))
+  
+  # Validação (KS e AD)
+  params <- fit$results$par
+  ks_res <- ks.test(dados_limpos, "pevd", loc=params[1], scale=params[2], shape=params[3], type="GEV")
+  ad_res <- goftest::ad.test(dados_limpos, "pevd", loc=params[1], scale=params[2], shape=params[3], type="GEV")
+  
+  df_gof <- data.frame(
+    Teste = c("Kolmogorov-Smirnov", "Anderson-Darling"),
+    P_Valor = c(format.pval(ks_res$p.value, digits=4, eps=0.001), format.pval(ad_res$p.value, digits=4, eps=0.001)),
+    Conclusao = c(
+      if(ks_res$p.value > 0.05) criar_badge("Bom Ajuste", "#27ae60") else criar_badge("Mau Ajuste", "#c0392b"),
+      if(ad_res$p.value > 0.05) criar_badge("Bom Ajuste", "#27ae60") else criar_badge("Mau Ajuste", "#c0392b")
+    )
+  )
+  
+  tabela_html_gof <- df_gof %>%
+    kbl(caption = paste("Tabela B: Validação -", nome_mes), align = "c", escape = FALSE, row.names = FALSE) %>%
+    kable_styling(bootstrap_options = c("hover", "condensed"), full_width = F, position = "left")
+    
+  cat(tabela_html_gof)
+  cat("\n\n")
+  
+  # --- 4. Gráficos ---
+  par(mfrow=c(1,2))
+  plot(fit, type = "density", main = "Densidade")
+  plot(fit, type = "qq", main = "QQ-Plot")
+  par(mfrow=c(1,1))
+  
+  return(fit)
+}
+```
+
+```{r}
+# ==============================================================================
+# LEITURA DOS DADOS (PREPARADO PARA CHUVA E TEMP)
+# ==============================================================================
+anos <- seq(1968, 2022, 1)
+
+# Lendo Jan (Sheet 1)
+df_jan <- read_excel("EXTREMOS.xlsx", sheet = 1)
+dados_jan_precip <- df_jan$PRECIP
+dados_jan_temp   <- df_jan$TEMP 
+
+# Lendo Fev (Sheet 2)
+df_fev <- read_excel("EXTREMOS.xlsx", sheet = 2)
+dados_fev_precip <- df_fev$PRECIP
+dados_fev_temp   <- df_fev$TEMP
+
+# Lendo Dez (Sheet 12)
+df_dez <- read_excel("EXTREMOS.xlsx", sheet = 12)
+dados_dez_precip <- df_dez$PRECIP
+dados_dez_temp   <- df_dez$TEMP
+
+```
+
+
+```{r}
+# ==============================================================================
+# INVESTIGAÇÃO DETALHADA: ESTACIONARIEDADE DE FEVEREIRO
+# ==============================================================================
+library(readxl)
+library(urca)
+library(ggplot2)
+
+# 1. Leitura isolada dos dados de Fevereiro (para garantir que estamos testando o certo)
+df_fev_investigacao <- read_excel("EXTREMOS.xlsx", sheet = 2)
+dados_fev_check <- na.omit(df_fev_investigacao$PRECIP)
+
+# 2. Visualização Rápida (Fundamental para escolher o tipo de teste)
+# Olhe para o gráfico: A série parece subir/descer com o tempo? Ou oscila numa média fixa?
+plot(dados_fev_check, type="l", col="#c0392b", lwd=2, 
+     main="Investigação Visual: Série de Fevereiro", ylab="Precipitação (mm)")
+abline(reg=lm(dados_fev_check~time(dados_fev_check)), col="blue", lty=2) # Linha de tendência
+legend("topleft", legend=c("Dados", "Tendência Linear"), col=c("#c0392b", "blue"), lty=c(1,2))
+
+# 3. Aplicação do Teste ADF Completo (Pacote urca)
+# type = "trend": Testa considerando que pode haver uma tendência e uma constante.
+# selectlags = "AIC": O R escolhe automaticamente quantos anos para trás olhar (lags).
+teste_urca <- ur.df(dados_fev_check, type = "trend", selectlags = "AIC")
+
+# 4. Exibição do Sumário Detalhado
+summary(teste_urca)
+```
+
+
+Resultados por Mês {.tabset .tabset-fade}
+A seguir, apresentamos a análise detalhada para cada um dos meses críticos da estação chuvosa.
+
+##Janeiro
+
+# Análise de Precipitação {.tabset .tabset-fade}
+
+A seguir, apresentamos a análise detalhada para cada um dos meses críticos da estação chuvosa.
+
+## Janeiro
+```{r analise_jan, results='asis'}
+fit_jan_rain <- analisar_clima(dados_jan_precip, anos, "Janeiro", "#2980b9", 
+                               tipo_analise = "Precipitação", unidade = "mm")
+cat("\n\n") # Garante quebra de linha para a próxima aba
+```
+
+##Fevereiro
+```{r analise_fev, results='asis'}
+# Investigação de Estacionariedade Específica (Se necessário)
+fit_fev_rain <- analisar_clima(dados_fev_precip, anos, "Fevereiro", "#27ae60",
+                               tipo_analise = "Precipitação", unidade = "mm")
+cat("\n\n") # Garante quebra de linha para a próxima aba
+```
+
+##Dezembro
+```{r analise_dez, results='asis'}
+fit_dez_rain <- analisar_clima(dados_dez_precip, anos, "Dezembro", "#e67e22",
+                               tipo_analise = "Precipitação", unidade = "mm")
+cat("\n\n") # Garante quebra de linha para a próxima aba
+```
+
+#Comparativo e Conclusão
+
+Comparação das curvas de Nível de Retorno para os três meses analisados. Este gráfico permite identificar qual mês apresenta maior risco de eventos extremos para um mesmo período de retorno.
+
+
+
+```{r comparativo_final, fig.width=10, fig.height=7}
+# Carrega bibliotecas de estética
+if(!require(kableExtra)) install.packages("kableExtra")
+library(kableExtra)
+
+periodos <- c(5, 10, 20, 50, 100)
+
+# Função Auxiliar de Formatação
+get_est_ci <- function(modelo, periods) {
+  matriz_ci <- ci(modelo, return.period = periods, method = "normal", verbose = FALSE)
+  est <- round(matriz_ci[,2], 1); low <- round(matriz_ci[,1], 1); upp <- round(matriz_ci[,3], 1)
+  paste0("<strong>", est, "</strong><br><span style='font-size:11px; color:#7f8c8d'>[", low, "; ", upp, "]</span>")
+}
+
+col_jan <- get_est_ci(fit_jan_rain, periodos)
+col_fev <- get_est_ci(fit_fev_rain, periodos)
+col_dez <- get_est_ci(fit_dez_rain, periodos)
+
+df_final <- data.frame("Retorno" = paste(periodos, "Anos"), "Janeiro" = col_jan, "Fevereiro" = col_fev, "Dezembro" = col_dez)
+
+vals_jan <- return.level(fit_jan_rain, return.period = periodos)
+vals_fev <- return.level(fit_fev_rain, return.period = periodos)
+vals_dez <- return.level(fit_dez_rain, return.period = periodos)
+
+vencedores <- c()
+for(i in 1:length(periodos)){
+  linha <- c(Janeiro=vals_jan[i], Fevereiro=vals_fev[i], Dezembro=vals_dez[i])
+  vencedores[i] <- names(linha)[which.max(linha)]
+}
+df_final$Risco_Maior <- vencedores
+
+df_final %>%
+  kbl(caption = "<div style='text-align:center; color:#2980b9; font-size:18px; font-weight:bold'>Precipitação Máxima (mm) com IC 95%</div>", align = "c", escape = FALSE, row.names = FALSE) %>%
+  kable_styling(bootstrap_options = c("hover", "condensed"), full_width = F, position = "center", font_size = 15) %>%
+  add_header_above(c(" " = 1, "Meses da Estação Chuvosa" = 3, "Conclusão" = 1)) %>%
+  column_spec(1, bold = T, background = "#f8f9fa") %>%
+  column_spec(5, bold = T, color = "white", background = "#e74c3c") %>%
+  row_spec(0, bold = T, color = "white", background = "#2c3e50")
+
+# Gráfico
+plot(periodos, vals_jan, type="n", ylim=c(min(vals_fev)*0.9, max(vals_dez)*1.2), log="x",
+     main="Comparativo Precipitação: Jan vs Fev vs Dez", xlab="Período de Retorno (Anos)", ylab="Precipitação (mm)", axes=FALSE)
+grid(nx=NULL, ny=NULL, col="lightgray", lty="dotted")
+axis(1, at=periodos, labels=paste(periodos, "anos")); axis(2, las=2)
+lines(periodos, vals_jan, col="#2980b9", lwd=3); points(periodos, vals_jan, pch=19, col="#2980b9")
+lines(periodos, vals_fev, col="#27ae60", lwd=3, lty=2); points(periodos, vals_fev, pch=17, col="#27ae60")
+lines(periodos, vals_dez, col="#e67e22", lwd=3, lty=4); points(periodos, vals_dez, pch=15, col="#e67e22")
+legend("topleft", legend=c("Janeiro", "Fevereiro", "Dezembro"), col=c("#2980b9", "#27ae60", "#e67e22"), lwd=3, pch=c(19,17,15), bty="n")
+```
+
+A análise comparativa demonstra visualmente a diferença na magnitude dos eventos esperados. A curva superior indica o mês com maior potencial de severidade para obras hidráulicas de longo prazo.
+
+# Análise de Temperatura {.tabset .tabset-fade}
+
+Nesta seção, avaliamos o comportamento dos eventos extremos de calor (Temperaturas Máximas).
+
+## Janeiro (Temp)
+
+```{r analise_jan_temp, results='asis'}
+fit_jan_temp <- analisar_clima(dados_jan_temp, anos, "Janeiro", "#c0392b", 
+                               tipo_analise = "Temperatura", unidade = "ºC")
+```
+
+## Fevereiro (Temp)
+```{r analise_fev_temp, results='asis'}
+fit_fev_temp <- analisar_clima(dados_fev_temp, anos, "Fevereiro", "#d35400",
+                               tipo_analise = "Temperatura", unidade = "ºC")
+```
+
+## Dezembro (Temp)
+```{r analise_dez_temp, results='asis'}
+fit_dez_temp <- analisar_clima(dados_dez_temp, anos, "Dezembro", "#e74c3c",
+                               tipo_analise = "Temperatura", unidade = "ºC")
+```
+
+Investigação de Tendência (Dezembro)
+Como os testes iniciais indicaram possível não-estacionariedade, realizamos uma investigação específica para a temperatura de Dezembro.
+
+```{r}
+# 1. Preparação dos Dados
+df_dez_trend <- data.frame(Ano = anos, Temp = dados_dez_temp)
+df_dez_trend <- na.omit(df_dez_trend)
+
+# 2. Regressão Linear
+modelo_linear <- lm(Temp ~ Ano, data = df_dez_trend)
+
+# Exibe resumo da regressão
+print(summary(modelo_linear))
+
+p_valor_trend <- summary(modelo_linear)$coefficients[2, 4] 
+
+# Gráfico da Tendência
+par(mfrow=c(1,1))
+plot(Temp ~ Ano, data = df_dez_trend, pch = 19, col = "#e74c3c",
+     main = "Tendência Linear: Temperatura Máxima (Dezembro)",
+     ylab = "Temperatura (ºC)", xlab = "Ano", las=1)
+abline(modelo_linear, col = "blue", lwd = 2, lty = 2)
+legend("topleft", legend=c("Observado", "Tendência Linear"), 
+       col=c("#e74c3c", "blue"), pch=c(19, NA), lty=c(NA, 2), bty="n")
+
+
+# 3. Modelagem GEV
+# M0 - Estacionário
+fit0 <- fevd(df_dez_trend$Temp, type = "GEV", units = "deg C")
+
+# M1 - Não-Estacionário (Location ~ Ano)
+fit1 <- fevd(Temp, data = df_dez_trend, 
+             location.fun = ~Ano, 
+             type = "GEV", units = "deg C")
+
+# 4. Teste de Razão de Verossimilhança
+lr_test <- lr.test(fit0, fit1)
+p_lr <- lr_test$p.value
+
+cat("\n\n### Decisão do Modelo (LRT)\n")
+cat(paste0("P-valor do Teste de Razão de Verossimilhança: **", format.pval(p_lr, digits=4), "**\n\n"))
+
+if(p_lr < 0.05) {
+  cat("**CONCLUSÃO:** O modelo Não-Estacionário é estatisticamente SUPERIOR. Há evidência de mudança climática na série.\n")
+  best_fit <- fit1
+  tipo_modelo <- "Não-Estacionário (Tendência)"
+} else {
+  cat("**CONCLUSÃO:** Não há evidência suficiente para preferir o modelo com tendência. O modelo Estacionário será mantido.\n")
+  best_fit <- fit0
+  tipo_modelo <- "Estacionário"
+}
+
+# ------------------------------------------------------------------------------
+# Diagnóstico e Visualização
+# ------------------------------------------------------------------------------
+cat(paste0("\n#### Diagnóstico do Modelo Vencedor: ", tipo_modelo, "\n"))
+par(mfrow=c(1,2))
+plot(best_fit, type = "density", main = "Densidade")
+plot(best_fit, type = "qq", main = "QQ-Plot")
+par(mfrow=c(1,1))
+
+# Gráfico de Retorno Não-Estacionário (se aplicável)
+# Se o modelo for não-estacionário, mostramos como os Níveis de Retorno mudam
+if(p_lr < 0.05) {
+  cat("\n#### Níveis de Retorno Efetivos (Variáveis no Tempo)\n")
+  cat("Como o clima não é estacionário, o evento de '100 anos' muda de valor a cada ano. O gráfico abaixo mostra como a magnitude dos eventos raros (2, 20 e 100 anos) tem aumentado.\n")
+  
+  # 1. Extrai os dados numéricos das curvas (Matriz: Anos x Períodos)
+  rl_vals <- return.level(best_fit, return.period = c(2, 20, 100))
+  
+  # 2. Cria o gráfico manual (matplot é ideal para múltiplas linhas)
+  # Usamos df_dez_trend$Ano para garantir que o eixo X mostre os anos corretos (1968-2022)
+  matplot(df_dez_trend$Ano, rl_vals, type = "l", lty = 1, lwd = 2,
+          col = c("#27ae60", "#e67e22", "#c0392b"), # Verde, Laranja, Vermelho escuro
+          main = "Evolução dos Níveis de Retorno (1968-2022)",
+          ylab = "Temperatura Máxima (ºC)", xlab = "Ano")
+  
+  # 3. Adiciona a legenda limpa e em Português
+  legend("topleft", 
+         legend = c("Retorno de 2 Anos", "Retorno de 20 Anos", "Retorno de 100 Anos"), 
+         col = c("#27ae60", "#e67e22", "#c0392b"), 
+         lty = 1, lwd = 2, bty = "n", cex = 0.9)
+  
+  grid(col = "lightgray", lty = "dotted")
+}
+```
+
+Comparativo Final de Temperatura
+Comparação das curvas de risco considerando o cenário atual.
+

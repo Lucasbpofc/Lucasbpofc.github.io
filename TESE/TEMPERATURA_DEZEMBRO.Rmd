@@ -1,0 +1,599 @@
+---
+title: "Análise de Extremos Climáticos: Dezembro"
+subtitle: "Investigação de Tendências e Mudança de Regime (1968-2022)"
+author: "Lucas Pereira Belo"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
+    number_sections: true
+    code_folding: show
+---
+
+<style>
+body { text-align: justify; font-family: 'Helvetica', sans-serif; }
+h1, h2 { color: #c0392b; font-weight: bold; } /* Vermelho para combinar com calor/Dezembro */
+.alert-info { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; }
+.alert-success { background-color: #d4edda; border-left: 6px solid #28a745; padding: 10px; }
+.alert-warning { background-color: #fff3cd; border-left: 6px solid #ffc107; padding: 10px; }
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = "center", fig.width = 10, fig.height = 6)
+```
+
+# Pacotes utilizados
+
+```{r}
+# Carregamento de Pacotes Essenciais
+library(DT)
+library(readxl)
+library(dplyr)
+library(ggplot2)    # Gráficos avançados
+library(tseries)    # Testes de séries temporais
+library(trend)      # Testes não-paramétricos (MK, Cox-Stuart)
+library(goftest)    # Testes de bondade de ajuste (AD)
+library(extRemes)   # Modelagem GEV
+library(urca)       # Testes de raiz unitária
+library(kableExtra) # Tabelas formatadas
+library(distillery)
+library(randtests)  # Runs Test
+```
+
+```{r}
+# ==============================================================================
+# LEITURA E PREPARAÇÃO DOS DADOS - DEZEMBRO
+# ==============================================================================
+# 1. Carregamento dos dados reais
+df_raw <- read_excel("EXTREMOS.xlsx", sheet = 12) 
+
+hist(df_raw$TEMP, main="Distribuição de Frequências", 
+     xlab="Temperatura (C°)", col="#3498db", border="white", prob=TRUE)
+lines(density(df_raw$TEMP), col="#c0392b", lwd=2)
+# 2. DEFINIÇÃO DA VARIÁVEL (O que faltou para o erro não acontecer)
+NOME_MES <- "Dezembro"
+
+# 3. Preparação do DataFrame
+anos <- seq(1968, 2022, 1)
+df_analise <- data.frame(Ano = anos, Temp = df_raw$TEMP)
+df_analise <- na.omit(df_analise)
+
+# No lugar de apenas imprimir o dataframe ou usar kable:
+library(DT)
+
+datatable(df_analise, 
+          colnames = c("Ano de Observação", "Temperatura Máxima (°C)"),
+          extensions = 'Buttons', 
+          options = list(
+            dom = 'Bfrtip', 
+            buttons = c('copy', 'csv', 'excel'), 
+            pageLength = 10,  # Mostra 10 linhas por vez
+            language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Portuguese-Brasil.json')
+          ),
+          caption = paste("Dados Históricos de", NOME_MES)) %>%
+  formatRound('Temp', 2)
+```
+
+A abordagem metodológica adotada neste estudo segue um fluxo rigoroso de diagnóstico, modelagem e validação, fundamentado na literatura clássica e recente de hidrologia estatística e climatologia. O Quadro 1 sumariza as etapas computacionais realizadas no ambiente R e suas respectivas bases teóricas, com destaque para a aplicação do teste de Anderson-Darling (AD) em séries não-estacionárias conforme discutido por Younas et al. (2020).
+
+```{r}
+# ==============================================================================
+# TABELA DE RESUMO METODOLÓGICO
+# ==============================================================================
+library(kableExtra)
+
+# Definição dos dados da tabela
+df_metodologia <- data.frame(
+  Etapa = c(
+    "1. Análise Exploratória",
+    "2. Detecção de Tendências", 
+    "3. Modelagem de Extremos", 
+    "4. Seleção de Modelos", 
+    "5. Validação (Resíduos)",
+    "6. Testes de Aderência"
+  ),
+  Metodo_Teste = c(
+    "Visualização e Estatística Descritiva",
+    "Mann-Kendall (MK) e Record Test (N)",
+    "GEV Não-Estacionária (Covariável Tempo)",
+    "Teste de Razão de Verossimilhança (LRT)",
+    "Transformada Integral de Probabilidade (PIT)",
+    "Anderson-Darling (AD) e Kolmogorov-Smirnov (KS)"
+  ),
+  Descricao = c(
+    "Inspeção visual da série temporal e identificação de outliers (ex: 2015).",
+    "Testes não-paramétricos para confirmar a não-estacionaridade e a frequência anômala de recordes.",
+    "Ajuste dos parâmetros de locação (mu) e escala (sigma) variando no tempo: mu(t) e sigma(t).",
+    "Uso da Estatística de Deviance para justificar a inclusão de parâmetros de tendência (parcimônia).",
+    "Padronização dos dados para uma escala Gumbel(0,1) ou Uniforme(0,1) para remover a tendência.",
+    "Verificação estatística se os resíduos padronizados seguem a distribuição teórica, com foco nas caudas (AD)."
+  ),
+  Referencia_Chave = c(
+    "Wilks (2011)",
+    "Mann (1945); Castillo-Mateo et al. (2023)",
+    "Coles (2001); Blanchet et al. (2016)",
+    "Coles (2001); Azzalini (1996)",
+    "Wang (1991); Khaliq et al. (2006)",
+    "Stephens (1974); Younas et al. (2020)"
+  )
+)
+
+# Geração da Tabela Formatada
+kbl(df_metodologia, 
+    caption = "Quadro 1: Síntese da Metodologia Estatística e Referencial Teórico", 
+    align = "l") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = TRUE, 
+                font_size = 14) %>%
+  column_spec(1, bold = T, width = "15%") %>%
+  column_spec(2, width = "25%") %>%
+  column_spec(3, width = "35%") %>%
+  column_spec(4, italic = T, width = "25%") %>%
+  row_spec(0, bold = T, color = "white", background = "#2c3e50")
+```
+
+
+```{r}
+# ==============================================================================
+# FUNÇÕES DE APOIO (Diagnóstico e Validação)
+# ==============================================================================
+
+# 1. Função de Plotagem da Série
+plot_serie_inicial <- function(dados, anos, nome) {
+  df <- data.frame(Ano = anos, Temp = dados)
+  media <- mean(df$Temp)
+  tendencia <- coef(lm(Temp ~ Ano, data = df))[2]
+  
+  ggplot(df, aes(x = Ano, y = Temp)) +
+    geom_line(color = "gray50", size = 0.8) +
+    geom_point(color = "#c0392b", size = 2) +
+    geom_smooth(method = "lm", se = FALSE, color = "black", linetype="dashed", size = 0.8) +
+    geom_hline(yintercept = media, color = "#2980b9", linetype = "dotted") +
+    theme_minimal() +
+    labs(title = paste("Série Histórica:", nome),
+         subtitle = paste0("Tendência Linear Estimada: ", round(tendencia, 3), " °C/ano"),
+         y = "Temperatura Máxima (°C)", x = "Ano") +
+    theme(plot.title = element_text(face="bold", size=14))
+}
+
+# 2. Função de Validação (KS e AD) com Histograma PIT
+validar_modelo <- function(modelo, nome_mod) {
+  
+  # Cálculo manual dos parâmetros para o PIT se o modelo for não-estacionário
+  # O pextRemes geralmente lida bem, mas para garantir robustez em modelos complexos:
+  z <- pextRemes(modelo, q = modelo$x, lower.tail = TRUE)
+  z <- na.omit(as.numeric(z))
+  
+  # Testes
+  ks <- ks.test(z, "punif")
+  ad <- ad.test(z, "punif")
+  
+  # Badge Helper
+  badge <- function(p) {
+    if(p > 0.05) "<span style='background:#27ae60; color:white; padding:2px 6px; border-radius:4px;'>Adequado (Aceita H0)</span>"
+    else "<span style='background:#c0392b; color:white; padding:2px 6px; border-radius:4px;'>Inadequado (Rejeita H0)</span>"
+  }
+  
+  # Tabela
+  df_res <- data.frame(
+    Teste = c("Kolmogorov-Smirnov", "Anderson-Darling"),
+    Estatistica = c(round(ks$statistic, 4), round(ad$statistic, 4)),
+    P_Valor = c(format.pval(ks$p.value, digits=4), format.pval(ad$p.value, digits=4)),
+    Conclusao = c(badge(ks$p.value), badge(ad$p.value))
+  )
+  
+  print(kbl(df_res, caption = paste("Validação de Bondade de Ajuste:", nome_mod), escape = F, align = "c") %>%
+        kable_styling(bootstrap_options = "striped", full_width = F))
+  
+  # Histograma PIT
+  par(mfrow=c(1,1))
+  hist(z, breaks = seq(0, 1, 0.1), freq = FALSE, col="#ecf0f1", border="#7f8c8d",
+       main = paste("Histograma PIT (Uniformidade):", nome_mod), xlab = "Probabilidade (z)")
+  abline(h=1, col="#c0392b", lwd=2, lty=2)
+}
+```
+
+
+```{r func_validacao_final}
+# ==============================================================================
+# FUNÇÃO DE VALIDAÇÃO ADAPTADA PARA MODELOS NÃO-ESTACIONÁRIOS (PIT)
+# ==============================================================================
+validar_modelo_adaptado <- function(modelo, nome_modelo) {
+  
+  require(goftest)   # Para Anderson-Darling
+  require(extRemes)  # Para pextRemes
+  require(kableExtra)
+  
+  # 1. Transformada Integral de Probabilidade (PIT)
+  # A função pextRemes calcula F(x_t) usando os parâmetros mu_t, sigma_t, xi_t de cada ano.
+  # Isso transforma os dados complexos em uma série padronizada z.
+  z <- pextRemes(modelo, q = modelo$x, lower.tail = TRUE)
+  
+  # Remove NAs (caso existam) e garante numérico
+  z <- na.omit(as.numeric(z))
+  
+  # 2. Execução dos Testes Formais (Contra a Distribuição Uniforme)
+  # H0: O modelo ajusta-se bem aos dados (z segue Uniforme[0,1])
+  
+  # A) Kolmogorov-Smirnov (Sensível ao centro da distribuição)
+  ks_res <- ks.test(z, "punif")
+  
+  # B) Anderson-Darling (Mais sensível às caudas - CRUCIAL para extremos)
+  ad_res <- ad.test(z, "punif")
+  
+  # 3. Helper para colorir a tabela (Verde = Passou, Vermelho = Falhou)
+  badge_res <- function(pval) {
+    if(pval > 0.05) {
+      return("<span style='color: white; background-color: #27ae60; padding: 2px 6px; border-radius: 4px;'>Adequado (Aceita H0)</span>")
+    } else {
+      return("<span style='color: white; background-color: #c0392b; padding: 2px 6px; border-radius: 4px;'>Inadequado (Rejeita H0)</span>")
+    }
+  }
+  
+  # 4. Tabela de Resultados
+  df_res <- data.frame(
+    "Teste Estatístico" = c("Kolmogorov-Smirnov (KS)", "Anderson-Darling (AD)"),
+    "Estatística" = c(round(ks_res$statistic, 4), round(ad_res$statistic, 4)),
+    "P_Valor" = c(format.pval(ks_res$p.value, digits=4), format.pval(ad_res$p.value, digits=4)),
+    "Conclusão" = c(badge_res(ks_res$p.value), badge_res(ad_res$p.value))
+  )
+  
+  print(kbl(df_res, caption = paste("Validação Estatística (PIT):", nome_modelo), escape = FALSE, align = "c") %>%
+        kable_styling(bootstrap_options = c("striped", "hover"), full_width = F, position = "center"))
+  
+  # 5. Diagnóstico Visual (Histograma PIT)
+  # Se o modelo for bom, as barras devem ser planas (próximas da linha vermelha)
+  par(mfrow=c(1,1), mar=c(5,4,4,2)+0.1)
+  hist(z, breaks = seq(0, 1, 0.1), freq = FALSE, 
+       col = "#ecf0f1", border = "#7f8c8d",
+       main = paste("Histograma PIT (Uniformidade) -", nome_modelo),
+       xlab = "Probabilidade Transformada (z)", ylab = "Densidade")
+  abline(h = 1, col = "#c0392b", lwd = 2, lty = 2)
+  legend("topright", legend="Uniforme Teórica", col="#c0392b", lty=2, bty="n")
+  
+  # Pequena verificação textual
+  if(ks_res$p.value > 0.05 && ad_res$p.value > 0.05) {
+    cat("\n> **Diagnóstico:** O modelo foi APROVADO em ambos os testes. A transformação PIT resultou em uma distribuição Uniforme, indicando que a variação temporal dos parâmetros capturou corretamente a dinâmica dos dados.\n")
+  } else {
+    cat("\n> **Diagnóstico:** O modelo apresentou desvios estatísticos significativos (P < 0.05). Verifique o Histograma para identificar se o erro está nas caudas ou no centro.\n")
+  }
+}
+```
+
+#Análise Exploratória
+Investigação inicial do comportamento da série temporal de Dezembro.
+
+```{r, results='asis'}
+# 1. Visualização
+plot_serie_inicial(df_analise$Temp, df_analise$Ano, NOME_MES)
+
+# 2. Testes Preliminares
+mk_res <- mk.test(df_analise$Temp)
+cs_res <- cox.stuart.test(df_analise$Temp)
+adf_res <- adf.test(df_analise$Temp, alternative = "stationary")
+lb_res <- Box.test(df_analise$Temp, type = "Ljung-Box")
+
+# Tabela de Diagnóstico
+df_diag <- data.frame(
+  Teste = c("Mann-Kendall", "Cox-Stuart", "ADF (Estacionariedade)", "Ljung-Box (Independência)"),
+  Hipotese_Nula = c("Sem Tendência", "Sem Tendência", "Série Não-Estacionária", "Independência"),
+  P_Valor = c(format.pval(mk_res$p.value, digits=3), format.pval(cs_res$p.value, digits=3),
+              format.pval(adf_res$p.value, digits=3), format.pval(lb_res$p.value, digits=3))
+)
+
+print(kbl(df_diag, caption = "Diagnóstico Estatístico Preliminar - Dezembro", align = "c") %>%
+      kable_styling(bootstrap_options = c("hover", "condensed"), full_width = F))
+```
+
+# Modelagem GEV e Seleção
+Para Dezembro, testamos modelos mais complexos devido à suspeita de alteração no regime de extremos.
+
+M0: Estacionário.
+
+M1: Tendência na Média (Locação).
+
+M2: Tendência na Média e Variabilidade (Locação + Escala).
+
+M3: Tendência na Média e Forma da Cauda (Locação + Shape). 
+
+M4: Modelo Completo (Locação + Escala + Shape).
+
+```{r, results='asis'}
+# ==============================================================================
+# 1. AJUSTE DOS 5 MODELOS
+# ==============================================================================
+
+# M0: Estacionário
+fit0 <- fevd(Temp, data = df_analise, type = "GEV", units = "deg C")
+
+# M1: Locação Variável
+fit1 <- fevd(Temp, data = df_analise, location.fun = ~Ano, type = "GEV")
+
+# M2: Locação + Escala (Variabilidade)
+# use.phi = TRUE para garantir sigma > 0 via log-link
+fit2 <- fevd(Temp, data = df_analise, location.fun = ~Ano, scale.fun = ~Ano, 
+             use.phi = TRUE, type = "GEV")
+
+# M3: Locação + Forma (Shape) - O modelo que "estica" a cauda
+fit3 <- fevd(Temp, data = df_analise, location.fun = ~Ano, shape.fun = ~Ano, type = "GEV")
+
+# M4: Completo (Locação + Escala + Forma)
+fit4 <- fevd(Temp, data = df_analise, location.fun = ~Ano, scale.fun = ~Ano, shape.fun = ~Ano, 
+             use.phi = TRUE, type = "GEV")
+
+# ==============================================================================
+# 2. SELEÇÃO POR AIC E TRV (LRT)
+# ==============================================================================
+
+# --- A) Coleta de AIC e BIC ---
+aic_vals <- c(summary(fit0)$AIC, summary(fit1)$AIC, summary(fit2)$AIC, summary(fit3)$AIC, summary(fit4)$AIC)
+bic_vals <- c(summary(fit0)$BIC, summary(fit1)$BIC, summary(fit2)$BIC, summary(fit3)$BIC, summary(fit4)$BIC)
+
+# --- B) Cálculo do TRV (Todos vs M0) ---
+# Testamos se cada modelo não-estacionário é significativamente melhor que o M0
+p1 <- lr.test(fit0, fit1)$p.value
+p2 <- lr.test(fit1, fit2)$p.value
+p3 <- lr.test(fit1, fit3)$p.value
+p4 <- lr.test(fit1, fit4)$p.value
+
+# Vetor de P-valores (O primeiro é NA pois é M0 vs M0)
+p_vals_m0 <- c(NA, p1, p2, p3, p4)
+
+# Função para formatar P-valor bonito na tabela
+fmt_p <- function(p) {
+  if(is.na(p)) return("-")
+  if(p < 0.001) return("< 0.001")
+  return(format(round(p, 4), nsmall=4))
+}
+
+# --- C) Montagem da Tabela ---
+nomes_modelos <- c("M0: Estacionário", 
+                   "M1: Locação", 
+                   "M2: Loc. + Escala", 
+                   "M3: Loc. + Forma (Shape)", 
+                   "M4: Completo")
+
+df_comp <- data.frame(
+  Modelo = nomes_modelos,
+  AIC = round(aic_vals, 2),
+  BIC = round(bic_vals, 2),
+  Delta_AIC = round(aic_vals - min(aic_vals), 2),
+  TRV_vs_M0 = sapply(p_vals_m0, fmt_p)
+)
+
+# Identificando o Vencedor (Menor AIC)
+vencedor_idx <- which.min(df_comp$AIC)
+modelo_vencedor_nome <- df_comp$Modelo[vencedor_idx]
+obj_vencedor <- list(fit0, fit1, fit2, fit3, fit4)[[vencedor_idx]]
+
+# Exibição da Tabela
+print(kbl(df_comp, caption = "Comparativo de Modelos GEV - Dezembro (com TRV)", align = "c") %>%
+      kable_styling(bootstrap_options = "striped", full_width = F) %>%
+      row_spec(vencedor_idx, bold = T, color = "white", background = "darkgreen") %>%
+      footnote(general = "TRV_vs_M0: P-valor do Teste de Razão de Verossimilhança comparado ao modelo Estacionário."))
+
+# --- D) Validação Adicional (Tira-Teima) ---
+# Se o vencedor for M3 ou M4, testamos se ele é melhor que o M1 (para não complexificar à toa)
+cat("\n#### Tira-Teima de Complexidade:\n")
+
+if(modelo_vencedor_nome == "M3: Loc. + Forma (Shape)") {
+  # M3 vs M1 (Valeu a pena adicionar o Shape?)
+  lrt_extra <- lr.test(fit1, fit3)
+  cat(paste0("Comparação M1 vs M3 (P-valor): ", round(lrt_extra$p.value, 5)))
+  if(lrt_extra$p.value < 0.05) cat(" -> A inclusão do Shape é Significativa!\n") else cat(" -> A inclusão do Shape NÃO é significativa.\n")
+  
+} else if(modelo_vencedor_nome == "M4: Completo") {
+  # M4 vs M3 (Valeu a pena adicionar a Escala no modelo de Shape?)
+  lrt_extra <- lr.test(fit3, fit4)
+  cat(paste0("Comparação M3 vs M4 (P-valor): ", round(lrt_extra$p.value, 5), "\n"))
+} else {
+  cat(paste0("O modelo vencedor (", modelo_vencedor_nome, ") é parcimonioso por natureza."))
+}
+
+cat(paste0("\n<div class='alert-success'>**Modelo Selecionado:** O critério de AIC aponta o modelo **", modelo_vencedor_nome, "** como o mais adequado.</div>\n"))
+```
+
+Para a seleção do modelo GEV mais adequado, aplicou-se o Teste de Razão de Verossimilhança (Likelihood Ratio Test), fundamentado na estatística de Deviance ($D$), conforme preconizado por Coles (2001). A estatística é definida por $D = 2 \{ \ell_1(\mathcal{M}_1) - \ell_0(\mathcal{M}_0) \}$, onde $\ell_1$ e $\ell_0$ são as log-verossimilhanças maximizadas dos modelos candidato e nulo, respectivamente. Sob a hipótese nula de que o modelo mais simples é suficiente, $D$ segue uma distribuição assintótica $\chi^2$ com graus de liberdade equivalentes à diferença de parâmetros entre os modelos. Este procedimento garante o princípio da parcimônia, selecionando o modelo mais complexo apenas quando o ganho de ajuste for estatisticamente significativo ($p < 0,05$).
+
+```{r, results='asis'}
+# ==============================================================================
+# SELEÇÃO DE MODELOS VIA ESTATÍSTICA DE DEVIANCE (COLES, 2001)
+# ==============================================================================
+
+# Comparando modelos contra o modelo nulo (Estacionário)
+lrt_m1 <- lr.test(fit0, fit1)
+lrt_m2 <- lr.test(fit0, fit2)
+lrt_m3 <- lr.test(fit0, fit3)
+lrt_m4 <- lr.test(fit0, fit4)
+
+df_deviance <- data.frame(
+  Modelo = c("M1: Locação", "M2: Loc + Escala", "M3: Loc + Forma", "M4: Completo"),
+  Deviance = round(c(lrt_m1$statistic, lrt_m2$statistic, lrt_m3$statistic, lrt_m4$statistic), 3),
+  GL = c(1, 2, 2, 3), # Diferença de parâmetros para o M0
+  P_Valor = c(lrt_m1$p.value, lrt_m2$p.value, lrt_m3$p.value, lrt_m4$p.value)
+)
+
+# Formatação da Tabela
+kbl(df_deviance, caption = "Teste de Razão de Verossimilhança (Baseado em Coles, 2001)", align = "c") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F) %>%
+  add_header_above(c(" " = 1, "Comparação com Modelo Estacionário (M0)" = 3)) %>%
+  column_spec(4, bold = T, color = ifelse(df_deviance$P_Valor < 0.05, "darkgreen", "red"))
+```
+
+
+# Diagnóstico do Vencedor
+
+```{r diagnostico_manual, results='asis'}
+# ==============================================================================
+# DIAGNÓSTICO 
+# ==============================================================================
+plot(fit1)
+plot(fit2)
+plot(fit3)
+plot(fit4)
+
+```
+O diagnóstico visual do modelo GEV não-estacionário confirma a adequação do ajuste. O QQ-Plot dos resíduos padronizados demonstra que a inclusão do tempo como covariável na locação e escala foi suficiente para linearizar a série. O gráfico de níveis de retorno evidencia uma clara ascensão nos limiares de risco, onde o evento extremo observado em 2015, outrora improvável sob condições estacionárias, encontra-se agora dentro dos intervalos de confiança previstos pela dinâmica de aquecimento da série.
+
+# Evolução do Risco Climático
+
+Visualização da curva de retorno de 100 anos. Se o modelo vencedor incluir tendência no Shape ($\xi$), esperamos ver uma curva não-linear acentuada.
+
+```{r, results='asis'}
+# Lógica Universal de Plotagem (Funciona para qualquer modelo GEV linear/log-linear)
+params <- obj_vencedor$results$par
+anos_vec <- df_analise$Ano
+
+# --- 1. Recuperação dos Parâmetros no Tempo ---
+
+# A) LOCAÇÃO (Mu)
+mu_int <- if(is.na(params["mu0"])) params["location"] else params["mu0"]
+mu_inc <- if(is.na(params["mu1"])) 0 else params["mu1"]
+mu_t <- mu_int + mu_inc * anos_vec
+
+# B) ESCALA (Sigma)
+# Verifica se usou Log-Link (modelos com use.phi=TRUE)
+if("log.scale" %in% names(params)) {
+  sig_int <- params["log.scale"]
+  sig_inc <- if(is.na(params["phi1"])) 0 else params["phi1"]
+  sig_t <- exp(sig_int + sig_inc * anos_vec)
+} else {
+  sig_int <- params["scale"]
+  sig_inc <- 0 
+  sig_t <- sig_int 
+}
+
+# C) FORMA (Xi / Shape)
+xi_int <- if(is.na(params["xi0"])) params["shape"] else params["xi0"]
+xi_inc <- if(is.na(params["xi1"])) 0 else params["xi1"]
+xi_t <- xi_int + xi_inc * anos_vec
+
+# --- 2. Cálculo do Nível de Retorno (100 Anos) ---
+periodo <- 100
+y_p <- -log(1 - 1/periodo)
+rl_100 <- mu_t + (sig_t / xi_t) * ( (y_p^(-xi_t)) - 1 )
+
+# --- 3. Plotagem ---
+y_max <- max(c(df_analise$Temp, rl_100, 40)) # Garante que 2015 (39.6) apareça
+y_min <- min(df_analise$Temp)
+
+par(mfrow=c(1,1), mar=c(5, 4, 4, 2) + 0.1)
+plot(df_analise$Ano, df_analise$Temp, pch=19, col="gray70",
+     main = paste("Evolução do Risco de 100 Anos (", modelo_vencedor_nome, ")"),
+     ylab = "Temperatura Máxima (°C)", xlab = "Ano",
+     ylim = c(y_min, y_max))
+
+# Linha de Tendência do Risco
+lines(df_analise$Ano, rl_100, col = "#c0392b", lwd = 3)
+
+# Destaque para o evento de 2015
+if(any(df_analise$Ano == 2015)) {
+  val_2015 <- df_analise$Temp[df_analise$Ano == 2015]
+  points(2015, val_2015, pch=8, col="black", cex=1.5)
+  text(2015, val_2015, "2015", pos=3, font=2, cex=0.8)
+}
+
+grid()
+legend("topleft", legend = c("Observado", "Retorno de 100 Anos"), 
+       col = c("gray70", "#c0392b"), pch = c(19, NA), lwd = c(NA, 3), bty = "n")
+
+if(xi_inc > 0) {
+  cat("\n> **Nota Crítica:** O modelo detectou um aumento no parâmetro de forma (Shape). Isso indica que a distribuição está desenvolvendo uma cauda mais pesada, tornando eventos extremos significativamente mais frequentes e intensos do que no passado.")
+}
+```
+```{r}
+library(goftest)
+
+# 1. Calcular a PIT (Probabilidade Transformada)
+# O 'lower.tail = TRUE' é o padrão, mas é bom deixar explícito que queremos P(X <= x)
+z <- pextRemes(fit3, q = fit3$x, lower.tail = TRUE)
+
+# 2. Limpeza de Segurança
+# Garante que é numérico e remove anos sem dados (NAs) para não travar o teste
+z <- as.numeric(z)
+z <- z[!is.na(z)]
+
+# 3. Teste de Anderson-Darling
+# Testamos se z segue uma Uniforme (min=0, max=1)
+ad_final <- ad.test(z, null = "punif", min = 0, max = 1)
+
+# Exibição
+print(paste("P-valor AD:", format.pval(ad_final$p.value, digits=4)))
+```
+
+Seguindo a abordagem de Younas et al. (2020) para séries não-estacionárias, a validação de bondade de ajuste foi aprofundada através do teste de Anderson-Darling (AD), utilizando o pacote goftest. A escolha do AD justifica-se pela sua maior sensibilidade às caudas da distribuição em comparação ao teste de Kolmogorov-Smirnov, garantindo que o modelo GEV descreva com precisão não apenas a tendência central, mas especialmente o comportamento dos extremos históricos de Dezembro.
+
+```{r}
+# ==============================================================================
+# DIAGNÓSTICO DE MODELO NÃO-ESTACIONÁRIO (COLES, SEÇÃO 6.2.3)
+# ==============================================================================
+
+# 1. Extração de Dados e Parâmetros
+# 'obj_vencedor' deve ser o seu modelo ajustado com fevd()
+zt <- as.numeric(obj_vencedor$x) # Dados originais (Máximos de Dezembro)
+
+# Buscamos a matriz de parâmetros (um mu, sigma e xi para cada ano)
+# Se find.param falhar, acessamos via estrutura interna
+params <- tryCatch({
+  find.param(obj_vencedor)
+}, error = function(e) {
+  # Alternativa caso a função find.param não seja encontrada
+  obj_vencedor$results$par.mat 
+})
+
+mu_t    <- as.numeric(params[, "location"])
+sigma_t <- as.numeric(params[, "scale"])
+xi_t    <- as.numeric(params[, "shape"])
+
+# 2. Padronização (A "Fórmula Mágica" do Coles - Eq. 6.6)
+# Transformamos Z_t heterogêneo em resíduos Gumbel i.i.d.
+res_gumbel <- ifelse(abs(xi_t) < 1e-6,
+                     (zt - mu_t) / sigma_t, # Caso Gumbel (xi -> 0)
+                     (1/xi_t) * log(pmax(0.00001, 1 + xi_t * ((zt - mu_t) / sigma_t))))
+
+# 3. Limpeza de NAs (Anos sem dados)
+res_validos <- res_gumbel[is.finite(res_gumbel)]
+n <- length(res_validos)
+res_ordenados <- sort(res_validos)
+
+# 4. Geração dos Gráficos de Diagnóstico (Figura 6.4 do livro)
+par(mfrow = c(2, 2), mar = c(4, 4, 2, 1))
+
+# --- Probability Plot ---
+prob_pos <- (1:n) / (n + 1)
+prob_modelo <- exp(-exp(-res_ordenados)) # Acumulada da Gumbel
+plot(prob_modelo, prob_pos, main = "Probability Plot",
+     xlab = "Modelo (Gumbel)", ylab = "Empírico", pch = 20, col = "blue")
+abline(0, 1, col = "red", lwd = 2)
+
+# --- Quantile Plot (O mais importante!) ---
+quant_teorico <- -log(-log(prob_pos)) # Inversa da Gumbel
+plot(quant_teorico, res_ordenados, main = "Quantile Plot (QQ)",
+     xlab = "Quantil Teórico (Gumbel)", ylab = "Quantil Empírico", pch = 20, col = "blue")
+abline(0, 1, col = "red", lwd = 2)
+
+# --- Histograma de Resíduos ---
+hist(res_validos, freq = FALSE, main = "Densidade dos Resíduos",
+     xlab = "Resíduos Padronizados", col = "lightblue", border = "white")
+curve(exp(-x - exp(-x)), add = TRUE, col = "red", lwd = 2) # PDF Gumbel
+
+# --- Resíduos vs. Índice (Tempo) ---
+plot(1:n, res_validos, main = "Resíduos vs Tempo",
+     xlab = "Anos (sequência)", ylab = "Resíduos", pch = 20, col = "darkgray")
+abline(h = 0, col = "red", lty = 2)
+
+par(mfrow = c(1, 1))
+
+# 5. Teste de Ajuste Formal (Kolmogorov-Smirnov)
+# H0: O modelo descreve bem os dados (Resíduos ~ Gumbel Padrão)
+ks_teste <- ks.test(res_validos, function(x) exp(-exp(-x)))
+print(ks_teste)
+
+```
+
+

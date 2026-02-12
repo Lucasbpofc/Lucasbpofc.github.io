@@ -1,0 +1,66 @@
+################################################################################
+##########  Lucas Pereira Belo - Lucas.p.belo019@gmail.com      ################
+################################################################################
+
+
+##########                útil para encontrar cores no R          ##############
+
+# Função para plotar cores
+ver_cores <- function() {
+  cores_uteis <- c("black", "gray50", "firebrick", "tomato", "red", 
+                   "steelblue", "dodgerblue", "navy", 
+                   "forestgreen", "seagreen", "darkorange", "gold")
+  
+  barplot(rep(1, length(cores_uteis)), col = cores_uteis, 
+          names.arg = cores_uteis, las = 2, main = "Cores Úteis no R")
+}
+ver_cores()
+
+
+# Exemplo: Criar 50 tons entre Azul Marinho e Vermelho Sangue
+minha_paleta <- colorRampPalette(c("navy", "white", "firebrick"))
+
+# Visualizar 50 cores geradas
+par(mar=c(1,1,1,1))
+barplot(rep(1, 50), col = minha_paleta(50), border = NA, main = "Gradiente Térmico")
+
+# Função para plotar uma matriz de cores
+mostrar_todas_cores <- function() {
+  par(mar=c(0,0,0,0))
+  # Pega todas as cores, excluindo as repetidas/muito parecidas
+  cores <- colors()
+  cores <- cores[!grepl("grey|gray", cores)] # Remove excesso de cinzas para limpar
+  
+  # Configura a grade
+  n <- length(cores)
+  ncol <- 20
+  nrow <- ceiling(n / ncol)
+  
+  plot(c(0, ncol), c(0, -nrow), type = "n", axes = FALSE, xlab = "", ylab = "")
+  
+  for (i in 1:n) {
+    col_idx <- (i - 1) %% ncol
+    row_idx <- (i - 1) %/% ncol
+    
+    # Retângulo da cor
+    rect(col_idx, -row_idx, col_idx + 1, -row_idx - 1, col = cores[i], border = "white")
+    
+    # Nome da cor (texto pequeno)
+    text(col_idx + 0.5, -row_idx - 0.5, labels = cores[i], 
+         cex = 0.6, col = "black", font = 2)
+  }
+}
+
+# Rode a função (pode demorar um segundo para renderizar)
+mostrar_todas_cores()
+
+# Definição de cores Hexadecimais para Temperatura
+cor_fria   <- "#2980b9"  # Azul (Belize Hole)
+cor_neutra <- "#f1c40f"  # Amarelo (Sunflower)
+cor_quente <- "#c0392b"  # Vermelho (Pomegranate)
+
+# Cria uma função que gera 'n' cores baseadas nessas 3
+paleta_termica <- colorRampPalette(c(cor_fria, cor_neutra, cor_quente))
+
+# Teste visual
+barplot(rep(1, 100), col = paleta_termica(100), border = NA, main = "Sua Paleta de Temperatura")

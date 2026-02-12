@@ -1,0 +1,315 @@
+---
+title: "Análise de Extremos Climáticos: Novembro"
+subtitle: "Investigação de Tendências em Séries Temporais (1968-2022)"
+author: "Lucas Pereira Belo"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
+    number_sections: true
+    code_folding: show
+    df_print: paged
+---
+
+<style>
+body { text-align: justify; font-family: 'Helvetica', sans-serif; }
+h1, h2 { color: #2c3e50; font-weight: bold; }
+.alert-info { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; }
+.alert-success { background-color: #d4edda; border-left: 6px solid #28a745; padding: 10px; }
+.alert-warning { background-color: #fff3cd; border-left: 6px solid #ffc107; padding: 10px; }
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = "center", fig.width = 10, fig.height = 6)
+```
+
+Pacotes utilizados
+
+```{r}
+library(readxl)
+library(dplyr)
+library(ggplot2)    # Gráficos avançados
+library(tseries)    # Testes de séries temporais
+library(trend)      # Testes não-paramétricos (MK, Cox-Stuart)
+library(goftest)    # Testes de bondade de ajuste (AD)
+library(extRemes)   # Modelagem GEV
+library(urca)       # Testes de raiz unitária
+library(kableExtra) # Tabelas formatadas
+library(distillery)
+library(randtests)  # Runs Test
+```
+
+# Leitura e preparação dos dados 
+
+```{r}
+# ==============================================================================
+# LEITURA E PREPARAÇÃO DOS DADOS
+# ==============================================================================
+# Ajuste o caminho do arquivo conforme necessário
+df_nov <- read_excel("EXTREMOS.xlsx", sheet = 11) # Sheet 11 = Novembro
+
+# Criação do DataFrame de Trabalho (limpo de NAs)
+anos <- seq(1968, 2022, 1)
+df_analise <- data.frame(Ano = anos, Temp = df_nov$TEMP)
+df_analise <- na.omit(df_analise)
+
+# Metadados para os gráficos
+NOME_MES <- "Novembro"
+```
+
+# Diagnóstico 
+
+```{r}
+# ==============================================================================
+# FUNÇÕES DE APOIO (Diagnóstico e Validação)
+# ==============================================================================
+
+# 1. Função de Plotagem da Série
+plot_serie_inicial <- function(dados, anos, nome) {
+  df <- data.frame(Ano = anos, Temp = dados)
+  media <- mean(df$Temp)
+  tendencia <- coef(lm(Temp ~ Ano, data = df))[2]
+  
+  ggplot(df, aes(x = Ano, y = Temp)) +
+    geom_line(color = "gray50", size = 0.8) +
+    geom_point(color = "#2c3e50", size = 2) +
+    geom_smooth(method = "lm", se = FALSE, color = "#c0392b", size = 1) +
+    geom_hline(yintercept = media, color = "#2980b9", linetype = "dashed") +
+    theme_minimal() +
+    labs(title = paste("Série Histórica:", nome),
+         subtitle = paste0("Tendência Linear: ", round(tendencia, 3), " °C/ano"),
+         y = "Temperatura Máxima (°C)", x = "Ano")
+}
+
+# 2. Função de Validação (KS e AD) com Histograma PIT
+validar_modelo <- function(modelo, nome_mod) {
+  # PIT (Probability Integral Transform)
+  z <- pextRemes(modelo, q = modelo$x, lower.tail = TRUE)
+  z <- na.omit(as.numeric(z))
+  
+  # Testes
+  ks <- ks.test(z, "punif")
+  ad <- ad.test(z, "punif")
+  
+  # Badge
+  badge <- function(p) {
+    if(p > 0.05) "<span style='background:#27ae60; color:white; padding:2px 6px; border-radius:4px;'>Adequado</span>"
+    else "<span style='background:#c0392b; color:white; padding:2px 6px; border-radius:4px;'>Inadequado</span>"
+  }
+  
+  # Tabela
+  df_res <- data.frame(
+    Teste = c("Kolmogorov-Smirnov", "Anderson-Darling"),
+    Estatistica = c(round(ks$statistic, 4), round(ad$statistic, 4)),
+    P_Valor = c(format.pval(ks$p.value, digits=4), format.pval(ad$p.value, digits=4)),
+    Conclusao = c(badge(ks$p.value), badge(ad$p.value))
+  )
+  
+  print(kbl(df_res, caption = paste("Validação:", nome_mod), escape = F, align = "c") %>%
+        kable_styling(bootstrap_options = "striped", full_width = F))
+  
+  # Histograma PIT
+  par(mfrow=c(1,1))
+  hist(z, breaks = seq(0, 1, 0.1), freq = FALSE, col="#ecf0f1", border="#7f8c8d",
+       main = paste("Histograma PIT:", nome_mod), xlab = "Probabilidade (z)")
+  abline(h=1, col="#c0392b", lwd=2, lty=2)
+}
+```
+
+# Análise Exploratória
+A primeira etapa consiste na visualização da série temporal e na aplicação de testes estatísticos para verificar a presença de tendências monotônicas, estacionariedade e dependência serial.
+
+```{r, results='asis'}
+# 1. Visualização
+plot_serie_inicial(df_analise$Temp, df_analise$Ano, NOME_MES)
+
+# 2. Testes Preliminares
+mk_res <- mk.test(df_analise$Temp)
+cs_res <- cox.stuart.test(df_analise$Temp)
+adf_res <- adf.test(df_analise$Temp, alternative = "stationary")
+lb_res <- Box.test(df_analise$Temp, type = "Ljung-Box")
+
+# Tabela de Diagnóstico
+df_diag <- data.frame(
+  Teste = c("Mann-Kendall (Tendência)", "Cox-Stuart (Tendência)", "ADF (Estacionariedade)", "Ljung-Box (Independência)"),
+  H0 = c("Sem Tendência", "Sem Tendência", "Não-Estacionário", "Independência"),
+  P_Valor = c(format.pval(mk_res$p.value, digits=3), format.pval(cs_res$p.value, digits=3),
+              format.pval(adf_res$p.value, digits=3), format.pval(lb_res$p.value, digits=3))
+)
+
+print(kbl(df_diag, caption = "Diagnóstico Estatístico Preliminar", align = "c") %>%
+      kable_styling(bootstrap_options = c("hover", "condensed"), full_width = F))
+
+cat("\n**Interpretação:** P-valores < 0.05 indicam rejeição da hipótese nula (H0).")
+```
+
+Ajuste e Seleção de Modelos GEV
+
+Serão ajustados quatro modelos concorrentes para explicar o comportamento dos extremos em Novembro:
+M0 (Estacionário): Parâmetros constantes.
+M1 (Tendência na Locação): $\mu(t) = \mu_0 + \mu_1 \cdot t$
+M2 (Tendência na Locação e Escala): $\mu(t)$ e $\sigma(t)$ variam linearmente.
+M3 (Tendência na Locação, Escala e Forma): Modelo completo não-estacionário.
+
+```{r, results='asis'}
+```{r modelagem_gev_v2, results='asis'}
+# ==============================================================================
+# 1. AJUSTE DOS MODELOS (M0 a M4)
+# ==============================================================================
+
+# M0: Estacionário (Referência)
+fit0 <- fevd(Temp, data = df_analise, type = "GEV", units = "deg C")
+
+# M1: Tendência apenas na Média (Locação)
+fit1 <- fevd(Temp, data = df_analise, location.fun = ~Ano, type = "GEV")
+
+# M2: Tendência na Média e Variabilidade (Locação + Escala)
+# Nota: Usamos use.phi=TRUE para garantir variância positiva
+fit2 <- fevd(Temp, data = df_analise, location.fun = ~Ano, scale.fun = ~Ano, 
+             use.phi = TRUE, type = "GEV")
+
+# M3: O NOVO MODELO (Locação + Forma, Escala Fixa)
+# Testamos se os extremos (shape) mudam junto com a média, mas a variância base é estável.
+fit3 <- fevd(Temp, data = df_analise, location.fun = ~Ano, shape.fun = ~Ano, type = "GEV")
+
+# M4: Modelo Completo (Locação + Escala + Forma)
+fit4 <- fevd(Temp, data = df_analise, location.fun = ~Ano, scale.fun = ~Ano, shape.fun = ~Ano, 
+             use.phi = TRUE, type = "GEV")
+
+# ==============================================================================
+# 2. SELEÇÃO E TABELA COMPARATIVA
+# ==============================================================================
+
+# Extração manual dos critérios (AIC e BIC)
+aic_vals <- c(summary(fit0)$AIC, summary(fit1)$AIC, summary(fit2)$AIC, summary(fit3)$AIC, summary(fit4)$AIC)
+bic_vals <- c(summary(fit0)$BIC, summary(fit1)$BIC, summary(fit2)$BIC, summary(fit3)$BIC, summary(fit4)$BIC)
+
+# Montagem da Tabela
+nomes_modelos <- c("M0: Estacionário", 
+                   "M1: Locação", 
+                   "M2: Loc. + Escala", 
+                   "M3: Loc. + Forma", 
+                   "M4: Completo (Loc+Esc+Shp)")
+
+df_comp <- data.frame(
+  Modelo = nomes_modelos,
+  AIC = round(aic_vals, 2),
+  BIC = round(bic_vals, 2),
+  Delta_AIC = round(aic_vals - min(aic_vals), 2)
+)
+
+# Identificando o Vencedor
+vencedor_idx <- which.min(df_comp$AIC)
+modelo_vencedor_nome <- df_comp$Modelo[vencedor_idx]
+
+# Salva o objeto vencedor para os próximos passos
+lista_modelos <- list(fit0, fit1, fit2, fit3, fit4)
+obj_vencedor <- lista_modelos[[vencedor_idx]]
+
+# Exibe Tabela com Destaque
+print(kbl(df_comp, caption = "Comparativo de Modelos GEV - Novembro", align = "c") %>%
+      kable_styling(bootstrap_options = "striped", full_width = F) %>%
+      row_spec(vencedor_idx, bold = T, color = "white", background = "#27ae60"))
+
+cat(paste0("\n<div class='alert-success'>**Resultado:** O critério AIC selecionou o modelo **", modelo_vencedor_nome, "** como o mais adequado.</div>\n"))
+```
+
+# Diagnóstico do Modelo Vencedor
+Abaixo, realizamos a verificação da adequação do modelo selecionado através de testes formais de bondade de ajuste e inspeção visual dos resíduos.
+
+```{r, results='asis'}
+# 1. Parâmetros Estimados
+cat("#### Parâmetros Estimados e Erro Padrão\n")
+print(obj_vencedor$results$par)
+
+# 2. Testes de Adequação (KS e AD)
+cat("\n#### Validação Estatística (Kolmogorov-Smirnov)\n")
+validar_modelo(obj_vencedor, modelo_vencedor_nome)
+
+# 3. Diagnóstico Visual Padrão
+par(mfrow=c(1,2))
+plot(obj_vencedor, type = "density", main = "Densidade: Modelo vs Observado")
+plot(obj_vencedor, type = "qq", main = "QQ-Plot de Resíduos")
+par(mfrow=c(1,1))
+```
+
+Análise de Risco (Níveis de Retorno)
+Com base no modelo vencedor, projetamos os níveis de retorno para diferentes períodos de recorrência, destacando a evolução do risco ao longo do tempo (caso o modelo seja não-estacionário)
+```{r, results='asis'}
+# ==============================================================================
+# PROJEÇÃO DE RISCO (GRÁFICO UNIVERSAL)
+# ==============================================================================
+
+# Se for M0 (Estacionário), faz o plot simples
+if(modelo_vencedor_nome == "M0: Estacionário") {
+  
+  plot(obj_vencedor, type = "rl", main = "Níveis de Retorno (Estacionário)", 
+       rperiods = c(10, 50, 100), col = "#2c3e50")
+
+} else {
+  # CÁLCULO MANUAL ROBUSTO (Para modelos com tendência)
+  
+  params <- obj_vencedor$results$par
+  anos_vec <- df_analise$Ano
+  
+  # --- 1. Montagem do Vetor de Locação (Mu) ---
+  # Pega o intercepto (pode chamar 'location' ou 'mu0') e a inclinação ('mu1')
+  mu_int <- if(is.na(params["mu0"])) params["location"] else params["mu0"]
+  mu_inc <- if(is.na(params["mu1"])) 0 else params["mu1"]
+  mu_t <- mu_int + mu_inc * anos_vec
+  
+  # --- 2. Montagem do Vetor de Escala (Sigma) ---
+  # Se usou Log-Link (M2, M4), sigma = exp(a + b*t). Se não (M1, M3), sigma é fixo.
+  if("log.scale" %in% names(params)) {
+    sig_int <- params["log.scale"]
+    sig_inc <- if(is.na(params["phi1"])) 0 else params["phi1"]
+    sig_t <- exp(sig_int + sig_inc * anos_vec)
+  } else {
+    sig_int <- params["scale"]
+    sig_inc <- 0 # Modelo sem tendência na escala
+    sig_t <- sig_int 
+  }
+  
+  # --- 3. Montagem do Vetor de Forma (Xi) ---
+  # Pega intercepto ('shape' ou 'xi0') e inclinação ('xi1')
+  xi_int <- if(is.na(params["xi0"])) params["shape"] else params["xi0"]
+  xi_inc <- if(is.na(params["xi1"])) 0 else params["xi1"]
+  xi_t <- xi_int + xi_inc * anos_vec
+  
+  # --- 4. Fórmula do Nível de Retorno (GEV Inversa) ---
+  periodo <- 100
+  y_p <- -log(1 - 1/periodo)
+  
+  # Aplica a fórmula para cada ano
+  rl_100 <- mu_t + (sig_t / xi_t) * ( (y_p^(-xi_t)) - 1 )
+  
+  # --- 5. Plotagem ---
+  par(mfrow=c(1,1), mar=c(5, 4, 4, 2) + 0.1)
+  
+  # Limites dinâmicos para o gráfico
+  y_max_plot <- max(c(df_analise$Temp, rl_100)) * 1.02
+  y_min_plot <- min(df_analise$Temp) * 0.98
+  
+  plot(df_analise$Ano, df_analise$Temp, pch=19, col="gray70",
+       main = paste("Evolução do Risco de 100 Anos (", modelo_vencedor_nome, ")"),
+       ylab = "Temperatura Máxima (°C)", xlab = "Ano",
+       ylim = c(y_min_plot, y_max_plot))
+  
+  lines(df_analise$Ano, rl_100, col = "#c0392b", lwd = 3)
+  
+  grid()
+  legend("topleft", legend = c("Observado", "Retorno de 100 Anos"), 
+         col = c("gray70", "#c0392b"), pch = c(19, NA), lwd = c(NA, 3), bty = "n")
+  
+  # Pequeno diagnóstico do comportamento
+  if(xi_inc > 0) {
+    cat("\n> **Nota:** O parâmetro de forma crescente indica aceleração do risco extremo (cauda mais pesada).")
+  }
+}
+```
+

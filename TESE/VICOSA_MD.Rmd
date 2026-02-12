@@ -1,6 +1,6 @@
 ---
 title: "Análise de Valores Extremos na cidade de Viçosa-Mg: Precipitação e Temperatura"
-subtitle: "Estudo de Caso: Viçosa - MG (1968-2022)"
+subtitle: "Estudo de Caso: Mês de janeiro(1968-2022)"
 author: "Lucas Pereira Belo"
 date: "`r Sys.Date()`"
 output: 
@@ -14,7 +14,11 @@ output:
     number_sections: true
     code_folding: show
     df_print: paged
+bibliography: [referencias.bib, pacotes.bib]
+csl: associacao-brasileira-de-normas-tecnicas.csl
+link-citations: yes
 ---
+
 
 <style>
 body {
@@ -41,6 +45,14 @@ h1, h2 {
 }
 </style>
 
+```{r gerar_bib_pacotes, include=FALSE}
+# Lista dos pacotes que você usou
+meus_pacotes <- c("base", "extRemes", "urca", "trend", "tseries")
+
+# Isso cria automaticamente um arquivo 'pacotes.bib' com as citações corretas
+knitr::write_bib(meus_pacotes, file = "pacotes.bib")
+```
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = "center", fig.width = 10, fig.height = 6)
 ```
@@ -51,15 +63,15 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align =
 
 O município de Viçosa está localizado na mesorregião da Zona da Mata do estado de Minas Gerais, a aproximadamente 230 km a sudeste da capital, Belo Horizonte. Com altitude média de 649 metros, o município ocupa uma área territorial de cerca de 300 km², dos quais 18 km² compreendem o perímetro urbano. Para o ano de 2025, a população foi estimada em 79.517 habitantes.
 
-```{r, echo=FALSE, fig.align='center', fig.cap="Figura 1: Vista da praça municipal de Viçosa-MG", out.width="90%"}
+```{r, echo=FALSE, fig.align='center', fig.cap="Figura 1: Vista da praça municipal de Viçosa-MG. FONTE: Google imagens", out.width="90%"}
 knitr::include_graphics("VICOSA.jpg")
 ```
 
 ## Base de Dados e Metodologia
 
-Inicialmente, vamos analisar as precipitações máximas diárias históricas ocorridas exclusivamente no mêses de janeiro, posteriormente a análise será expandida para os demais mêses chuvosos do ano. A série temporal abrange o período de **1968 a 2022**, totalizando 55 observações anuais, um tamanho amostral considerado adequado para garantir a robustez estatística das estimativas.
+Inicialmente, vamos analisar as precipitações máximas diárias históricas ocorridas exclusivamente no mêses de janeiro, posteriormente a análise será expandida para os demais mêses chuvosos do ano. A série temporal abrange o período de **1968 a 2022**, totalizando 55 observações anuais, um tamanho amostral considerado adequado para garantir a robustez estatística das estimativas, como indicado pelos autores, [@cai_hames_2011]; [@baddour_kontongomde_2007]; [@roslan_2020].
 
-Os dados pluviométricos foram obtidos a partir das estações do **Instituto Nacional de Meteorologia (INMET)** e do banco de dados do Boletim Meteorológico do **Programa de Pós-Graduação em Meteorologia Aplicada da Universidade Federal de Viçosa (UFV)**.
+Os dados pluviométricos foram obtidos a partir das estações do Instituto Nacional de Meteorelogia - INMET [@inmet_dados] e do banco de dados do Boletim Meteorológico do **Programa de Pós-Graduação em Meteorologia Aplicada da Universidade Federal de Viçosa (UFV)** [@ufv2023].
 
 Para a estruturação dos dados, adotou-se a metodologia de **Máximos de Blocos**, onde, para cada mês de janeiro da série histórica (bloco de 31 dias), selecionou-se o evento de maior precipitação diária acumulada. 
 
@@ -67,15 +79,15 @@ Para a estruturação dos dados, adotou-se a metodologia de **Máximos de Blocos
 
 A modelagem probabilística foi realizada utilizando a **Distribuição Generalizada de Valores Extremos (GEV)**. A consistência da série temporal e a adequação do modelo foram verificadas através das seguintes etapas:
 
-## 1. Verificação de Pressupostos e Estrutura de Dependência
+## 1. Verificação de pressupostos e estrutura de dependência
 
 A modelagem de valores extremos exige uma compreensão rigorosa do comportamento estocástico da série temporal. A aplicação dos testes a seguir visa diagnosticar a presença de tendência e dependência serial, orientando a escolha entre uma abordagem estacionária (parâmetros constantes) ou não-estacionária (parâmetros variáveis no tempo):
 
-* **Teste de Cox-Stuart:** Aplicado para verificar a existência de tendências determinísticas (monotonicidade). A detecção de tendência não invalida a análise, mas indica a necessidade de incorporar o tempo como covariável nos parâmetros da distribuição GEV (modelagem não-estacionária) ou proceder com a remoção da tendência para garantir a estacionariedade.
+* **Teste de Cox-Stuart:** Proposto por Cox-Stuart @cox_stuart_1955 o teste é aplicado para verificar a existência de tendências determinísticas. Um asteriscos importante de se destacar é que a detecção de tendência não invalida a análise, mas indica a necessidade de incorporar o tempo como covariável nos parâmetros da distribuição GEV (modelagem não-estacionária) ou proceder com a remoção da tendência para garantir a estacionariedade.
 
-* **Teste Augmented Dickey-Fuller (ADF):** Utilizado para testar a hipótese de raiz unitária e confirmar o grau de estacionariedade da série. Este diagnóstico é crucial para definir se a modelagem deve ser realizada na série em nível ou em suas diferenças.
+* **Teste Augmented Dickey-Fuller (ADF):** Proposto por Dickey-Fuller @dickey_fuller_1979 é utilizado para testar a hipótese de raiz unitária e confirmar o grau de estacionariedade da série. Este diagnóstico é crucial para definir se a modelagem deve ser realizada na série em nível ou em suas diferenças.
 
-* **Análise de Autocorrelação (FAC e FACP):** As Funções de Autocorrelação (FAC) e Autocorrelação Parcial (FACP) foram examinadas para avaliar a independência e autocorrelação presentes na série.
+* **Análise de Autocorrelação (FAC e FACP):** As Funções de Autocorrelação (FAC) e Autocorrelação Parcial (FACP) foram examinadas para avaliar a independência e autocorrelação presentes na série, o teste de Ljumg Box foi utilizado para validar ou não a análise visual.
 
 2.  **Ajuste e Validação:** Estimativa dos parâmetros da GEV via máxima verossimilhança e validação da aderência do modelo aos dados empíricos através do teste de **Kolmogorov-Smirnov**.
 3.  **Projeção de Risco:** Estimativa dos níveis de retorno (precipitação máxima esperada) para períodos de recorrência de 5, 10 e 100 anos.
@@ -96,6 +108,7 @@ library(extRemes)  # Modelagem GEV
 library(ismev)     # Diagnósticos GEV
 library(urca)      # Teste de Raiz Unitária Avançado
 library(DT)        # Tabelas Interativas
+library(kableExtra)
 ```
 
 ```{r import_data}
@@ -145,7 +158,6 @@ lines(density(CHUVA), col="#c0392b", lwd=2)
 Verificação breve dos dados referentes à segunda aba da planilha que serão abordados em outra análise.
 
 ```{r folha2, fig.width=10, fig.height=5}
-# Importa especificamente a folha 2
 folha2 <- read_excel("EXTREMOS.xlsx", sheet = 2)
 CHUVA2 <- folha2$PRECIP   
 year_f2 <- seq(1968, 2022, 1)
@@ -157,7 +169,9 @@ hist(CHUVA2, main="Histograma (Fev)", col="lightgreen")
 
 ## Testes Formais
 
-Verificamos a existência de tendência e/ou estacionariedade nas séries bem como o teste de sequência para verificar a independência. Como a análise principal foca nos máximos semre do mesmo mês, não houve necessidade de analisar sazonalidade.
+Verificamos a existência de tendência, por meio do teste de @cox_stuart_1955 [cox_stuart_1955], bem como estacionariedade via teste de @dickey_fuller_1979 [@dickey_fuller_1979] o teste de sequência @wald_wolfowitz_1940 [@wald_wolfowitz_1940] foi utilizado para verificar a aleatoriedade da série. O teste de Ljung-Box em conjunto com os gráficos de autocorrelação e autocorrelação parcial foram utilizados para verificar a independência.  Como a análise principal foca nos máximos sempre do mesmo mês, não houve necessidade de analisar sazonalidade. As definições formais dos testes, podem também ser encontradas com mais detalhes em @morettin2006 [@morettin2006].
+
+Em complemento, a principal referência utilizada para embasamento teórico e dos códigos é referente ao livro @coles2001.
 
 ### Definição Teórica: Teste de Tendência de Cox-Stuart
 
@@ -297,6 +311,42 @@ Se $|Z| > Z_{\alpha/2}$ (para teste bilateral), rejeita-se a hipótese nula ao n
 
 > **Relação com o Teste de Cox-Stuart:** O teste de Cox-Stuart, utilizado na verificação de tendência desta análise, é uma aplicação direta do Teste de Sinal. Nele, a série temporal é dividida em duas metades e o Teste de Sinal é aplicado às diferenças pareadas ($X_{i+c} - X_i$), testando se a "mediana das diferenças" difere de zero, o que evidenciaria uma tendência determinística.
 
+#### O Teste de Ljung-Box
+
+O teste de Ljung-Box (também conhecido como teste Q portmanteau) é utilizado para verificar se as autocorrelações de uma série temporal são, em conjunto, significativamente diferentes de zero. Em diagnósticos de modelos, ele é fundamental para confirmar se os resíduos se comportam como ruído branco.
+
+#### Formulação Algébrica
+
+A estatística de teste $Q$ é calculada com base nas autocorrelações amostrais até uma defasagem $h$:
+
+$$Q = n(n+2) \sum_{k=1}^{h} \frac{\hat{\rho}_k^2}{n-k}$$
+
+Onde:
+
+* $n$: Tamanho da amostra (número de observações).
+* $\hat{\rho}_k$: Autocorrelação amostral na defasagem $k$.
+* $h$: Número de defasagens (lags) testadas em conjunto.
+* $k$: O índice de cada defasagem individual.
+
+
+
+[Image of Chi-square distribution for different degrees of freedom]
+
+
+#### Hipóteses e Estatística do Teste
+
+O teste avalia se a estrutura de dependência serial foi completamente capturada ou se ainda existe informação sistemática na série. As hipóteses são:
+
+1. **Hipótese Nula ($H_0$):** $\rho_1 = \rho_2 = \dots = \rho_h = 0$. Os dados são **independentes** (não há autocorrelação; a série é ruído branco).
+2. **Hipótese Alternativa ($H_1$):** Ao menos um $\rho_k \neq 0$ para $k \in \{1, \dots, h\}$. Os dados **apresentam dependência serial** (não são ruído branco).
+
+Sob a hipótese nula, a estatística $Q$ segue uma distribuição Qui-quadrado ($\chi^2$). A definição dos graus de liberdade ($gl$) depende da aplicação:
+
+* **Para séries originais:** $gl = h$.
+* **Para resíduos de modelos (ex: ARIMA):** $gl = h - m$, onde $m$ é a soma dos parâmetros estimados (ex: $p + q$).
+
+Se a estatística $Q$ calculada for superior ao valor crítico da distribuição $\chi^2$ para o nível de significância adotado (ou se o p-valor < 0,05), rejeita-se $H_0$, indicando que o modelo não capturou toda a estrutura de correlação da série.
+
 ```{r testes_estatisticos, echo=TRUE, message=FALSE, warning=FALSE, fig.cap="Gráficos de Autocorrelação (ACF) e Autocorrelação Parcial (PACF).", fig.height=4, fig.width=8}
 
 # 1. Análise Visual de Dependência (ACF e PACF)
@@ -306,7 +356,9 @@ par(mfrow = c(1, 2))
 acf(CHUVA, main = "Função de Autocorrelação (FAC)", ylab = "ACF")
 pacf(CHUVA, main = "Autocorrelação Parcial (FACP)", ylab = "PACF")
 
-# Retorna a configuração gráfica ao padrão (1x1)
+# H0: Os dados são independentes, não há autocorrelação.
+Box.test(CHUVA, lag = 10, type = "Ljung-Box")
+
 par(mfrow = c(1, 1)) 
 
 # 2. Teste de Estacionariedade (Augmented Dickey-Fuller)
@@ -332,9 +384,8 @@ runs.test(CHUVA)
 
 # Fundamentação Teórica e Implementação Manual
 
-A estrutura matemática do modelo GEV, apresenta-se a seguir com a implementação manual da função de Log-Verossimilhança e o cálculo dos parâmetros via otimização numérica (`nlm`), além do cálculo de incerteza via Método Delta.
+A Distribuição Generalizada de Valores Extremos (GEV), introduzida por @jenkinson1955, fornece uma estrutura analítica robusta para modelar máximos de blocos. A função de distribuição acumulada é dada por:
 
-A função de distribuição acumulada GEV é dada por:
 $$G(z) = \exp\left\{ -\left[ 1 + \xi \left( \frac{z - \mu}{\sigma} \right) \right]^{-1/\xi} \right\}$$
 
 ## Definição da Log-Likelihood Manual
@@ -442,7 +493,7 @@ cat("Erro Padrão (10 anos):", se_return)
 
 # Modelagem Otimizada e Validação
 
-Para fins de robustez e otimização, diagnóstico e cálculo de intervalos de confiança via *Profile Likelihood*, é útil a utilozação de alguns pacotes  já existentes, como: `extRemes` e `ismev`.
+Para fins de robustez e otimização, diagnóstico e cálculo de intervalos de confiança via *Profile Likelihood*, é útil a utilização de alguns pacotes  já existentes, como: `extRemes` e `ismev`.
 
 ## Diagnóstico via `ismev`
 
@@ -454,8 +505,6 @@ gev.diag(fit_ismev)
 ```
 
 ## Ajuste e Validação via `extRemes`
-
-O ajuste abaixo utiliza o método de máxima verossimilhança otimizado.
 
 ```{r extremes_fit}
 # Ajuste do Modelo
@@ -488,12 +537,10 @@ print(ad_result)
 
 ## Estimativa de Níveis de Retorno
 
-Por fim, foram calculados os níveis de retorno para 5, 10 e 20 anos com intervalos de confiança baseados em Perfil de Verossimilhança (*Profile Likelihood*), que são mais precisos para extremos.
+Por fim, foram calculados os níveis de retorno para 5, 10 e 20 anos com intervalos de confiança baseados na Verossimilhança perfilhada (*Profile Likelihood*), que são mais precisos para extremos.
 
 ```{r return_levels, fig.width=10, fig.height=5}
 par(mfrow=c(1,3))
-
-# Nota: O argumento 'xrange' foi ajustado visualmente para cobrir a região de verossimilhança
 # 5 Anos
 ci(fit1, method = "proflik", xrange = c(65, 100), verbose = TRUE, return.period = 5)
 
@@ -505,6 +552,587 @@ ci(fit1, method = "proflik", xrange = c(120, 470), verbose = TRUE, return.period
 ```
 
 As estimativas indicam que um evento de precipitação de 78,94 mm possui um tempo de recorrência de 5 anos para o mês de janeiro. Para períodos de retorno mais longos, de 10 e 100 anos, os volumes estimados são de 103 mm e 215,865 mm, respectivamente. Estatisticamente, isso implica que tais magnitudes devem ser igualadas ou superadas, em média, uma vez a cada intervalo de tempo considerado.
+
+
+#### Generalizando para os demais mêses
+
+
+```{r}
+# ==============================================================================
+# FUNÇÃO GERAL DE ANÁLISE CLIMÁTICA 
+# ==============================================================================
+analisar_clima <- function(dados, ano_vec, nome_mes, cor_tema) {
+
+  cat(paste0("\n### Análise Descritiva: ", nome_mes, "\n"))
+  
+  # --- 1. Descritiva e Gráficos ---
+  idx_max <- which.max(dados)
+  cat(paste0("**Evento Máximo:** ", round(dados[idx_max], 2), " mm em ", ano_vec[idx_max], "\n\n"))
+  
+  par(mfrow=c(2,2))
+  df_plot <- data.frame(Ano = ano_vec, Chuva = dados); df_plot <- na.omit(df_plot)
+  
+  plot(Chuva ~ Ano, data = df_plot, type="b", main=paste("Série -", nome_mes), 
+       ylab="Precipitação (mm)", xlab="Ano", pch=19, col=cor_tema, lwd=1.5)
+  grid()
+  hist(df_plot$Chuva, main=paste("Histograma -", nome_mes), 
+       xlab="mm", col=cor_tema, border="white", prob=TRUE)
+  lines(density(df_plot$Chuva), col="black", lwd=2)
+  acf(df_plot$Chuva, main="ACF", col=cor_tema, lag.max = 15)
+  pacf(df_plot$Chuva, main="PACF", col=cor_tema, lag.max = 15)
+  par(mfrow=c(1,1)) 
+  
+  # --- Função de Badge ---
+  criar_badge <- function(texto, cor) {
+    paste0("<span style='display: block; padding: 2px 8px; border-radius: 4px; ",
+           "color: white; background-color: ", cor, "; font-weight: bold; text-align: center;'>", 
+           texto, "</span>")
+  }
+  
+  # --- 2. Bateria de Testes de Diagnóstico ---
+  cat("\n#### Diagnóstico da Série Temporal\n")
+  
+  # A) Cox-Stuart (Tendência Sinais)
+  cs_test <- cox.stuart.test(dados)
+  p_cs <- cs_test$p.value
+  
+  # B) Mann-Kendall (Tendência Rankeada - Mais Potente)
+  mk_test <- trend::mk.test(dados)
+  p_mk <- mk_test$p.value
+  status_mk <- if(p_mk >= 0.05) criar_badge("Sem Tendência", "#27ae60") else criar_badge("Tendência (MK)", "#e67e22")
+  
+  # C) Teste de Pettitt (Quebra Estrutural / Salto)
+  pt_test <- trend::pettitt.test(dados)
+  p_pt <- pt_test$p.value
+  # Identifica o ano da provável quebra se houver
+  ano_quebra <- if(p_pt < 0.05) paste0(" (Em ", ano_vec[pt_test$estimate], ")") else ""
+  status_pt <- if(p_pt >= 0.05) criar_badge("Homogênea", "#27ae60") else criar_badge(paste0("Quebra", ano_quebra), "#c0392b")
+
+  # D) ADF (Estacionariedade)
+  adf_check <- tseries::adf.test(dados, alternative = "stationary")
+  p_adf <- adf_check$p.value
+  status_adf <- if(p_adf < 0.05) criar_badge("Estacionária", "#27ae60") else criar_badge("Não Estacionária", "#c0392b")
+  
+  # E) Ljung-Box (Independência)
+  lb_check <- Box.test(dados, type = "Ljung-Box", lag = 10)
+  p_lb <- lb_check$p.value
+  status_lb <- if(p_lb >= 0.05) criar_badge("Independente", "#27ae60") else criar_badge("Dependência", "#c0392b")
+  
+  # Tabela Diagnóstico Atualizada
+  df_pre <- data.frame(
+    Teste = c("Cox-Stuart (Tendência)", "Mann-Kendall (Tendência)", "Pettitt (Quebra)", "ADF (Estacionariedade)", "Ljung-Box (Memória)"),
+    Estatistica = c(round(cs_test$statistic, 4), round(mk_test$statistic, 4), round(pt_test$statistic, 4), round(adf_check$statistic, 4), round(lb_check$statistic, 4)),
+    P_Valor = c(format.pval(p_cs, digits=4, eps=0.001), 
+                format.pval(p_mk, digits=4, eps=0.001),
+                format.pval(p_pt, digits=4, eps=0.001),
+                format.pval(p_adf, digits=4, eps=0.001),
+                format.pval(p_lb, digits=4, eps=0.001)),
+    Diagnostico = c(
+      if(p_cs >= 0.05) criar_badge("Sem Tendência", "#27ae60") else criar_badge("Tendência", "#e67e22"),
+      status_mk,
+      status_pt,
+      status_adf,
+      status_lb
+    )
+  )
+  
+  tabela_html_pre <- df_pre %>%
+    kbl(caption = paste("Tabela A: Diagnóstico Avançado -", nome_mes), align = "c", escape = FALSE, row.names = FALSE) %>%
+    kable_styling(bootstrap_options = c("hover", "condensed"), full_width = F, position = "left") %>%
+    column_spec(1, bold = T) %>%
+    column_spec(4, width = "180px")
+    
+  cat(tabela_html_pre)
+  cat("\n\n")
+  
+  # --- 3. Ajuste GEV e Validação ---
+  cat("\n#### Modelagem GEV e Validação\n")
+  fit <- fevd(dados, type = "GEV", units = "mm")
+  params <- fit$results$par
+  loc_e <- params["location"]; sc_e <- params["scale"]; sh_e <- params["shape"]
+  
+  # Testes de Bondade de Ajuste
+  ks_res <- ks.test(dados, "pevd", loc=loc_e, scale=sc_e, shape=sh_e, type="GEV")
+  ad_res <- goftest::ad.test(dados, "pevd", loc=loc_e, scale=sc_e, shape=sh_e, type="GEV")
+  
+  df_gof <- data.frame(
+    Teste = c("Kolmogorov-Smirnov", "Anderson-Darling"),
+    Estatistica = c(round(ks_res$statistic, 4), round(ad_res$statistic, 4)),
+    P_Valor = c(format.pval(ks_res$p.value, digits=4, eps=0.001), format.pval(ad_res$p.value, digits=4, eps=0.001)),
+    Conclusao = c(
+      if(ks_res$p.value > 0.05) criar_badge("Bom Ajuste", "#27ae60") else criar_badge("Mau Ajuste", "#c0392b"),
+      if(ad_res$p.value > 0.05) criar_badge("Bom Ajuste", "#27ae60") else criar_badge("Mau Ajuste", "#c0392b")
+    )
+  )
+  
+  tabela_html_gof <- df_gof %>%
+    kbl(caption = paste("Tabela B: Validação do Modelo GEV -", nome_mes), align = "c", escape = FALSE, row.names = FALSE) %>%
+    kable_styling(bootstrap_options = c("hover", "condensed"), full_width = F, position = "left") %>%
+    column_spec(1, bold = T) %>%
+    column_spec(4, width = "140px")
+    
+  cat(tabela_html_gof)
+  cat("\n\n")
+  
+  # --- 4. Gráficos e Retorno ---
+  par(mfrow=c(1,2))
+  plot(fit, type = "density", main = "Densidade Ajustada")
+  plot(fit, type = "qq", main = "QQ-Plot")
+  par(mfrow=c(1,1))
+  
+  cat("\n#### Estimativas de Risco (Nível de Retorno)\n")
+  par(mfrow=c(1,3))
+  plot_ci_seguro <- function(modelo, periodo, titulo) {
+    tryCatch({
+      ci(modelo, return.period = periodo, method = "proflik", verbose = FALSE, main = titulo)
+    }, error = function(e) {
+      ci(modelo, return.period = periodo, method = "normal", verbose = FALSE, main = paste(titulo, "(Normal Appx)"))
+    })
+  }
+  plot_ci_seguro(fit, 5, "5 Anos"); plot_ci_seguro(fit, 10, "10 Anos"); plot_ci_seguro(fit, 50, "50 Anos")
+  par(mfrow=c(1,1))
+  
+  return(fit)
+}
+```
+
+```{r}
+# ==============================================================================
+# LEITURA DOS DADOS 
+# ==============================================================================
+
+# Definição do vetor de anos
+anos <- seq(1968, 2022, 1)
+
+# Lendo Jan (Sheet 1)
+df_jan <- read_excel("EXTREMOS.xlsx", sheet = 1)
+dados_jan <- df_jan$PRECIP
+
+# Lendo Fev (Sheet 2)
+df_fev <- read_excel("EXTREMOS.xlsx", sheet = 2)
+dados_fev <- df_fev$PRECIP
+
+# Lendi Março (Sheet 3)
+df_mar<- read_excel("EXTREMOS.xlsx", sheet = 3)
+dados_mar<- df_mar$PRECIP
+
+# Lendo Dez (Sheet 12)
+df_dez <- read_excel("EXTREMOS.xlsx", sheet = 12)
+dados_dez <- df_dez$PRECIP
+
+#Lendo Nov (Sheet 11)
+df_nov <- read_excel("EXTREMOS.xlsx", sheet = 11)
+dados_nov<- df_nov$PRECIP
+```
+
+
+```{r}
+# ==============================================================================
+# INVESTIGAÇÃO DETALHADA: ESTACIONARIEDADE DE FEVEREIRO
+# ==============================================================================
+library(readxl)
+library(urca)
+library(ggplot2)
+
+# 1. Leitura isolada dos dados de Fevereiro (para garantir que estamos testando o certo)
+df_fev_investigacao <- read_excel("EXTREMOS.xlsx", sheet = 2)
+dados_fev_check <- na.omit(df_fev_investigacao$PRECIP)
+
+# 2. Visualização Rápida
+
+plot(dados_fev_check, type="l", col="#c0392b", lwd=2, 
+     main="Investigação Visual: Série de Fevereiro", ylab="Precipitação (mm)")
+abline(reg=lm(dados_fev_check~time(dados_fev_check)), col="blue", lty=2) # Linha de tendência
+legend("topleft", legend=c("Dados", "Tendência Linear"), col=c("#c0392b", "blue"), lty=c(1,2))
+
+# 3. Aplicação do Teste ADF Completo (Pacote urca)
+# type = "trend": Testa considerando que pode haver uma tendência e uma constante.
+# selectlags = "AIC": O R escolhe automaticamente quantos anos para trás olhar (lags).
+teste_urca <- ur.df(dados_fev_check, type = "trend", selectlags = "AIC")
+
+# 4. Exibição do Sumário Detalhado
+summary(teste_urca)
+```
+
+
+Resultados por Mês {.tabset .tabset-fade}
+A seguir, apresentamos a análise detalhada para cada um dos meses críticos da estação chuvosa.
+
+#Janeiro
+
+```{r analise_jan, results='asis'}
+fit_jan <- analisar_clima(dados_jan, anos, "Janeiro", "#2980b9") # Azul
+```
+
+#Fevereiro
+
+```{r analise_fev, results='asis'}
+fit_fev <- analisar_clima(dados_fev, anos, "Fevereiro", "#27ae60") # Verde
+```
+
+# Março
+
+```{r analise_mar, results='asis'}
+fit_mar <-analisar_clima(dados_mar, anos, "Março", "gold")
+```
+
+#Dezembro
+
+```{r analise_dez, results='asis'}
+fit_dez <- analisar_clima(dados_dez, anos, "Dezembro", "#e67e22") # Laranja
+```
+
+#Novembro
+```{r analise_nov, results='asis'}
+fit_nov <- analisar_clima(dados_nov, anos, "Novembro", "navy") #
+```
+
+Analisando a tendencia de Novembro
+
+```{r analise_nov_precip_trend, results='asis'}
+# ==============================================================================
+# 1. PREPARAÇÃO E DIAGNÓSTICO
+# ==============================================================================
+# Criamos o dataframe primeiro
+df_nov_trend <- data.frame(Ano = anos, Prec = dados_nov)
+# Removemos NAs do DATAFRAME INTEIRO (preservando o alinhamento Ano-Prec)
+df_nov_trend <- na.omit(df_nov_trend)
+
+# Teste de Tendência e Estacionariedade
+mk_res <- mk.test(df_nov_trend$Prec)
+cs_res <- cox.stuart.test(df_nov_trend$Prec)
+adf_res <- ur.df(df_nov_trend$Prec, type = "trend", selectlags = "AIC")
+
+# Função para criar "Badges" coloridos
+criar_badge <- function(p_valor) {
+  cor <- if(p_valor < 0.05) "#c0392b" else "#27ae60" 
+  texto <- if(p_valor < 0.05) "Significativo" else "Não Signif."
+  paste0("<span style='color: white; background-color: ", cor, "; padding: 2px 6px; border-radius: 4px;'>", texto, "</span>")
+}
+
+df_diag <- data.frame(
+  Teste = c("Mann-Kendall (Tendência)", "Cox-Stuart (Tendência)", "ADF (Estacionariedade)"),
+  Estatistica = c(round(mk_res$statistic, 4), round(cs_res$statistic, 4), round(adf_res@teststat[1], 4)),
+  P_Valor = c(format.pval(mk_res$p.value, digits=4), format.pval(cs_res$p.value, digits=4), "Ver Tab. Crítica"),
+  Conclusao = c(criar_badge(mk_res$p.value), criar_badge(cs_res$p.value), "-")
+)
+
+print(kbl(df_diag, caption = "Tabela A: Diagnóstico Preliminar da Série (Novembro)", escape = FALSE) %>%
+      kable_styling(bootstrap_options = c("hover", "condensed"), full_width = F, position = "center"))
+
+cat("\n\n")
+
+# ==============================================================================
+# 1. MODELAGEM GEV (M0, M1 e M3) E SELEÇÃO - NOVEMBRO
+# ==============================================================================
+# Criamos o dataframe primeiro
+df_nov_trend <- data.frame(Ano = anos, Prec = dados_nov)
+# Removemos NAs mantendo alinhamento
+df_nov_trend <- na.omit(df_nov_trend)
+
+# --- Ajuste dos Modelos ---
+# M0: Estacionário
+fit0 <- fevd(Prec, data = df_nov_trend, type = "GEV", units = "mm")
+
+# M1: Não-Estacionário em Locação (Mu ~ Ano)
+fit1 <- fevd(Prec, data = df_nov_trend, location.fun = ~Ano, type = "GEV", units = "mm")
+
+# M3: Não-Estacionário em Locação e Escala (Mu ~ Ano, Sigma ~ Ano)
+fit3 <- fevd(Prec, data = df_nov_trend, location.fun = ~Ano, scale.fun = ~Ano, type = "GEV", units = "mm")
+
+# --- Testes de Razão de Verossimilhança (LRT) Sequenciais ---
+# 1. M0 vs M1 (Existe tendência na média?)
+lrt_0_1 <- lr.test(fit0, fit1)
+p_0_1   <- lrt_0_1$p.value
+
+# 2. M1 vs M3 (Existe tendência na variabilidade, dado que ajustamos a média?)
+lrt_1_3 <- lr.test(fit1, fit3)
+p_1_3   <- lrt_1_3$p.value
+
+# --- Lógica de Decisão Automática ---
+# Define qual objeto será o 'fit_nov_prec' usado nas próximas etapas
+modelo_selecionado <- "M0"
+fit_nov_prec <- fit0 # Default
+cor_decisao <- "#95a5a6" # Cinza (neutro)
+
+if(p_0_1 < 0.05) {
+  # Se M1 venceu M0, testamos se M3 vence M1
+  if(p_1_3 < 0.05) {
+    modelo_selecionado <- "M3"
+    fit_nov_prec <- fit3
+    msg_conclusao <- "O modelo **M3 (Locação e Escala variáveis)** apresentou o melhor ajuste (menor AIC/BIC e P-valor < 0.05)."
+  } else {
+    modelo_selecionado <- "M1"
+    fit_nov_prec <- fit1
+    msg_conclusao <- "O modelo **M1 (Apenas Locação variável)** foi o mais adequado. A variabilidade manteve-se constante."
+  }
+} else {
+  msg_conclusao <- "Não há evidências estatísticas suficientes para rejeitar a estacionariedade. O modelo **M0 (Estacionário)** foi mantido."
+}
+
+# --- Tabela de Comparação (Agora com AIC) ---
+df_comp_modelos <- data.frame(
+  Modelo = c("M0: Estacionário", "M1: Locação Var.", "M3: Loc. e Escala Var."),
+  LogLik = c(round(fit0$results$value, 2), round(fit1$results$value, 2), round(fit3$results$value, 2)),
+  # Extraindo AIC e BIC dos sumários
+  AIC = c(round(summary(fit0)$AIC, 2), round(summary(fit1)$AIC, 2), round(summary(fit3)$AIC, 2)),
+  BIC = c(round(summary(fit0)$BIC, 2), round(summary(fit1)$BIC, 2), round(summary(fit3)$BIC, 2)),
+  P_Valor_LRT = c("-", format.pval(p_0_1, digits=3), format.pval(p_1_3, digits=3)),
+  Status = c(
+    if(modelo_selecionado == "M0") "SELECIONADO" else "Rejeitado",
+    if(modelo_selecionado == "M1") "SELECIONADO" else "Rejeitado",
+    if(modelo_selecionado == "M3") "SELECIONADO" else "Rejeitado"
+  )
+)
+
+print(kbl(df_comp_modelos, caption = "Tabela B: Seleção de Modelo GEV (Critérios de Informação)", align = "c") %>%
+      kable_styling(bootstrap_options = "striped", full_width = F, position = "center") %>%
+      row_spec(which(df_comp_modelos$Status == "SELECIONADO"), bold = T, color = "white", background = "#27ae60"))
+
+cat(paste0("\n<div class='alert-info'>**CONCLUSÃO:** ", msg_conclusao, "</div>\n"))
+
+# ==============================================================================
+# DIAGNÓSTICO E PLOTAGEM DO VENCEDOR
+# ==============================================================================
+par(mfrow=c(1,2))
+plot(fit_nov_prec, type = "density", main = paste("Densidade:", modelo_selecionado))
+plot(fit_nov_prec, type = "qq", main = paste("QQ-Plot:", modelo_selecionado))
+par(mfrow=c(1,1))
+
+# Gráfico de Retorno (Evolução Temporal)
+# Plota apenas se o modelo selecionado NÃO for o estacionário
+if(modelo_selecionado != "M0") {
+  cat("\n#### Evolução do Risco Climático (1968-2022)\n")
+  
+  # Calcula os níveis de retorno para o período dos dados
+  # Nota: Com scale.fun, o return.level retorna uma matriz variando ano a ano
+  rl_vals <- return.level(fit_nov_prec, return.period = c(2, 20, 100))
+  
+  matplot(df_nov_trend$Ano, rl_vals, type = "l", lty = 1, lwd = 2,
+          col = c("#27ae60", "#e67e22", "#c0392b"),
+          main = paste0("Níveis de Retorno Efetivos (", modelo_selecionado, ")"),
+          ylab = "Precipitação Máxima (mm)", xlab = "Ano")
+  
+  legend("topleft", legend = c("Retorno de 2 Anos", "Retorno de 20 Anos", "Retorno de 100 Anos"), 
+         col = c("#27ae60", "#e67e22", "#c0392b"), lty = 1, lwd = 2, bty = "n", cex = 0.9)
+  grid(col = "lightgray", lty = "dotted")
+}
+cat("\n\n")
+```
+
+
+# Identificando as distribuições
+```{r tabela_tipos_distribuicao, results='asis'}
+# ==============================================================================
+# TABELA DE CARACTERIZAÇÃO DAS DISTRIBUIÇÕES
+# ==============================================================================
+# Lista dos modelos (Certifique-se que fit_nov_prec é o vencedor do bloco anterior)
+lista_modelos <- list(
+  "Novembro"  = fit_nov_prec,
+  "Dezembro"  = fit_dez,
+  "Janeiro"   = fit_jan,
+  "Fevereiro" = fit_fev,
+  "Março"     = fit_mar
+)
+
+df_tipos <- data.frame(
+  Mes = character(), Xi = character(), IC_95 = character(), 
+  Tipo = character(), stringsAsFactors = FALSE
+)
+
+for (mes in names(lista_modelos)) {
+  modelo <- lista_modelos[[mes]]
+  
+  # Extrai IC dos parâmetros (Robustez para encontrar o 'shape' ou 'xi')
+  ci_params <- ci(modelo, type = "parameter", method = "normal", verbose = FALSE)
+  
+  # Busca inteligente pelo índice do parâmetro de forma
+  idx_shape <- grep("shape|xi", rownames(ci_params), ignore.case = TRUE)
+  
+  if(length(idx_shape) > 0) {
+    est <- ci_params[idx_shape, 2]
+    low <- ci_params[idx_shape, 1]
+    upp <- ci_params[idx_shape, 3]
+    
+    # Classificação
+    if (low > 0) {
+      tipo_dist <- "Fréchet (Cauda Pesada)"
+      cor_tipo <- "#c0392b" # Vermelho
+    } else if (upp < 0) {
+      tipo_dist <- "Weibull (Cauda Limitada)"
+      cor_tipo <- "#27ae60" # Verde
+    } else {
+      tipo_dist <- "Gumbel (Cauda Leve)"
+      cor_tipo <- "#2980b9" # Azul
+    }
+    
+    df_tipos <- rbind(df_tipos, data.frame(
+      Mes = mes,
+      Xi = round(est, 3),
+      IC_95 = paste0("[", round(low, 3), "; ", round(upp, 3), "]"),
+      Tipo = paste0("<span style='color:", cor_tipo, "; font-weight:bold'>", tipo_dist, "</span>")
+    ))
+  }
+}
+
+df_tipos %>%
+  kbl(caption = "<div style='text-align:center; color:#2c3e50; font-size:18px; font-weight:bold'>Caracterização das Distribuições Ajustadas</div>", 
+      align = "c", escape = FALSE) %>%
+  kable_styling(bootstrap_options = c("hover", "striped"), full_width = F, position = "center") %>%
+  column_spec(1, bold = T) %>%
+  footnote(general = "Classificação baseada no IC (95%) do parâmetro de forma. Se inclui zero, assume-se Gumbel.", general_title = "Nota: ")
+```
+
+#Comparativo e Conclusão
+
+Comparação das curvas de Nível de Retorno para os três meses analisados. Este gráfico permite identificar qual mês apresenta maior risco de eventos extremos para um mesmo período de retorno.
+
+
+```{r comparativo_final_v3, fig.width=10, fig.height=7}
+# Carrega bibliotecas de estética
+if(!require(kableExtra)) install.packages("kableExtra")
+if(!require(extRemes)) install.packages("extRemes")
+library(kableExtra)
+library(extRemes)
+
+# 1. Definição dos Períodos
+periodos <- c(5, 10, 20, 50, 100)
+
+# ==============================================================================
+# FUNÇÕES BLINDADAS (Para suportar modelos com e sem tendência)
+# ==============================================================================
+
+# Função para formatar Texto com IC (HTML)
+get_est_ci_smart <- function(modelo, periods, ano_ref = 2022) {
+  
+  resultado <- tryCatch({
+    if (!is.null(modelo$cov.data)) {
+      # Se tem tendência (ex: Novembro), cria a matriz qcov para o ano 2022
+      dados_modelo <- modelo$cov.data
+      nome_col <- colnames(dados_modelo)[1]
+      novos_dados <- data.frame(ano_ref)
+      colnames(novos_dados) <- nome_col
+      
+      matriz_covariavel <- make.qcov(modelo, vals = novos_dados)
+      ci(modelo, return.period = periods, method = "normal", verbose = FALSE, qcov = matriz_covariavel)
+    } else {
+      # Se é estacionário (ex: Jan/Fev/Mar)
+      ci(modelo, return.period = periods, method = "normal", verbose = FALSE)
+    }
+  }, error = function(e) {
+    # Fallback de segurança
+    return(ci(modelo, return.period = periods, method = "normal", verbose = FALSE))
+  })
+  
+  est <- round(resultado[,2], 1)
+  low <- round(resultado[,1], 1)
+  upp <- round(resultado[,3], 1)
+  
+  paste0("<strong>", est, "</strong><br><span style='font-size:11px; color:#7f8c8d'>[", low, "; ", upp, "]</span>")
+}
+
+# Função para extrair valores numéricos (Para o gráfico)
+get_values_smart <- function(modelo, periods, ano_ref = 2022) {
+  res <- tryCatch({
+    if (!is.null(modelo$cov.data)) {
+      dados_modelo <- modelo$cov.data
+      nome_col <- colnames(dados_modelo)[1]
+      novos_dados <- data.frame(ano_ref)
+      colnames(novos_dados) <- nome_col
+      
+      matriz_covariavel <- make.qcov(modelo, vals = novos_dados)
+      return.level(modelo, return.period = periods, qcov = matriz_covariavel)
+    } else {
+      return.level(modelo, return.period = periods)
+    }
+  }, error = function(e) return.level(modelo, return.period = periods))
+  return(as.numeric(res))
+}
+
+# 3. Gerando as colunas formatadas (Texto)
+col_nov <- get_est_ci_smart(fit_nov_prec, periodos, ano_ref = 2022)
+col_dez <- get_est_ci_smart(fit_dez, periodos, ano_ref = 2022) 
+col_jan <- get_est_ci_smart(fit_jan, periodos)
+col_fev <- get_est_ci_smart(fit_fev, periodos)
+col_mar <- get_est_ci_smart(fit_mar, periodos) # Inclusão de Março
+
+# 4. Construção do DataFrame Final (Ordem Cronológica)
+df_final <- data.frame(
+  "Retorno"   = paste(periodos, "Anos"),
+  "Novembro"  = col_nov,
+  "Dezembro"  = col_dez,
+  "Janeiro"   = col_jan,
+  "Fevereiro" = col_fev,
+  "Março"     = col_mar
+)
+
+# 5. Lógica do Vencedor (Numérica)
+vals_nov <- get_values_smart(fit_nov_prec, periodos, ano_ref = 2022)
+vals_dez <- get_values_smart(fit_dez, periodos, ano_ref = 2022)
+vals_jan <- get_values_smart(fit_jan, periodos)
+vals_fev <- get_values_smart(fit_fev, periodos)
+vals_mar <- get_values_smart(fit_mar, periodos)
+
+vencedores <- c()
+for(i in 1:length(periodos)){
+  linha <- c(Novembro=vals_nov[i], Dezembro=vals_dez[i], Janeiro=vals_jan[i], Fevereiro=vals_fev[i], Março=vals_mar[i])
+  vencedores[i] <- names(linha)[which.max(linha)]
+}
+df_final$Risco_Maior <- vencedores
+
+# 6. Tabela Estilizada
+df_final %>%
+  kbl(caption = "<div style='text-align:center; color:#2c3e50; font-size:18px; font-weight:bold'>Precipitação Máxima (mm): Comparativo Completo (Nov-Mar)</div>", 
+      align = "c", escape = FALSE, row.names = FALSE) %>%
+  kable_styling(bootstrap_options = c("hover", "condensed"), full_width = F, position = "center", font_size = 14) %>%
+  add_header_above(c(" " = 1, "Estação Chuvosa" = 5, "Conclusão" = 1)) %>% # Agora são 5 meses
+  column_spec(1, bold = T, background = "#f8f9fa", width = "90px") %>%
+  column_spec(7, bold = T, color = "white", background = "#e74c3c", width = "110px") %>% # Coluna Vencedor
+  row_spec(0, bold = T, color = "white", background = "#34495e") %>%
+  footnote(general = "Para os meses com tendência (Nov/Dez), os valores referem-se ao risco estimado para o ano de 2022.", general_title = "Nota: ")
+
+# 7. Gráfico Comparativo (5 Meses)
+# Define limites do eixo Y considerando TODOS os meses
+todos_valores <- c(vals_nov, vals_dez, vals_jan, vals_fev, vals_mar)
+y_min <- min(todos_valores) * 0.9
+y_max <- max(todos_valores) * 1.1
+
+plot(periodos, vals_jan, type="n", 
+     ylim=c(y_min, y_max), log="x",
+     main="Curvas de Risco: Comparativo Sazonal",
+     xlab="Período de Retorno (Anos)", ylab="Precipitação (mm)", axes=FALSE)
+
+grid(nx=NULL, ny=NULL, col="lightgray", lty="dotted")
+axis(1, at=periodos, labels=paste(periodos, "anos")); axis(2, las=2)
+
+# --- Plotagem das Linhas ---
+# Novembro (Roxo)
+lines(periodos, vals_nov, col="#8e44ad", lwd=3, lty=1)
+points(periodos, vals_nov, pch=18, col="#8e44ad", cex=1.5)
+
+# Dezembro (Laranja Escuro)
+lines(periodos, vals_dez, col="#d35400", lwd=3, lty=5) 
+points(periodos, vals_dez, pch=15, col="#d35400", cex=1.3)
+
+# Janeiro (Azul)
+lines(periodos, vals_jan, col="#2980b9", lwd=3, lty=1)
+points(periodos, vals_jan, pch=19, col="#2980b9", cex=1.3)
+
+# Fevereiro (Verde)
+lines(periodos, vals_fev, col="#27ae60", lwd=3, lty=2)
+points(periodos, vals_fev, pch=17, col="#27ae60", cex=1.3)
+
+# Março (Dourado/Amarelo - Novo!)
+lines(periodos, vals_mar, col="#f39c12", lwd=3, lty=4)
+points(periodos, vals_mar, pch=8, col="#f39c12", cex=1.5) # pch=8 é um asterisco/estrela
+
+# Legenda Atualizada
+legend("topleft", 
+       legend=c("Novembro", "Dezembro", "Janeiro", "Fevereiro", "Março"),
+       col=c("#8e44ad", "#d35400", "#2980b9", "#27ae60", "#f39c12"), 
+       lwd=3, pch=c(18, 15, 19, 17, 8), lty=c(1, 5, 1, 2, 4), bty="n", cex=0.85, ncol=2) # ncol=2 para economizar espaço vertical
+```
+
 
 #### Temperatura máxima
 # Análise de Temperaturas Máximas
@@ -594,12 +1222,6 @@ ci(fit2, method = "proflik", xrange = c(35, 41), verbose = FALSE, return.period 
 
 # Referências Bibliográficas
 
-## Literatura e Fontes de Dados
-
-* **UNIVERSIDADE FEDERAL DE VIÇOSA – UFV**. Departamento de Engenharia Agrícola. Estação Climatológica Principal de Viçosa. **Boletim meteorológico 2023**. Viçosa-MG: UFV, 2023.
-* MOOD, A. M.; GRAYBILL, F. A.; BOES, D. C. **Introduction to the Theory of Statistics.** 3rd. ed. [S.l.]: McGraw-Hill,1974.
-* **INSTITUTO NACIONAL DE METEOROLOGIA (INMET)**. Banco de Dados Meteorológicos. Brasília. Disponível em: <https://portal.inmet.gov.br/>. Acesso em: `r format(Sys.Date(), "%d %b. %Y")`.
-
 ## Softwares e Pacotes Utilizados
 
 A análise estatística foi conduzida no ambiente R. Abaixo estão as citações oficiais dos softwares e bibliotecas aplicadas neste estudo:
@@ -621,3 +1243,5 @@ for(pkg in pacotes_principais){
   }
 }
 ```
+
+# Referências
