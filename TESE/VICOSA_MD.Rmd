@@ -137,7 +137,7 @@ datatable(EXTREMOS, options = list(pageLength = 5, scrollX = TRUE),
           caption = "Tabela 1: Série Histórica de Extremos (Viçosa)")
 
 ```
-Historicamente, a série de precipitações máximas diárias para o mês de janeiro apresenta uma média de 58,58 mm. O evento extremo de maior magnitude foi registrado em 1986, com um acumulado de 184,80 mm. Em contrapartida, o ano de 1989 apresentou o menor valor para uma máxima anual, com apenas 15,10 mm em 24 horas.
+Historicamente, a série de precipitações máximas diárias para o mês de janeiro apresenta uma média de 58,58 mm. O evento extremo de maior magnitude foi registrado em 1986, com um acumulado de 184,80 mm. Em contrapartida, o ano de 1989 apresentou o menor valor para uma máxima mensal, com apenas 15,10 mm em 24 horas.
 
 # Análise Exploratória e Testes de Estacionariedade
 
@@ -1131,93 +1131,6 @@ legend("topleft",
        legend=c("Novembro", "Dezembro", "Janeiro", "Fevereiro", "Março"),
        col=c("#8e44ad", "#d35400", "#2980b9", "#27ae60", "#f39c12"), 
        lwd=3, pch=c(18, 15, 19, 17, 8), lty=c(1, 5, 1, 2, 4), bty="n", cex=0.85, ncol=2) # ncol=2 para economizar espaço vertical
-```
-
-
-#### Temperatura máxima
-# Análise de Temperaturas Máximas
-
-Nesta seção, replicamos a metodologia estatística para analisar o comportamento das temperaturas máximas extremas registradas no mês de janeiro ao longo da série histórica.
-
-#Análise Exploratória
-
-Visualização inicial da série temporal e distribuição dos dados para identificação de padrões visuais.
-
-```{r exploratoria_temp, fig.width=10, fig.height=5}
-# Definição das variáveis
-TEMP_MAX <- EXTREMOS$TEMP
-year <- seq(1968, 2022, 1)
-
-# Plotagem
-plot(TEMP_MAX ~ year, type="b", main="Série Histórica: Temperatura (Jan)", 
-     ylab="Temperatura (ºC)", xlab="Ano", col="#c0392b", pch=19, lwd=2)
-grid()
-hist(TEMP_MAX, main="Distribuição de Frequências", 
-     xlab="Temperatura (ºC)", col="#e74c3c", border="white", prob=TRUE)
-lines(density(TEMP_MAX), col="#2c3e50", lwd=2)
-# 1. Teste Augmented Dickey-Fuller (Estacionariedade)
-# H0: Série Não-Estacionária | H1: Série Estacionária
-teste_completo2 <- ur.df(TEMP_MAX, type = "trend", selectlags = "AIC")
-summary(teste_completo2)
-# 2. Teste de Cox-Stuart (Tendência)
-# H0: Sem tendência | H1: Com tendência
-print(cox.stuart.test(TEMP_MAX))
-```
-
-
-```{r ismev_diag2, fig.width=10, fig.height=8}
-fit_ismev2 <- gev.fit(TEMP_MAX)
-gev.diag(fit_ismev2)
-```
-
-## Ajuste e Validação via `extRemes`
-
-O ajuste abaixo utiliza o método de máxima verossimilhança otimizado.
-
-```{r extremes_fit2}
-# Ajuste do Modelo
-fit2 <- fevd(TEMP_MAX, units = "deg C")
-print(fit2)
-```
-
-### Testes de Adequação
-
-Foram aplicados os testes de Kolmogorov-Smirnov e Anderson-Darling para confirmar estatisticamente a aderência do modelo.
-
-* **Hipótese Nula ($H_0$):** O modelo ajustado descreve bem os dados.
-* **Critério:** P-valor > 0.05 indica bom ajuste.
-
-```{r gof_tests2}
-# Recuperando parâmetros estimados do objeto fit2
-params <- fit2$results$par
-loc_est <- params["location"]
-scale_est <- params["scale"]
-shape_est <- params["shape"]
-
-# Teste KS
-ks_result2 <- ks.test(TEMP_MAX, "pevd", loc=loc_est, scale=scale_est, shape=shape_est, type="GEV")
-print(ks_result2)
-
-# Teste AD (Anderson-Darling)
-ad_result2 <- ad.test(TEMP_MAX, "pevd", loc=loc_est, scale=scale_est, shape=shape_est, type="GEV")
-print(ad_result2)
-```
-
-## Estimativa de Níveis de Retorno
-
-Por fim, foram calculados os níveis de retorno para 4, 10 e 20 anos com intervalos de confiança baseados em Perfil de Verossimilhança (*Profile Likelihood*), que são mais precisos para extremos.
-
-```{r return_levels2, fig.width=10, fig.height=5}
-par(mfrow=c(1,3))
-
-# Nível de Retorno: 4 Anos
-ci(fit2, method = "proflik", xrange = c(33, 36), verbose = FALSE, return.period = 4, main = "Retorno 4 Anos")
-
-# Nível de Retorno: 10 Anos
-ci(fit2, method = "proflik", xrange = c(34, 38), verbose = FALSE, return.period = 10, main = "Retorno 10 Anos")
-
-# Nível de Retorno: 20 Anos
-ci(fit2, method = "proflik", xrange = c(35, 41), verbose = FALSE, return.period = 20, main = "Retorno 20 Anos")
 ```
 
 # Referências Bibliográficas
