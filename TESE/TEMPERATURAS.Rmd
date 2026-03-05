@@ -65,12 +65,11 @@ library(kableExtra)
 library(distillery)
 library(randtests) # Essencial para o Runs Test
 library(ggplot2)
+library(magrittr)
 ```
 
 ```{r dados}
-# ==============================================================================
 # LEITURA DOS DADOS (TEMPERATURA)
-# ==============================================================================
 anos <- seq(1968, 2022, 1)
 
 # Lendo Novembro (Sheet 11 - Início do Verão)
@@ -97,13 +96,9 @@ dados_mar_temp <- df_mar$TEMP
 ### Função de Diagnóstico
 
 ```{r func_diagnostico}
-
-# ==============================================================================
 # FUNÇÃO PARA PLOTAGEM INICIAL DA SÉRIE TEMPORAL
-# ==============================================================================
 plot_serie_inicial <- function(vetor_dados, nome_mes) {
   
-  # Cria um dataframe temporário (assume que o objeto 'anos' existe no global)
   df_plot <- data.frame(Ano = anos, Temperatura = as.numeric(vetor_dados))
   df_plot <- na.omit(df_plot) # Remove NAs para não quebrar o plot
   
@@ -144,9 +139,9 @@ plot_diagnostico_basico <- function(modelo) {
   plot(modelo, type = "qq", main = "QQ-Plot")
   par(mfrow=c(1,1))
 }
-# ==============================================================================
+
 # FUNÇÃO DE DIAGNÓSTICO PRELIMINAR
-# ==============================================================================
+
 gerar_diagnostico_preliminar <- function(dados, nome_mes) {
   
   dados_clean <- na.omit(as.numeric(dados))
@@ -172,8 +167,8 @@ gerar_diagnostico_preliminar <- function(dados, nome_mes) {
     # tipo 'padrao': p < 0.05 é significativo (rejeita H0) -> Vermelho (ex: tem tendência)
     # tipo 'inverso': p < 0.05 rejeita H0 (mas H0 é ruim) -> Verde (ex: rejeita não-estacionariedade = estacionário)
     
-    cor_sig <- "#c0392b" # Vermelho (Algo 'ruim' ou 'ativo' detectado, ex: tendência)
-    cor_ns  <- "#27ae60" # Verde (Tudo calmo)
+    cor_sig <- "#c0392b" # Vermelho 
+    cor_ns  <- "#27ae60" # Verde 
     
     if (tipo == "estacionariedade") {
       # H0: Não estacionário. Se p < 0.05, Rejeita H0 -> É Estacionário (Bom/Verde)
@@ -239,21 +234,26 @@ gerar_diagnostico_preliminar <- function(dados, nome_mes) {
 ```
 
 ```{r func_validacao}
-```{r func_validacao_v2}
-# ==============================================================================
-# FUNÇÃO DE VALIDAÇÃO COM HISTOGRAMA PIT
-# ==============================================================================
+
+# FUNÇÃO DE VALIDAÇÃO (Estacionário e Não-Estacionário)
+
 verificar_adequacao_modelo <- function(modelo, nome_mes) {
   
-  # 1. Cálculo da Transformada Integral de Probabilidade (z)
+  # 1. Identifica se o modelo é não-estacionário (tem covariáveis?)
+  tem_tendencia <- !is.null(modelo$cov.data)
+  tipo_modelo <- if(tem_tendencia) "Não-Estacionário (Resíduos Padronizados)" else "Estacionário (Dados Brutos)"
+  
+  # 2. Transformada Integral de Probabilidade (PIT)
+  # O pextRemes já considera as covariáveis (Ano) automaticamente
   z <- pextRemes(modelo, q = modelo$x, lower.tail = TRUE)
   z <- na.omit(as.numeric(z))
   
-  # 2. Testes Estatísticos
+  # 3. Testes Estatísticos (KS e AD)
+  # Testam se o z é Uniforme[0,1]. Se for, o modelo (com tendência e tudo) está correto.
   ks_res <- ks.test(z, "punif")
-  ad_res <- ad.test(z, "punif")
+  ad_res <- goftest::ad.test(z, "punif") 
   
-  # 3. Tabela de Resultados
+  # Formatação da Tabela
   badge_gof <- function(pval) {
     cor <- if(pval > 0.05) "#27ae60" else "#c0392b" 
     texto <- if(pval > 0.05) "Adequado" else "Inadequado"
@@ -261,24 +261,70 @@ verificar_adequacao_modelo <- function(modelo, nome_mes) {
   }
   
   df_gof <- data.frame(
-    "Teste" = c("Kolmogorov-Smirnov (KS)", "Anderson-Darling (AD)"),
+    "Teste" = c("Kolmogorov-Smirnov", "Anderson-Darling"),
+    "Estatistica" = c(format(ks_res$statistic, digits=4), format(ad_res$statistic, digits=4)),
     "P-Valor" = c(format.pval(ks_res$p.value, digits=4), format.pval(ad_res$p.value, digits=4)),
     "Conclusão" = c(badge_gof(ks_res$p.value), badge_gof(ad_res$p.value))
   )
   
-  print(kbl(df_gof, caption = paste("Validação de Aderência:", nome_mes), escape = FALSE, align = "c") %>%
+  print(kbl(df_gof, caption = paste("Validação:", nome_mes), escape = F, align = "c") %>%
         kable_styling(bootstrap_options = c("striped", "hover"), full_width = F, position = "center"))
 
-  # 4. Plotagem do Histograma PIT
-  # Se o modelo for perfeito, as barras devem estar próximas da linha vermelha (1.0)
-  hist(z, breaks = seq(0, 1, by = 0.1), freq = FALSE,
-       main = paste("Histograma PIT (Uniformidade):", nome_mes),
-       xlab = "Probabilidade Acumulada (z)", 
-       ylab = "Densidade", col = "#ecf0f1", border = "#7f8c8d")
-  abline(h = 1, col = "#c0392b", lwd = 2, lty = 2)
-  legend("topright", legend = "Uniforme (Ideal)", col = "#c0392b", lty = 2, bty = "n")
+  # 4. Diagnóstico Gráfico
+  cat("\n#### Diagnóstico Visual\n")
+  cat(paste0("*Nota: Para modelos com tendência, os gráficos abaixo mostram os dados transformados/padronizados.*"))
+  
+  par(mfrow = c(1, 2))
+  
+  # QQ-Plot
+  plot(modelo, type = "qq", 
+       main = paste("QQ-Plot -", nome_mes),
+       sub = tipo_modelo,
+       col = "#2980b9", pch = 19, cex = 0.7)
+  
+  # Return Level Plot
+  # No caso não-estacionário, isso mostra o ajuste da distribuição aos resíduos
+  plot(modelo, type = "rl", 
+       main = paste("Níveis de Retorno -", nome_mes),
+       sub = tipo_modelo,
+       col = "#2980b9", pch = 19, cex = 0.7,
+       rperiods = c(2, 5, 10, 20, 50, 100))
+  
+  par(mfrow = c(1, 1))
 }
 ```
+
+
+### Validação de Modelos Não-Estacionários via PIT
+
+Para validar a qualidade do ajuste de um modelo GEV não-estacionário (onde os parâmetros variam com o tempo), não é possível aplicar testes de aderência diretamente aos dados brutos, pois a distribuição subjacente muda a cada ano, ou seja os dados deixam de ser independentes e identicamente distribuídos.
+
+A solução adotada é a **Transformada Integral de Probabilidade (Probability Integral Transform - PIT)**, realizada em duas etapas:
+
+1.  **Padronização (Remoção de Tendência e Escala):**
+    Calcula-se o resíduo padronizado $z_t$ para cada observação $x_t$:
+    $$z_t = \frac{x_t - \hat{\mu}_t}{\hat{\sigma}_t}$$
+    * Subtrair $\hat{\mu}_t$ remove a tendência temporal (centraliza os dados).
+    * Dividir por $\hat{\sigma}_t$ remove a escala (adimensionaliza a variabilidade).
+    * *Nota:* O resultado $z_t$ segue uma distribuição GEV Padrão, e **não** uma distribuição Normal.
+
+2.  **Transformação para Probabilidades (PIT):**
+    Aplica-se a Função de Distribuição Acumulada (CDF) da GEV aos resíduos padronizados:
+    $$u_t = G(z_t) = \exp\left\{ -\left[ 1 + \hat{\xi} z_t \right]^{-1/\hat{\xi}} \right\}$$
+    
+    Esta etapa converte a magnitude física do evento (ex: °C) em sua probabilidade de ocorrência condicional ao ano.
+
+**Interpretação do Teste:**
+Segundo a teoria estatística, se o modelo estiver corretamente especificado, a variável transformada $u_t$ deve seguir, necessariamente, uma **Distribuição Uniforme [0, 1]**.
+Portanto, os testes de Kolmogorov-Smirnov e Anderson-Darling são aplicados testando a hipótese nula $H_0: u_t \sim \text{Uniforme}(0,1)$.
+
+* **Resultado:** Um p-valor > 0.05 indica que o modelo capturou corretamente tanto a tendência determinística quanto a variabilidade aleatória dos extremos.
+
+**Validação Estatística e Diagnóstico de Resíduos**
+
+A validação da adequação do modelo não-estacionário baseou-se na análise dos resíduos padronizados. Seguindo a metodologia de diagnóstico descrita por Coles (2001, p. 107), os parâmetros variantes no tempo ($\hat{\mu}_t, \hat{\sigma}_t$) foram utilizados para transformar as observações originais em uma série de resíduos idênticamente distribuídos.
+
+Para a aplicação de testes formais de aderência, optou-se pela técnica da Transformada Integral de Probabilidade (PIT), conforme proposto por Buuren e Fredriks (2001). Esta transformação converte os resíduos GEV em valores no intervalo unitário $u_t \in [0, 1]$. Sob a hipótese nula de que o modelo está corretamente especificado (capturando toda a tendência determinística), a variável transformada $u_t$ deve seguir uma distribuição Uniforme(0,1). A aderência a esta distribuição foi verificada pelos testes de Kolmogorov-Smirnov e Anderson-Darling.
 
 Análise de Temperatura {.tabset .tabset-fade}
 Abaixo, apresentamos a modelagem para cada mês. Note que Dezembro recebe um tratamento diferenciado devido a indícios de tendências climáticas.
@@ -329,8 +375,13 @@ cat("\n\n")
 # 4. Diagnóstico Visual
 plot_diagnostico_basico(fit_fev_temp)
 cat("\n\n")
+
+library(urca)
+teste_trend <- ur.df(dados_fev_temp, type = "trend", lags = 1, selectlags = "AIC")
+summary(teste_trend)
 ```
 
+Quando se utiliza o teste de Dick Fuller aumentado, observa-se que a série é estacionária, pois o valor de t calculado é menor que o valor crítico a 5%.
 
 ## Março
 ```{r analise_mar_temp, results='asis'}
@@ -361,6 +412,7 @@ cat("\n\n")
 # ==============================================================================
 # 1. PREPARAÇÃO DOS DADOS
 # ==============================================================================
+
 # Cria dataframe específico para usar a covariável "Ano"
 df_nov_trend <- data.frame(Ano = anos, Temp = dados_nov_temp)
 df_nov_trend <- na.omit(df_nov_trend)
@@ -368,6 +420,7 @@ df_nov_trend <- na.omit(df_nov_trend)
 # ==============================================================================
 # 2. ANÁLISE VISUAL E DIAGNÓSTICO PRELIMINAR
 # ==============================================================================
+
 # Gráfico da Série com Linha de Tendência
 plot_serie_inicial(df_nov_trend$Temp, "Novembro (1968-2022)")
 
@@ -375,58 +428,94 @@ plot_serie_inicial(df_nov_trend$Temp, "Novembro (1968-2022)")
 gerar_diagnostico_preliminar(df_nov_trend$Temp, "Novembro")
 
 # ==============================================================================
-# 3. AJUSTE DOS MODELOS (M0, M1, M2)
+# 3. AJUSTE DOS MODELOS (M0, M1, M2, M3)
 # ==============================================================================
 
-# M0: Estacionário (Referência)
+# M0: Estacionário (Referência - Tudo constante)
 fit0 <- fevd(Temp, data = df_nov_trend, type = "GEV", units = "deg C")
 
-# M1: Não-Estacionário em Locação (Mu varia com o Ano)
+# M1: Não-Estacionário em Locação (Apenas Mu varia com o Ano)
 fit1 <- fevd(Temp, data = df_nov_trend, location.fun = ~Ano, type = "GEV", units = "deg C")
 
 # M2: Não-Estacionário em Locação e Escala (Mu e Sigma variam com o Ano)
 fit2 <- fevd(Temp, data = df_nov_trend, location.fun = ~Ano, scale.fun = ~Ano, type = "GEV", units = "deg C")
 
+# M3: Não-Estacionário em Escala (Apenas Sigma varia com o Ano)
+fit3 <- fevd(Temp, data = df_nov_trend, scale.fun = ~Ano, type = "GEV", units = "deg C")
+
+# Diagnósticos Visuais (M0 e M1 como exemplo)
+verificar_adequacao_modelo(fit1, "Novembro")
+plot_diagnostico_basico(fit1)
+
+verificar_adequacao_modelo(fit0, "Novembro")
+plot_diagnostico_basico(fit0)
+
 # ==============================================================================
-# 4. COMPARAÇÃO E SELEÇÃO (AIC, BIC, TRV)
+# 4. COMPARAÇÃO E SELEÇÃO (TRV / LRT)
 # ==============================================================================
 
-# Testes de Razão de Verossimilhança (LRT / TRV)
-lrt_0_1 <- lr.test(fit0, fit1) # M0 vs M1
+# Testes de Razão de Verossimilhança (LRT / TRV) com base no M0
+lrt_0_1 <- lr.test(fit0, fit1) # M0 vs M1 (Testa Locação)
 p_0_1   <- lrt_0_1$p.value
 
-lrt_1_2 <- lr.test(fit1, fit2) # M1 vs M2
+lrt_0_3 <- lr.test(fit0, fit3) # M0 vs M3 (Testa Escala)
+p_0_3   <- lrt_0_3$p.value
+
+lrt_1_2 <- lr.test(fit1, fit2) # M1 vs M2 (Testa adicionar Escala)
 p_1_2   <- lrt_1_2$p.value
 
-# Lógica de Decisão: Quem ganha?
-modelo_selecionado <- "M0"
-fit_nov_final <- fit0 # Começamos assumindo que o simples é melhor
+lrt_3_2 <- lr.test(fit3, fit2) # M3 vs M2 (Testa adicionar Locação)
+p_3_2   <- lrt_3_2$p.value
 
-if(p_0_1 < 0.05) {
-  # M1 venceu M0. Agora vamos ver se M2 vence M1.
+# LÓGICA DE SELEÇÃO: Batalha do TRV
+modelo_selecionado <- "M0"
+fit_nov_final <- fit0
+msg_conclusao <- "Não há evidências estatísticas de tendência. Mantém-se o modelo **M0 (Estacionário)**."
+
+sig_m1 <- p_0_1 < 0.05
+sig_m3 <- p_0_3 < 0.05
+
+if(sig_m1 && !sig_m3) {
+  # Apenas Locação importou contra o M0. Testa se M2 é melhor que M1.
   if(p_1_2 < 0.05) {
-    modelo_selecionado <- "M2"
-    fit_nov_final <- fit2
-    msg_conclusao <- "O modelo **M2 (Locação e Escala variáveis)** foi selecionado."
+    modelo_selecionado <- "M2"; fit_nov_final <- fit2
+    msg_conclusao <- "O modelo **M2 (Locação e Escala variáveis)** foi selecionado (venceu M1)."
   } else {
-    modelo_selecionado <- "M1"
-    fit_nov_final <- fit1
+    modelo_selecionado <- "M1"; fit_nov_final <- fit1
     msg_conclusao <- "O modelo **M1 (Apenas Locação variável)** foi selecionado."
   }
-} else {
-  msg_conclusao <- "Não há evidências estatísticas de tendência. Mantém-se o modelo **M0 (Estacionário)**."
+} else if(!sig_m1 && sig_m3) {
+  # Apenas Escala importou contra o M0. Testa se M2 é melhor que M3.
+  if(p_3_2 < 0.05) {
+    modelo_selecionado <- "M2"; fit_nov_final <- fit2
+    msg_conclusao <- "O modelo **M2 (Locação e Escala variáveis)** foi selecionado (venceu M3)."
+  } else {
+    modelo_selecionado <- "M3"; fit_nov_final <- fit3
+    msg_conclusao <- "O modelo **M3 (Apenas Escala variável)** foi selecionado."
+  }
+} else if(sig_m1 && sig_m3) {
+  # Ambos (M1 e M3) melhoram o M0 significativamente. 
+  # Testamos o M2 contra o melhor entre eles via AIC (pois não são aninhados entre si).
+  if(summary(fit1)$AIC < summary(fit3)$AIC) {
+    if(p_1_2 < 0.05) { modelo_selecionado <- "M2"; fit_nov_final <- fit2; msg_conclusao <- "O modelo **M2** venceu após desempate." }
+    else { modelo_selecionado <- "M1"; fit_nov_final <- fit1; msg_conclusao <- "O modelo **M1** venceu após desempate com M3." }
+  } else {
+    if(p_3_2 < 0.05) { modelo_selecionado <- "M2"; fit_nov_final <- fit2; msg_conclusao <- "O modelo **M2** venceu após desempate." }
+    else { modelo_selecionado <- "M3"; fit_nov_final <- fit3; msg_conclusao <- "O modelo **M3** venceu após desempate com M1." }
+  }
 }
 
 # Tabela de Comparação
 df_comp <- data.frame(
-  Modelo = c("M0: Estacionário", "M1: Locação Var.", "M2: Loc. e Escala Var."),
-  AIC = c(summary(fit0)$AIC, summary(fit1)$AIC, summary(fit2)$AIC),
-  BIC = c(summary(fit0)$BIC, summary(fit1)$BIC, summary(fit2)$BIC),
-  LRT_Pval = c("-", format.pval(p_0_1, digits=3), format.pval(p_1_2, digits=3)),
+  Modelo = c("M0: Estacionário", "M1: Locação Var.", "M2: Loc. e Escala Var.", "M3: Escala Var."),
+  AIC = c(summary(fit0)$AIC, summary(fit1)$AIC, summary(fit2)$AIC, summary(fit3)$AIC),
+  BIC = c(summary(fit0)$BIC, summary(fit1)$BIC, summary(fit2)$BIC, summary(fit3)$BIC),
+  LRT_vs_M0 = c("-", format.pval(p_0_1, digits=3), "-", format.pval(p_0_3, digits=3)),
   Decisao = c(
     if(modelo_selecionado == "M0") "SELECIONADO" else "",
     if(modelo_selecionado == "M1") "SELECIONADO" else "",
-    if(modelo_selecionado == "M2") "SELECIONADO" else ""
+    if(modelo_selecionado == "M2") "SELECIONADO" else "",
+    if(modelo_selecionado == "M3") "SELECIONADO" else ""
   )
 )
 
@@ -437,15 +526,90 @@ print(kbl(df_comp, caption = "Comparação de Modelos GEV - Novembro", align = "
 cat(paste0("\n<div class='alert-info'>**RESULTADO:** ", msg_conclusao, "</div>\n"))
 
 # ==============================================================================
-# 5. VALIDAÇÃO E DIAGNÓSTICO DO VENCEDOR
+# 5. VEREDITO FINAL: Teste de Adequação (PIT Manual - Novembro)
 # ==============================================================================
 
-# Validação (Goodness-of-Fit) com Kolmogorov e Anderson-Darling
-cat("\n#### Validação do Modelo Vencedor\n")
-verificar_adequacao_modelo(fit_nov_final, paste("Novembro -", modelo_selecionado))
+# 1. Definição dos Dados Base
+params_nov <- fit_nov_final$results$par
+anos_vec   <- df_nov_trend$Ano
+dados_obs  <- df_nov_trend$Temp
+n_obs      <- length(dados_obs)
+
+# 2. Reconstrução dos Parâmetros 
+mu_t  <- numeric(n_obs)
+sig_t <- numeric(n_obs)
+xi_t  <- numeric(n_obs)
+
+# Captura segura dos nomes dos parâmetros (evita erros entre versões do pacote)
+nome_phi0 <- ifelse("phi0" %in% names(params_nov), "phi0", "scale0")
+nome_phi1 <- ifelse("phi1" %in% names(params_nov), "phi1", "scale1")
+
+if (modelo_selecionado == "M0") {
+  # --- M0: Estacionário ---
+  mu_t  <- rep(params_nov["location"], n_obs)
+  sig_t <- rep(params_nov["scale"], n_obs)
+  xi_t  <- rep(params_nov["shape"], n_obs)
+  
+} else if (modelo_selecionado == "M1") {
+  # --- M1: Tendência na Locação ---
+  mu_t  <- params_nov["mu0"] + params_nov["mu1"] * anos_vec
+  sig_t <- rep(params_nov["scale"], n_obs)
+  xi_t  <- rep(params_nov["shape"], n_obs)
+  
+} else if (modelo_selecionado == "M2") {
+  # --- M2: Tendência na Locação e Escala ---
+  mu_t  <- params_nov["mu0"] + params_nov["mu1"] * anos_vec
+  sig_t <- exp(params_nov[nome_phi0] + params_nov[nome_phi1] * anos_vec) 
+  xi_t  <- rep(params_nov["shape"], n_obs)
+  
+} else if (modelo_selecionado == "M3") {
+  # --- M3: Tendência apenas na Escala ---
+  mu_t  <- rep(params_nov["location"], n_obs)
+  sig_t <- exp(params_nov[nome_phi0] + params_nov[nome_phi1] * anos_vec) 
+  xi_t  <- rep(params_nov["shape"], n_obs)
+}
+
+# 3. Transformada Integral de Probabilidade (PIT) - Manual
+z_score <- (dados_obs - mu_t) / sig_t
+prob_teorica <- numeric(n_obs)
+
+for(i in 1:n_obs) {
+  termo_interno <- 1 + xi_t[i] * z_score[i]
+  
+  if(termo_interno <= 0) {
+    prob_teorica[i] <- 0 
+  } else {
+    if(abs(xi_t[i]) < 1e-6) {
+      prob_teorica[i] <- exp( -exp(-z_score[i]) )
+    } else {
+      prob_teorica[i] <- exp( - (termo_interno) ^ (-1 / xi_t[i]) )
+    }
+  }
+}
+
+# 4. Execução dos Testes Formais (KS e AD)
+ks_res <- ks.test(prob_teorica, "punif")
+ad_res <- ad.test(prob_teorica, null = "punif")
+
+# 5. Exibição dos Resultados
+df_veredito_nov <- data.frame(
+  "Teste" = c("Kolmogorov-Smirnov (KS)", "Anderson-Darling (AD)"),
+  "Estatistica" = c(round(ks_res$statistic, 4), round(ad_res$statistic, 4)),
+  "P_Valor" = c(format.pval(ks_res$p.value, digits=4), format.pval(ad_res$p.value, digits=4)),
+  "Resultado" = c(
+    if(ks_res$p.value > 0.05) "APROVADO (Modelo Adequado)" else "REJEITADO",
+    if(ad_res$p.value > 0.05) "APROVADO (Modelo Adequado)" else "REJEITADO"
+  )
+)
+
+print(kbl(df_veredito_nov, 
+          caption = paste("Veredito Final: Validação do Modelo", modelo_selecionado, "(Novembro)"), 
+          align = "c") %>%
+      kable_styling(bootstrap_options = c("striped", "hover"), full_width = F, position = "center") %>%
+      row_spec(which(df_veredito_nov$Resultado == "APROVADO (Modelo Adequado)"), bold = T, color = "white", background = "#27ae60") %>%
+      row_spec(which(df_veredito_nov$Resultado == "REJEITADO"), bold = T, color = "white", background = "#c0392b"))
 
 cat("\n#### Diagnóstico Visual\n")
-# Plota gráficos de diagnóstico do modelo vencedor
 par(mfrow=c(1,2))
 plot(fit_nov_final, type = "density", main = paste("Densidade:", modelo_selecionado))
 plot(fit_nov_final, type = "qq", main = paste("QQ-Plot:", modelo_selecionado))
@@ -458,19 +622,17 @@ cat("\n\n")
 Neste mês, os testes preliminares indicam comportamentos que justificam a investigação de modelos não-estacionários.
 
 ```{r analise_dez_temp_trend, results='asis'}
-# ==============================================================================
-# 1. DIAGNÓSTICO PRELIMINAR COMPLETO
-# ==============================================================================
+
+# 1. DIAGNÓSTICO PRELIMINAR 
+
 # Prepara dataframe para uso posterior nos modelos
 df_dez_trend <- data.frame(Ano = anos, Temp = dados_dez_temp)
 df_dez_trend <- na.omit(df_dez_trend)
 
-# Chama a função mestra que gera Tabela + ACF + PACF
 gerar_diagnostico_preliminar(df_dez_trend$Temp, "Dezembro")
 
-# ==============================================================================
 # 2. ANÁLISE VISUAL DE TENDÊNCIA (Regressão Linear)
-# ==============================================================================
+
 modelo_linear <- lm(Temp ~ Ano, data = df_dez_trend)
 p_valor_trend <- summary(modelo_linear)$coefficients[2, 4] 
 
@@ -483,9 +645,9 @@ legend("topleft", legend=c("Observado", "Tendência Linear"),
        col=c("#e74c3c", "blue"), pch=c(19, NA), lty=c(NA, 2), bty="n")
 
 cat(paste0("\n**Regressão Linear:** Coeficiente angular de ", round(coef(modelo_linear)[2], 3), " ºC/ano (P-valor: ", format.pval(p_valor_trend), ").\n\n"))
-# ==============================================================================
-# MODELAGEM GEV (M0, M1 e M3) E SELEÇÃO
-# ==============================================================================
+
+# MODELAGEM GEV (M0, M1 e M3)
+
 # M0: Estacionário
 fit0 <- fevd(Temp, data = df_dez_trend, type = "GEV", units = "deg C")
 
@@ -541,33 +703,15 @@ print(kbl(df_comp_modelos, caption = "Tabela B: Seleção de Modelo GEV (Critér
 
 cat(paste0("\n<div class='alert-info'>**CONCLUSÃO:** ", msg_conclusao, "</div>\n"))
 
-# ==============================================================================
-# VALIDAÇÃO DO MODELO VENCEDOR (NOVO)
-# ==============================================================================
-cat("\n### Validação Estatística do Modelo Selecionado\n")
-verificar_adequacao_modelo(fit_dez_temp, paste("Dezembro -", modelo_selecionado))
-cat("\n\n")
-
-# ==============================================================================
 # DIAGNÓSTICO VISUAL
-# ==============================================================================
-par(mfrow=c(1,2))
-plot(fit_dez_temp, type = "density", main = paste("Densidade:", modelo_selecionado))
-plot(fit_dez_temp, type = "qq", main = paste("QQ-Plot:", modelo_selecionado))
-par(mfrow=c(1,1))
 
-# ==============================================================================
-# DIAGNÓSTICO E PLOTAGEM DO VENCEDOR
-# ==============================================================================
 par(mfrow=c(1,2))
 plot(fit_dez_temp, type = "density", main = paste("Densidade:", modelo_selecionado))
 plot(fit_dez_temp, type = "qq", main = paste("QQ-Plot:", modelo_selecionado))
 par(mfrow=c(1,1))
 
 # Gráfico de Retorno (Apenas se o modelo selecionado NÃO for estacionário)
-if(modelo_selecionado != "M0") {
-  cat("\n#### Evolução do Risco de Calor Extremo (1968-2022)\n")
-  
+
   # Calcula níveis de retorno (matriz se scale.fun variar)
   rl_vals <- return.level(fit_dez_temp, return.period = c(2, 20, 100))
   
@@ -579,22 +723,21 @@ if(modelo_selecionado != "M0") {
   legend("topleft", legend = c("Retorno de 2 Anos", "Retorno de 20 Anos", "Retorno de 100 Anos"), 
          col = c("#27ae60", "#e67e22", "#c0392b"), lty = 1, lwd = 2, bty = "n", cex = 0.9)
   grid(col = "lightgray", lty = "dotted")
-}
+
 cat("\n\n")
 ```
 
 ```{r}
-# ==============================================================================
+
 # COMPARATIVO VISUAL DOS 3 MODELOS (M0 vs M1 vs M3)
-# ==============================================================================
+
 # Objetivo: Visualizar como cada modelo estima o risco de um evento extremo (ex: 100 anos)
-# Nota: Este bloco assume que fit0, fit1 e fit3 já foram criados no bloco anterior.
 
 # 1. Defina o Período de Retorno para Comparação
-rp_comparacao <- 100  # Ex: Evento de 1 em 100 anos
+rp_comparacao <- 100  
 
 # 2. Cálculo dos Níveis de Retorno para cada modelo
-# M0: Retorna um valor único. Repetimos para criar uma linha horizontal.
+# M0: Retorna um valor único.
 rl_m0_val <- return.level(fit0, return.period = rp_comparacao)[1]
 rl_m0 <- rep(rl_m0_val, nrow(df_dez_trend))
 
@@ -633,48 +776,18 @@ legend("topleft",
 
 grid(col = "lightgray", lty = "dotted")
 
-# Pequeno texto explicativo abaixo do gráfico
+
 cat(paste0("\n**Interpretação:** O gráfico acima mostra como cada modelo enxerga o evento de ", rp_comparacao, " anos.\n",
            "- Se a linha vermelha (M3) estiver muito distante da azul (M1) nos anos recentes, isso indica que ignorar a variabilidade (Scale) subestima o risco.\n",
            "- Se as linhas M1 e M3 estiverem sobrepostas, o modelo mais simples (M1) é suficiente."))
 
-# ==============================================================================
-# AJUSTE CORRIGIDO DO MODELO M3 (Com Log-Link)
-# ==============================================================================
-# O argumento 'use.phi = TRUE' modela log(sigma) ao invés de sigma.
-# Isso garante que a escala seja sempre positiva e evita o erro.
-
-fit3_corrigido <- fevd(Temp, data = df_dez_trend, 
-                       location.fun = ~Ano, 
-                       scale.fun = ~Ano, 
-                       use.phi = TRUE,   # <--- O SEGREDO ESTÁ AQUI
-                       type = "GEV", 
-                       units = "deg C")
-
-# Agora tente validar novamente
-cat("#### Validação do M3 (Corrigido com Log-Link)\n")
-
-# Se o erro persistir aqui, significa que M3 é matematicamente impossível para seus dados
-tryCatch({
-  verificar_adequacao_modelo(fit3_corrigido, "Dezembro - M3 (Log-Link)")
-  plot_diagnostico_basico(fit3_corrigido)
-}, error = function(e) {
-  cat("ERRO: O modelo M3 continua instável mesmo com correção. O M1 é a única opção viável.\n")
-})
-
-# ==============================================================================
 # AJUSTE DO MODELO M4 (Locação e Forma variáveis)
-# ==============================================================================
 
 # M1: Apenas Locação variável (seu modelo atual)
 fit1 <- fevd(Temp, data = df_dez_trend, location.fun = ~Ano, type = "GEV")
 
 # M4: Locação E Forma (shape) variáveis no tempo
-# Nota: Frequentemente este modelo falha em convergir ou gera erros numéricos
-fit4 <- fevd(Temp, data = df_dez_trend, 
-             location.fun = ~Ano, 
-             shape.fun = ~Ano, 
-             type = "GEV")
+fit4 <- fevd(Temp, data = df_dez_trend,location.fun =~Ano,shape.fun = ~Ano,type = "GEV")
 
 # --- Comparação por Razão de Verossimilhança ---
 lrt_1_4 <- lr.test(fit1, fit4)
@@ -688,11 +801,8 @@ cat("\nAIC M4:", summary(fit4)$AIC)
 
 plot_diagnostico_basico(fit4)
 
-# ==============================================================================
 # TIRA-TEIMA: M1 (Locação) vs M4 (Locação + Forma)
-# ==============================================================================
 
-# 1. Recriando os modelos para garantir
 # M1: Só a média sobe
 fit1 <- fevd(Temp, data = df_dez_trend, location.fun = ~Ano, type = "GEV")
 
@@ -712,11 +822,7 @@ cat("----------------------------------------\n")
 cat("P-Valor do Teste (Deve ser < 0.05):", lrt$p.value, "\n")
 cat("========================================\n")
 
-# 4. Verificação de Perigo (Erro Padrão do Shape)
-# Se o 'Std. Error' do shape for maior que o próprio valor estimado, o modelo é instável.
 print(summary(fit4)$results)
-
-
 ```
 
 
@@ -727,18 +833,11 @@ Inicialmente, o critério de Akaike (AIC) sugere uma ligeira vantagem para o mod
 Contudo, a análise de diagnóstico dos resíduos padronizados (QQ-plots e densidade) revelou que o modelo M1 apresenta uma aderência superior aos dados observados. Enquanto o M3 demonstra sensibilidade excessiva ao outlier de 2015, o M1 oferece um ajuste mais robusto ao considerar a tendência apenas no parâmetro de locação. Assim, priorizando a qualidade do ajuste gráfico e o princípio da parcimônia (validado pelo Teste de Razão de Verossimilhança), optou-se pelo modelo M1 como o mais representativo.
 
 ```{r}
-# ==============================================================================
+
 # DIAGNÓSTICO VISUAL
-# ==============================================================================
 
-# Configuração de Margens (mar) e Posição do Texto (mgp)
-# mar = c(baixo, esquerda, cima, direita) -> Reduzimos a esquerda para 4
-# mgp = c(titulo_eixo, numeros_eixo, linha_eixo) -> Padrão é c(3, 1, 0).
-# Ajustando mgp[1] para 2.0, trazemos o "ylab" para mais perto dos números.
 par(mfrow=c(1,3), mar=c(4, 4, 3, 1), mgp=c(2.3, 1, 0)) 
-
-# Definindo um limite comum para o eixo Y para todos ficarem na mesma escala
-limite_y <- c(0, 0.4) # <-- AQUI ESTÁ O AJUSTE PARA 0.4 QUE LIBERA O TOPO
+limite_y <- c(0, 0.4) 
 
 # --- M0 ---
 plot(fit0, type = "density", 
@@ -824,9 +923,8 @@ get_est_ci_temp_smart <- function(modelo, periods, ano_ref = 2022) {
   paste0("<strong>", est, "</strong><br><span style='font-size:11px; color:#7f8c8d'>[", low, "; ", upp, "]</span>")
 }
 
-# ==============================================================================
-# FUNÇÃO VALORES (Gráfico) - CORRIGIDA
-# ==============================================================================
+# FUNÇÃO VALORES 
+
 get_values_smart <- function(modelo, periods, ano_ref = 2022) {
   resultado <- tryCatch({
     if (!is.null(modelo$cov.data)) {
@@ -840,9 +938,7 @@ get_values_smart <- function(modelo, periods, ano_ref = 2022) {
       return.level(modelo, return.period = periods)
     }
   }, error = function(e) {
-    # --- CORREÇÃO AQUI ---
-    # Se der erro no modelo com tendência, ajustamos um simples AGORA.
-    # Antes, ele retornava uma matriz gigante que quebrava o gráfico.
+
     dados_brutos <- modelo$x
     fit_simples <- fevd(dados_brutos, type="GEV", verbose=FALSE)
     return.level(fit_simples, return.period = periods)
@@ -914,127 +1010,4 @@ legend("topleft",
        lwd=3, pch=c(18, 15, 19, 17, 8), lty=c(1, 5, 1, 2, 4), bty="n", cex=0.85, ncol=2)
 ```
 
-```{r grafico_final_m4}
-# ==============================================================================
-# VISUALIZAÇÃO DO MODELO VENCEDOR (M4 - CÁLCULO MANUAL ROBUSTO)
-# ==============================================================================
 
-# 1. Recuperando o modelo M4 (Locação e Forma variáveis)
-fit_m4 <- fevd(Temp, data = df_dez_trend, 
-               location.fun = ~Ano, 
-               shape.fun = ~Ano, 
-               type = "GEV", units = "deg C")
-
-# 2. Extraindo os coeficientes estimados
-params <- fit_m4$results$par
-# Os nomes devem ser algo como: mu0, mu1, scale, xi0, xi1
-
-# 3. Criando vetores dos parâmetros para cada ano (1968-2022)
-anos_vec <- df_dez_trend$Ano
-
-# Mu muda com o tempo: Mu(t) = mu0 + mu1 * Ano
-mu_t <- params["location"] + params["mu1"] * anos_vec 
-# Nota: dependendo da versão, pode ser params["mu0"] ou params["location"]. 
-# O código abaixo garante que pegue o intercepto correto.
-if(is.na(params["mu0"])) mu_intercept <- params["location"] else mu_intercept <- params["mu0"]
-mu_t <- mu_intercept + params["mu1"] * anos_vec
-
-# Sigma é constante (não variamos escala neste modelo)
-sig_t <- params["scale"]
-
-# Xi muda com o tempo: Xi(t) = xi0 + xi1 * Ano
-if(is.na(params["xi0"])) xi_intercept <- params["shape"] else xi_intercept <- params["xi0"]
-xi_t <- xi_intercept + params["xi1"] * anos_vec
-
-# 4. Cálculo do Nível de Retorno de 100 Anos (Fórmula GEV Inversa)
-# Retorno = Mu + (Sigma / Xi) * [ (-ln(1 - 1/T))^(-Xi) - 1 ]
-periodo <- 100
-y_p <- -log(1 - 1/periodo)
-rl_100_m4 <- mu_t + (sig_t / xi_t) * ( (y_p^(-xi_t)) - 1 )
-
-# 5. Plotagem Final
-par(mfrow=c(1,1), mar=c(5, 4, 4, 2) + 0.1)
-
-# Plota os pontos (temperaturas observadas)
-plot(df_dez_trend$Ano, df_dez_trend$Temp, pch=19, col="gray70",
-     main = "Evolução do Risco Extremo (M4: Locação e Forma)",
-     ylab = "Temperatura Máxima (ºC)", xlab = "Ano",
-     ylim = c(min(df_dez_trend$Temp), max(c(df_dez_trend$Temp, rl_100_m4, 40)))) # 40 para garantir o outlier
-
-# Adiciona a linha do Nível de Retorno de 100 Anos
-lines(anos_vec, rl_100_m4, col="#c0392b", lwd=3)
-
-# Destaca o evento de 2015
-points(2015, 39.6, col="black", pch=8, cex=1.5)
-text(2015, 39.6, "2015 (39.6°C)", pos=3, font=2, cex=0.8)
-
-grid()
-legend("topleft", legend=c("Observado", "Retorno de 100 Anos (M4)"),
-       col=c("gray70", "#c0392b"), pch=c(19, NA), lwd=c(NA, 3), bty="n")
-
-# Pequeno diagnóstico textual abaixo do gráfico
-cat(paste0("\n**Interpretação:** A linha vermelha mostra o nível teórico de uma temperatura com chance de 1% de ocorrer (100 anos).\n",
-           "Note como a curva 'empina' para cima nas últimas décadas, tentando alcançar o evento de 2015.\n",
-           "Isso confirma que o risco de eventos extremos está acelerando."))
-```
-
-```{r veredito_final_m4, results='asis'}
-# ==============================================================================
-# VEREDITO FINAL: Teste de Kolmogorov-Smirnov (M4 - Cálculo Robusto)
-# ==============================================================================
-
-# 1. Recupera o modelo M4 (caso não esteja na memória)
-fit_m4 <- fevd(Temp, data = df_dez_trend, 
-               location.fun = ~Ano, 
-               shape.fun = ~Ano, 
-               type = "GEV", units = "deg C")
-
-# 2. Extração Manual dos Parâmetros (Para evitar erros do pacote)
-params <- fit_m4$results$par
-anos_vec <- df_dez_trend$Ano
-dados_obs <- df_dez_trend$Temp
-
-# Constrói os vetores de parâmetros variando no tempo
-# Mu(t)
-if(is.na(params["mu0"])) mu_int <- params["location"] else mu_int <- params["mu0"]
-mu_t <- mu_int + params["mu1"] * anos_vec
-
-# Sigma (Constante)
-sig_t <- params["scale"]
-
-# Xi(t)
-if(is.na(params["xi0"])) xi_int <- params["shape"] else xi_int <- params["xi0"]
-xi_t <- xi_int + params["xi1"] * anos_vec
-
-# 3. Transformada Integral de Probabilidade (PIT) - Manual
-# Fórmula da CDF da GEV: G(x) = exp( - [1 + xi * ((x-mu)/sigma)]^(-1/xi) )
-termo_padronizado <- (dados_obs - mu_t) / sig_t
-z_m4 <- exp( - (1 + xi_t * termo_padronizado) ^ (-1 / xi_t) )
-
-# 4. Execução dos Testes Formais
-ks_res <- ks.test(z_m4, "punif")
-ad_res <- ad.test(z_m4, "punif")
-
-# 5. Exibição Bonita dos Resultados
-df_veredito <- data.frame(
-  "Teste" = c("Kolmogorov-Smirnov (KS)", "Anderson-Darling (AD)"),
-  "Estatistica" = c(round(ks_res$statistic, 4), round(ad_res$statistic, 4)),
-  "P_Valor" = c(format.pval(ks_res$p.value, digits=4), format.pval(ad_res$p.value, digits=4)),
-  "Resultado" = c(
-    if(ks_res$p.value > 0.05) "APROVADO (Modelo Adequado)" else "REJEITADO",
-    if(ad_res$p.value > 0.05) "APROVADO (Modelo Adequado)" else "REJEITADO"
-  )
-)
-
-print(kbl(df_veredito, caption = "Veredito Final: Validação do Modelo M4 (Dezembro)", align = "c") %>%
-      kable_styling(bootstrap_options = c("striped", "hover"), full_width = F, position = "center") %>%
-      row_spec(which(df_veredito$Resultado == "APROVADO (Modelo Adequado)"), bold = T, color = "white", background = "#27ae60") %>%
-      row_spec(which(df_veredito$Resultado == "REJEITADO"), bold = T, color = "white", background = "#c0392b"))
-```
-
-
-# 6. Histograma PIT (A Prova Real)
-par(mfrow=c(1,1))
-hist(z_m4, breaks = seq(0, 1, 0.1), freq = FALSE, col="#ecf0f1", border="#7f8c8d",
-     main = "Histograma PIT: Modelo M4", xlab = "Probabilidade (Uniformidade)", ylab="Densidade")
-abline(h=1, col="#c0392b", lwd=2, lty=2)

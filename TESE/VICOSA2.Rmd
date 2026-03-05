@@ -279,7 +279,7 @@ cat("\n\n") # Garante quebra de linha para a próxima aba
 ```{r analise_dez, results='asis'}
 fit_dez_rain <- analisar_clima(dados_dez_precip, anos, "Dezembro", "#e67e22",
                                tipo_analise = "Precipitação", unidade = "mm")
-cat("\n\n") # Garante quebra de linha para a próxima aba
+cat("\n\n") 
 ```
 
 #Comparativo e Conclusão

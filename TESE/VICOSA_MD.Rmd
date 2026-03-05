@@ -207,6 +207,47 @@ Seja $X = \{x_1, x_2, \dots, x_n\}$ uma série temporal de observações indepen
     
     Rejeita-se $H_0$ se o p-valor associado a $Z$ for menor que o nível de significância $\alpha$ (usualmente 0.05).
 
+
+### Definição Teórica: Teste de Tendência de Mann-Kendall
+
+O Teste de Mann-Kendall é um método estatístico **não-paramétrico** amplamente utilizado para avaliar a significância de tendências monotônicas (crescimento ou decrescimento) em séries temporais climatológicas e ambientais. Assim como o teste de Cox-Stuart, ele baseia-se em postos (ranks) e diferenças de sinais, conferindo-lhe alta robustez contra *outliers* e dados faltantes, características essenciais na modelagem de extremos de temperatura.
+
+#### Formulação Algébrica
+
+Seja $X = \{x_1, x_2, \dots, x_n\}$ uma série temporal de $n$ observações temporais sequenciais. O algoritmo do teste consiste nos seguintes passos:
+
+1.  **Comparação de Pares:**
+    Cada observação $x_i$ da série é iterativamente comparada com todas as observações subsequentes $x_j$, de modo que o tempo $j > i$.
+
+2.  **Função Sinal (*Sign Function*):**
+    A diferença entre as observações de cada par é avaliada e padronizada pela função sinal, extraindo-se apenas a direção da mudança:
+    $$sgn(x_j - x_i) = \begin{cases} 1, & \text{se } x_j - x_i > 0 \\ 0, & \text{se } x_j - x_i = 0 \\ -1, & \text{se } x_j - x_i < 0 \end{cases}$$
+
+3.  **Estatística do Teste ($S$):**
+    A estatística $S$ de Mann-Kendall é dada pelo somatório de todos os sinais resultantes dessas comparações pares ao longo de toda a série:
+    $$S = \sum_{i=1}^{n-1} \sum_{j=i+1}^{n} sgn(x_j - x_i)$$
+    Valores muito positivos de $S$ são indicativos de uma tendência de aquecimento (crescimento), enquanto valores muito negativos sugerem resfriamento (decrescimento).
+
+4.  **Distribuição e Decisão:**
+    Sob a Hipótese Nula ($H_0$) de ausência de tendência (os dados são independentes e aleatoriamente ordenados), a estatística $S$ aproxima-se de uma distribuição Normal com média zero ($E[S] = 0$) para amostras com $n \ge 10$. 
+    
+    A variância de $S$, ajustada para a presença de valores repetidos (empates) na série, é dada por:
+    $$Var(S) = \frac{n(n-1)(2n+5) - \sum_{p=1}^{g} t_p(t_p-1)(2t_p+5)}{18}$$
+    Onde $g$ é o número de grupos com valores empatados e $t_p$ é a quantidade de dados contidos no $p$-ésimo grupo.
+    
+    A estatística de teste padronizada $Z$ é então calculada aplicando-se uma correção de continuidade:
+    $$Z = \begin{cases} \frac{S - 1}{\sqrt{Var(S)}}, & \text{se } S > 0 \\ 0, & \text{se } S = 0 \\ \frac{S + 1}{\sqrt{Var(S)}}, & \text{se } S < 0 \end{cases}$$
+    
+    Rejeita-se a hipótese $H_0$ em favor da existência de uma tendência estatisticamente significativa se o p-valor associado a $Z$ for menor que o nível de significância $\alpha$ (usualmente 0.05), ou equivalentemente, se $|Z| > Z_{1-\alpha/2}$.
+
+### Comparação entre os Testes de Mann-Kendall e Cox-Stuart
+
+Embora os testes de Mann-Kendall e Cox-Stuart sejam métodos não-paramétricos destinados à identificação de tendências monotônicas em séries temporais, eles diferem substancialmente na forma como processam a informação temporal, o que impacta diretamente o poder estatístico de cada abordagem. 
+
+O teste de Cox-Stuart adota uma estratégia de segmentação, dividindo a série pela metade e comparando apenas os pares de observações correspondentes ($n/2$ comparações). Esta simplificação descarta as variações que ocorrem entre os pontos adjacentes dentro da mesma metade da série, resultando em uma considerável perda de informação e, consequentemente, conferindo ao teste um baixo poder estatístico para detectar tendências mais sutis.
+
+Em contrapartida, o teste de Mann-Kendall realiza uma avaliação exaustiva da série. O algoritmo compara cada observação com todas as observações subsequentes na linha do tempo, totalizando $n(n-1)/2$ comparações pareadas. Ao utilizar a totalidade da estrutura topológica dos dados, o Mann-Kendall apresenta um poder estatístico significativamente superior. Por esta razão, é amplamente reconhecido na literatura hidrológica e climatológica como o método mais robusto e confiável para a detecção de tendências, sendo o critério principal para justificar a adoção de parâmetros variantes no tempo (não-estacionariedade) na modelagem de valores extremos.
+
 ### Definição Teórica: Teste Augmented Dickey-Fuller (ADF)
 
 Para a verificação de estacionariedade (condição em que a média e a variância da série são constantes ao longo do tempo), utilizou-se o Teste Augmented Dickey-Fuller (ADF). Este método testa a presença de uma **raiz unitária** na série temporal, o que indicaria um comportamento não estacionário.
@@ -762,25 +803,33 @@ A seguir, apresentamos a análise detalhada para cada um dos meses críticos da 
 
 ```{r analise_jan, results='asis'}
 fit_jan <- analisar_clima(dados_jan, anos, "Janeiro", "#2980b9") # Azul
+
+# O modelo parece superestimar os dados, uma investigação maior deve ser realizada.
 ```
 
 #Fevereiro
 
 ```{r analise_fev, results='asis'}
 fit_fev <- analisar_clima(dados_fev, anos, "Fevereiro", "#27ae60") # Verde
+# O ajuste para o mês de fevereiro no geral indica um bom ajuste de acordo com os gráficos e testes realizados.
 ```
+
 
 # Março
 
 ```{r analise_mar, results='asis'}
 fit_mar <-analisar_clima(dados_mar, anos, "Março", "gold")
+# O mês de março apresentou um bom ajuste, bem como indicou que o modelo se adequou bem aos dados de acordo com os testes realizados.
 ```
+
 
 #Dezembro
 
 ```{r analise_dez, results='asis'}
 fit_dez <- analisar_clima(dados_dez, anos, "Dezembro", "#e67e22") # Laranja
+# Para o mês de dezembro o modelo aparenta subestimar os valores, uma investigação mais profunda também deve ser realizada. 
 ```
+
 
 #Novembro
 ```{r analise_nov, results='asis'}
