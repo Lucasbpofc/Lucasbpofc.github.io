@@ -20,54 +20,94 @@
   <a href="https://www.latex-project.org/" target="_blank" rel="noreferrer"> <img src="https://img.shields.io/badge/LaTeX-008080?style=for-the-badge&logo=latex&logoColor=white" alt="LaTeX"/> </a>
 </p>
 
-## 🚀 Projetos em Destaque
+## 🚀 Áreas de Atuação e Projetos Destaque
 
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <h3>Análise de Séries Temporais - Preços do Café Arábica</h3>
-      <p>Análise da volatilidade condicional dos preços do café arábica utilizando modelos da família ARCH/GARCH.</p>
-      <p><strong>Tecnologias:</strong> R, Tidyverse, GARCH.</p>
-      <a href="https://Lucasbpofc.github.io/Post_caféarabica.html"><strong>Ver Análise Completa &rarr;</strong></a>
-    </td>
-    <td width="50%" valign="top">
-      <h3>Estudo de Mecanismos de Censura em Análise de Sobrevivência</h3>
-      <p>Uma exploração teórica e prática dos diferentes tipos de censura e suas implicações em estudos de sobrevivência.</p>
-      <p><strong>Tecnologias:</strong> R, Survival, ggplot2.</p>
-      <a href="https://Lucasbpofc.github.io/Mecanismos-de-Censura.html"><strong>Ver Análise Completa &rarr;</strong></a>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <h3>Precipitação máxima esperada na cidade de Lavras-MG via distribuição generalizada de valores extremos</h3>
-      <p>Modelagem da precipitação máxima esperada utilizando a Distribuição Generalizada de Valores Extremos (GEV) para estimar períodos de retorno de eventos climáticos.</p>
-      <p><strong>Tecnologias:</strong> R, GEV, Análise de Dados Climáticos.</p>
-      <br>
-      <a href="Eventos_extremos.pdf" target="_blank">
-        <img src="extremos.png" alt="Capa da Apresentação sobre Precipitação" width="100%">
-      </a>
-    </td>
-    <td width="50%" valign="top">
-      <h3>Estudo do Pacote Forcats</h3>
-      <p>Tutorial prático sobre a manipulação de variáveis categóricas (fatores) no R utilizando o poderoso pacote Forcats, parte do Tidyverse.</p>
-      <p><strong>Tecnologias:</strong> R, Tidyverse, Forcats.</p>
-      <a href="https://Lucasbpofc.github.io/Pacote-forcats.html"><strong>Ver Análise Completa &rarr;</strong></a>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-        <h3>Análise de Séries Temporais - Preços da Soja</h3>
+<details>
+  <summary><b>📈 Séries Temporais</b></summary>
+  <br>
+  <table>
+    <tr>
+      <td width="50%" valign="top">
+        <h3>Preços do Café Arábica</h3>
+        <p>Análise da volatilidade condicional dos preços do café arábica utilizando modelos da família ARCH/GARCH.</p>
+        <p><strong>Tecnologias:</strong> R, Tidyverse, GARCH.</p>
+        <a href="https://Lucasbpofc.github.io/Post_caféarabica.html"><strong>Ver Análise Completa &rarr;</strong></a>
+      </td>
+      <td width="50%" valign="top">
+        <h3>Preços da Soja</h3>
         <p>Modelagem da volatilidade dos preços da soja utilizando o modelo APARCH.</p>
         <p><strong>Status:</strong> Em desenvolvimento 🚧</p>
-    </td>
-    <td width="50%" valign="top">
-      <h3>Extremos climáticos na cidade de Viçosa - MG</h3>
-      <p>Análise de precipitação e temperaturas extremas na cidade de Viçosa.</p>
-      <p><strong>Tecnologias:</strong> R, extRemes, ismev, Distribuição Generalizada de Valores Extremos.</p>
-      <a href="https://Lucasbpofc.github.io/TESE/VICOSA_MD.html"><strong>Ver Análise Completa &rarr;</strong></a>
-    </td>
-  </tr>
-</table> 
+      </td>
+    </tr>
+  </table>
+</details>
+
+<details>
+  <summary><b>⛈️ Teoria de Valores Extremos (GEV)</b></summary>
+  <br>
+  <table>
+    <tr>
+      <td width="50%" valign="top">
+        <h3>Precipitação Máxima - Lavras/MG</h3>
+        <p>Modelagem da precipitação máxima esperada utilizando a Distribuição Generalizada de Valores Extremos (GEV) para estimar períodos de retorno de eventos climáticos.</p>
+        <p><strong>Tecnologias:</strong> R, GEV, Análise de Dados Climáticos.</p>
+        <br>
+        <a href="Eventos_extremos.pdf" target="_blank">
+          <img src="extremos.png" alt="Capa da Apresentação sobre Precipitação" width="100%">
+        </a>
+      </td>
+      <td width="50%" valign="top">
+        <h3>Extremos Climáticos - Viçosa/MG</h3>
+        <p>Análise de precipitação e temperaturas extremas na cidade de Viçosa.</p>
+        <p><strong>Tecnologias:</strong> R, extRemes, ismev, GEV.</p>
+        <br><br><br>
+        <a href="https://Lucasbpofc.github.io/TESE/VICOSA_MD.html"><strong>Ver Análise Completa &rarr;</strong></a>
+      </td>
+    </tr>
+    <tr>
+      <td width="50%" valign="top">
+        <h3>Extremos Climáticos - Teófilo Otoni/MG</h3>
+        <p>Análise de frequência de precipitações máximas diárias e estimativa de tempos de retorno utilizando a Distribuição GEV.</p>
+        <p><strong>Tecnologias:</strong> R, extRemes, goftest, TVE.</p>
+        <br>
+        <a href="https://Lucasbpofc.github.io/TESE/teofilo_otoni.html"><strong>Ver Análise Completa &rarr;</strong></a>
+      </td>
+      <td width="50%" valign="top">
+        </td>
+    </tr>
+  </table>
+</details>
+
+<details>
+  <summary><b>⏳ Análise de Sobrevivência</b></summary>
+  <br>
+  <table>
+    <tr>
+      <td width="100%" valign="top">
+        <h3>Estudo de Mecanismos de Censura</h3>
+        <p>Uma exploração teórica e prática dos diferentes tipos de censura e suas implicações em estudos de sobrevivência.</p>
+        <p><strong>Tecnologias:</strong> R, Survival, ggplot2.</p>
+        <a href="https://Lucasbpofc.github.io/Mecanismos-de-Censura.html"><strong>Ver Análise Completa &rarr;</strong></a>
+      </td>
+    </tr>
+  </table>
+</details>
+
+<details>
+  <summary><b>🧹 Manipulação e Limpeza de Dados</b></summary>
+  <br>
+  <table>
+    <tr>
+      <td width="100%" valign="top">
+        <h3>Estudo do Pacote Forcats</h3>
+        <p>Tutorial prático sobre a manipulação de variáveis categóricas (fatores) no R utilizando o poderoso pacote Forcats, parte do Tidyverse.</p>
+        <p><strong>Tecnologias:</strong> R, Tidyverse, Forcats.</p>
+        <a href="https://Lucasbpofc.github.io/Pacote-forcats.html"><strong>Ver Análise Completa &rarr;</strong></a>
+      </td>
+    </tr>
+  </table>
+</details>
+<br>
 
 ## 🎓 Apresentações Acadêmicas
 
@@ -117,3 +157,15 @@
   <a href="https://instagram.com/lucasbello_01" target="_blank"><img src="https://img.shields.io/badge/-Instagram-%23E4405F?style=for-the-badge&logo=instagram&logoColor=white" target="_blank"></a>
   <a href="https://wa.me/5531995426266" target="_blank"><img src="https://img.shields.io/badge/WhatsApp-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" target="_blank"></a>
 </p>
+
+---
+
+## 🐍 Minhas Contribuições
+
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Lucasbpofc/Lucasbpofc.github.io/output/github-contribution-grid-snake-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Lucasbpofc/Lucasbpofc.github.io/output/github-contribution-grid-snake.svg">
+    <img alt="Animação da Cobrinha do GitHub" src="https://raw.githubusercontent.com/Lucasbpofc/Lucasbpofc.github.io/output/github-contribution-grid-snake.svg">
+  </picture>
+</div>
