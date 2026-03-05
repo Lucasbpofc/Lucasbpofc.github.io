@@ -1,0 +1,191 @@
+---
+title: "Análise de Frequência de Precipitações Máximas Diárias"
+author: "Lucas"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+# Configurações globais dos chunks de código
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = 'center')
+```
+
+## 1. Introdução e Preparação dos Dados
+
+
+Nesta análise, exploramos uma série temporal de precipitações máximas diárias anuais (1961-2025) da cidade de Teófilo Otoni utilizando a Teoria de Valores Extremos (TVE). Os dados são oriúndos do Banco de Dados Metereológicos -BDMEP do Instituto Nacional de Metereologia - INMET. O objetivo principal é ajustar um modelo estatístico capaz de estimar tempos de retorno para eventos climáticos severos que ocorrem na região de Teófilo Otoni, que comumente sofre com enchentes e alagamentos causados por essas condições.
+
+```{r dados}
+# Criando o vetor de precipitações máximas
+PRECIP <- c(
+  63.9, 70.2, 75.8, 108.1, 86.4, 68.9, 46.2, 54.4, 62.5, 82.9, 66.8, 61.4,
+  62.2, 73.1, 150.3, 69.0, 59.8, 54.1, 83.0, 58.6, 102.7, 59.9, 92.8, 70.9,
+  79.2, 68.1, 95.4, 47.6, 62.0, 155.9, 66.0, 89.4, 72.6, 68.6, 60.9, 78.0,
+  68.7, 57.4, 56.0, 89.6, 80.4, 246.4, 64.0, 120.7, 91.0, 102.1, 49.2, 96.5,
+  104.4, 72.0, 69.8, 145.0, 82.6, 82.2, 75.8, 137.6, 70.2, 58.0, 64.2, 93.6,
+  75.6, 96.4, 44.8, 91.4, 67.2
+)
+
+# Resumo estatístico
+summary(PRECIP)
+
+# Criando a série temporal
+year <- seq(1961, 2025, 1)
+precip_ts <- ts(PRECIP, start = min(year), frequency = 1) 
+```
+
+### Visualização da Série Histórica
+```{r plot-serie}
+plot(precip_ts, type = "o", col = "#2980b9", pch = 16,
+     ylab = "Precipitação Máxima Diária (mm)", xlab = "Ano", 
+     main = "Série Temporal de Precipitação Máxima (1961-2025)")
+```
+
+---
+
+## 2. Análise Exploratória e Testes de Premissas
+
+Antes da modelagem, verificamos a estacionariedade, a presença de tendências monotônicas e a autocorrelação da série, premissas fundamentais para a aplicação do modelo de extremos de forma estacionária.
+
+**Hipóteses do Teste de Ljung-Box (Autocorrelação):**
+* **$H_0$:** Os dados são distribuídos de forma independente (não há autocorrelação serial até o *lag* testado).
+* **$H_1$:** Os dados não são independentes (existe autocorrelação serial).
+
+**Hipóteses dos Testes de Cox-Stuart e Mann-Kendall (Tendência):**
+* **$H_0$:** Não existe tendência (monotônica) na série temporal.
+* **$H_1$:** Existe uma tendência (crescente ou decrescente) na série.
+
+**Hipóteses do Teste Dickey-Fuller Aumentado - ADF (Estacionariedade):**
+* **$H_0$:** A série temporal possui uma raiz unitária (é não-estacionária).
+* **$H_1$:** A série temporal não possui raiz unitária (é estacionária).
+
+```{r testes-premissas}
+# Pacotes necessários
+library(randtests)
+library(Kendall)
+library(tseries)
+
+# 1. Teste de Autocorrelação (Ljung-Box no lag 10)
+Box.test(precip_ts, type = "Ljung-Box", lag = 10)
+
+# 2. Testes de Tendência
+cox.stuart.test(precip_ts)
+MannKendall(precip_ts)
+
+# 3. Teste de Estacionariedade (Dickey-Fuller Aumentado)
+adf.test(precip_ts)
+```
+
+### Avaliação de Normalidade
+
+Na climatologia de extremos, espera-se que a distribuição dos máximos anuais seja assimétrica e com cauda pesada. Portanto, o ideal é **rejeitar** a normalidade.
+
+**Hipóteses do Teste Kolmogorov-Smirnov (Série Bruta):**
+* **$H_0$:** Os dados seguem uma distribuição Normal.
+* **$H_1$:** Os dados não seguem uma distribuição Normal.
+
+```{r normalidade}
+
+densidade_precip <- density(PRECIP)
+
+hist(PRECIP, breaks = 12, prob = TRUE, 
+     col = "blue", border = "white",
+     main = "Distribuição das Precipitações Máximas", 
+     xlab = "Precipitação Máxima Diária (mm)",
+     ylab = "Densidade",
+     ylim = c(0, max(densidade_precip$y) * 1.2)) 
+
+lines(densidade_precip, col = "#e74c3c", lwd = 3)
+
+rug(PRECIP, col = "#2c3e50", lwd = 1.5)
+box()
+
+# Teste de Normalidade Clássico
+ks.test(precip_ts, "pnorm", mean = mean(precip_ts), sd = sd(precip_ts))
+```
+
+---
+
+## 3. Ajuste do Modelo GEV
+
+Utilizamos a Distribuição Generalizada de Valores Extremos (GEV) para modelar a série de máximos anuais. A avaliação inicial do parâmetro de forma ($\xi$) define a família da distribuição.
+
+```{r ajuste-gev}
+library(ismev)
+library(extRemes)
+
+# Ajuste inicial e diagnóstico visual
+B <- gev.fit(precip_ts)
+gev.diag(B)
+```
+
+Avaliamos também a incerteza dos parâmetros utilizando a Verossimilhança Perfilada para diferentes tempos de retorno, gerando intervalos de confiança mais robustos para distribuições de cauda pesada.
+
+```{r verossimilhanca-perfilada, results='hide'}
+# Ajuste com extRemes
+fit1 <- fevd(PRECIP, units = "mm")
+
+par(mfrow=c(2,2))
+b1 <- ci(fit1, method = "proflik", xrange = c(100, 140), verbose = TRUE, return.period = c(10))
+b2 <- ci(fit1, method = "proflik", xrange = c(115, 190), verbose = TRUE, return.period = c(25))
+b3 <- ci(fit1, method = "proflik", xrange = c(125, 240), verbose = TRUE, return.period = c(50))
+b4 <- ci(fit1, method = "proflik", xrange = c(140, 310), verbose = TRUE, return.period = c(100))
+par(mfrow=c(1,1))
+```
+
+---
+
+## 4. Validação e Teste de Adequação (Goodness-of-Fit)
+
+Para atestar a validade do modelo, aplicamos testes formais para verificar se a distribuição teórica estimada capta bem o comportamento dos dados observados. Neste caso, o cenário ideal é **não rejeitar** a hipótese nula ($p-valor > 0.05$).
+
+**Hipóteses dos Testes KS e AD contra a GEV:**
+* **$H_0$:** A amostra observada provém da distribuição GEV ajustada.
+* **$H_1$:** A amostra observada não provém da distribuição GEV ajustada.
+
+```{r gof-test}
+library(goftest)
+
+# Extraindo os parâmetros do modelo GEV
+loc_est   <- fit1$results$par["location"]
+scale_est <- fit1$results$par["scale"]
+shape_est <- fit1$results$par["shape"]
+
+# Testes de Aderência
+teste_ks <- ks.test(precip_ts, "pevd", loc = loc_est, scale = scale_est, shape = shape_est)
+teste_ad <- ad.test(precip_ts, "pevd", loc = loc_est, scale = scale_est, shape = shape_est)
+
+print(teste_ks)
+print(teste_ad)
+```
+
+> **Nota de Discussão:** O p-valor elevado no teste de Anderson-Darling indica falha em rejeitar $H_0$, atestando uma excelente adequação da GEV aos dados extremos observados.
+
+---
+
+## 5. Níveis de Retorno Estimados
+
+Finalmente, extraímos as previsões probabilísticas para eventos extremos futuros, considerando tempos de retorno convencionais para obras de infraestrutura.
+
+```{r niveis-retorno}
+# Ajustamos o modelo avisando o pacote da estrutura de dados
+df_precip <- data.frame(Chuva = precip_ts)
+fit_gev <- fevd(Chuva, data = df_precip, type = "GEV")
+
+# Cálculo dos Níveis de Retorno com Intervalos de Confiança
+niveis_retorno_m0 <- return.level(fit_gev, 
+                                  return.period = c(10, 50, 100), 
+                                  do.ci = TRUE)
+
+print(niveis_retorno_m0)
+
+# Gráfico da Curva de Retorno
+plot(fit_gev, type = "rl", 
+     main = "Curva de Nível de Retorno - GEV Estacionário",
+     pch = 19, col = "#2c3e50")
+```
