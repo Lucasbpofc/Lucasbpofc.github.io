@@ -70,7 +70,7 @@
         <p>Análise de frequência de precipitações máximas diárias e estimativa de tempos de retorno utilizando a Distribuição GEV.</p>
         <p><strong>Tecnologias:</strong> R, extRemes, goftest, TVE.</p>
         <br>
-        <a href="https://Lucasbpofc.github.io/TESE/teofilo_otoni.html"><strong>Ver Análise Completa &rarr;</strong></a>
+        <a href="https://Lucasbpofc.github.io/TESE/Teofilo_Otoni.html"><strong>Ver Análise Completa &rarr;</strong></a>
       </td>
       <td width="50%" valign="top">
         </td>
