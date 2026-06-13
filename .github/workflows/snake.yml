@@ -11,6 +11,8 @@ on:
 
 jobs:
   generate:
+    permissions: 
+      contents: write  # <--- ESSA ?? A LINHA M??GICA
     runs-on: ubuntu-latest
     timeout-minutes: 10
     

@@ -1,0 +1,137 @@
+# install.packages(c("terra", "dplyr", "ggplot2", "tidyr"))
+
+library(terra)
+library(dplyr)
+library(ggplot2) # Para visualização
+library(tidyr)   # Para organizar os dados para o gráfico
+
+# 1. Carregar o arquivo original
+cubo_20km_brasil <- rast("pr_historical_1961_2005.nc")
+
+# 2. Definir as coordenadas e criar uma "janela" ao redor da região
+lon_estudo <- -42.87
+lat_estudo <- -20.75
+
+# Criamos uma janela de uns 200 km ao redor do ponto (ajuste como preferir)
+janela_recorte <- ext(lon_estudo - 2, lon_estudo + 2, 
+                      lat_estudo - 2, lat_estudo + 2)
+
+# 3. RECORTAR PRIMEIRO (Isso é quase instantâneo)
+cubo_20km_local <- crop(cubo_20km_brasil, janela_recorte)
+
+# 4. DESAGREGAR DEPOIS (Agora será processado em segundos, pois a área é minúscula)
+cubo_5km <- disagg(cubo_20km_local, fact = 4, method = "bilinear")
+
+# ==============================================================================
+# 3. Definir as Coordenadas de Interesse (Viçosa/MG)
+# ==============================================================================
+lon_estudo <- -42.87
+lat_estudo <- -20.75
+ponto_extravel <- vect(cbind(lon_estudo, lat_estudo), crs = crs(cubo_20km_local))
+
+# ==============================================================================
+# 4. Extrair as Séries Temporais para as Duas Dimensões
+# ==============================================================================
+# Usamos terra::extract para garantir que estamos chamando a função do pacote terra
+serie_20km <- terra::extract(cubo_20km_local, ponto_extravel)
+chuva_20km <- as.numeric(serie_20km[-1]) 
+
+# Fazemos o mesmo para o cubo de 5km
+serie_5km <- terra::extract(cubo_5km, ponto_extravel)
+chuva_5km <- as.numeric(serie_5km[-1])
+
+# ==============================================================================
+# 5. Organizar o Data Frame Final
+# ==============================================================================
+# Puxar as datas diretamente dos metadados do NetCDF (evita erro de ano bissexto)
+datas_simulacao <- time(cubo_20km_local)
+
+# Unir tudo num data frame limpo
+df_vicosa_comparacao <- data.frame(
+  Data = datas_simulacao,
+  Prec_20km = chuva_20km,
+  Prec_5km = chuva_5km
+)
+
+# Resumo estatístico para ver a diferença
+summary(df_vicosa_comparacao)
+
+# ==============================================================================
+# 6. Gerar Gráfico de Abrangência das Grades (20km vs 5km)
+# ==============================================================================
+
+# Pegamos apenas a primeira camada (o 1º dia) de cada cubo para servir de fundo
+camada_20km <- cubo_20km_local[[1]]
+camada_5km <- cubo_5km[[1]]
+
+# Criamos uma "janela de zoom" ao redor do seu ponto
+# +/- 0.3 graus equivalem a aproximadamente um raio de 30 a 35 km
+janela_zoom <- ext(lon_estudo - 0.3, lon_estudo + 0.3, 
+                   lat_estudo - 0.3, lat_estudo + 0.3)
+
+# Recortamos os mapas originais para essa janela menor
+zoom_20km <- crop(camada_20km, janela_zoom)
+zoom_5km <- crop(camada_5km, janela_zoom)
+
+# Transformamos os limites dos pixels em polígonos para desenhar a "malha" da grade
+grade_20km <- as.polygons(zoom_20km)
+grade_5km <- as.polygons(zoom_5km)
+
+# Configurar a tela do R para exibir 2 gráficos lado a lado (1 linha, 2 colunas)
+par(mfrow = c(1, 2))
+
+# --- MAPA 1: A grade de 20 km ---
+plot(zoom_20km, main = "Grade Original (20x20 km)", 
+     col = colorRampPalette(c("lightblue", "blue", "darkblue"))(50), 
+     legend = FALSE)
+plot(grade_20km, add = TRUE, border = "black", lwd = 2) # Grade grossa preta
+plot(ponto_extravel, add = TRUE, col = "red", pch = 19, cex = 1.5) # Ponto vermelho
+text(lon_estudo, lat_estudo + 0.05, labels = "Sua Coordenada", col = "red", cex = 0.8)
+
+# --- MAPA 2: A grade de 5 km ---
+plot(zoom_5km, main = "Grade Interpolada (5x5 km)", 
+     col = colorRampPalette(c("lightblue", "blue", "darkblue"))(50), 
+     legend = FALSE)
+plot(grade_5km, add = TRUE, border = "white", lwd = 0.8) # Grade fina branca
+plot(ponto_extravel, add = TRUE, col = "red", pch = 19, cex = 1.5) # Ponto vermelho
+
+# Retornar a tela de gráficos do R para o padrão (1 gráfico por vez)
+par(mfrow = c(1, 1))
+
+library(tidyr)
+library(dplyr)
+
+# ==============================================================================
+# 1. Preparar os Nomes das Colunas (Datas)
+# ==============================================================================
+# Primeiro, renomeamos as camadas do cubo com as datas reais.
+# Isso vai facilitar muito a organização da tabela depois.
+names(cubo_5km) <- as.character(time(cubo_5km))
+
+# ==============================================================================
+# 2. Converter o Cubo para Data Frame (Formato Largo)
+# ==============================================================================
+# O xy = TRUE garante que as duas primeiras colunas sejam "x" (Lon) e "y" (Lat).
+# As colunas seguintes serão os milhares de dias (1961 a 2005).
+df_todas_grades_largo <- as.data.frame(cubo_5km, xy = TRUE)
+
+# ==============================================================================
+# 3. Transformar para o Formato Longo (Padrão Tidyverse)
+# ==============================================================================
+# Ter 16.000 colunas (uma por dia) é péssimo para fazer gráficos e médias.
+# O pivot_longer vai empilhar esses dados, criando uma coluna "Data" e uma "Precipitacao".
+df_todas_grades <- pivot_longer(
+  df_todas_grades_largo,
+  cols = -c(x, y),       # Transforma todas as colunas de dias, exceto as de coordenadas
+  names_to = "Data",
+  values_to = "Precipitacao_mm"
+)
+
+# ==============================================================================
+# 4. Ajustes Finais
+# ==============================================================================
+# Converter a coluna de Data (que virou texto) de volta para o formato de Data do R
+df_todas_grades$Data <- as.Date(df_todas_grades$Data)
+
+# Visualizar o resultado final
+head(df_todas_grades)

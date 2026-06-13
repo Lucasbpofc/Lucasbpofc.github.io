@@ -1,0 +1,629 @@
+# ====================================================================
+# PREPARAÇÃO DA BASE DE DADOS (EXTRAÇÃO DE MÁXIMOS ANUAIS)
+# ====================================================================
+
+library(readxl)
+library(dplyr)
+library(purrr)
+
+dados<-c(90, 59.2, 75.7, 75.8, 72.7, 42.2, 106, 96.6, 84.4, 65.8, 73.6, 
+         163.9, 83.6, 91.2, 112.6, 78.4, 82.3, 100.9, 184.8, 110.8, 56.7, 
+         67.3, 67.7, 74.8, 77, 44.3, 109.3, 69.5, 54.6, 92.2, 133.4, 73.9, 
+         87.4, 108.6, 72.8, 71.6, 133.4, 80.3, 90.5, 92.7, 94.4, 80.2, 
+         64.2, 89, 89.8, 60.4, 59.6, 110.4, 80.6, 87.2, 50.6, 112.6, 126.1, 
+         51.6, 84)
+
+length(dados)
+summary(dados)
+year=seq(1968, 2022, 1)
+
+# Criando a série temporal
+precip_ts <- ts(dados, start = min(year), frequency = 1)  # frequência = 1 (dados anuais)
+
+# Plotando a série temporal
+plot(precip_ts, type = "o", col = "blue", 
+     ylab = "Precipitacao", xlab = "Ano", 
+     main = "Serie Temporal de Precipitacao")
+
+# Verifica a presença de autocorrelação
+Box.test(precip_ts, type = "Ljung-Box")
+
+# Esse teste verifica a existencia de autocorrelaçao no 10lag
+# Para verificar em outros lags basta substituir 10 pelo valor desejado
+# Um complemento visual a esteteste é a inclusão dos gráficos ACF  e PACF
+# Os gráficos darão um retorno visual corroborando com o teste.
+
+# Gráficos de ACF e PACF
+acf(precip_ts)
+pacf(precip_ts)
+
+# teste de tendência
+library(randtests)
+cox.stuart.test(precip_ts)
+# H0: A série não apresenta tendência 
+
+# teste de tendência mais robusto
+library(Kendall)
+MannKendall(precip_ts)
+
+# Teste de estacionariedade
+library(tseries)
+adf.test(precip_ts)
+# H0: A série é não estacionária
+
+# Histograma dos dados
+hist(PRECIP, breaks = 12, col = "lightblue", 
+     main = "Histograma da Precipitacao", xlab = "Precipitacao")
+
+# Teste de normalidade 
+# Kolmogorov-Smirnov
+ks.test(precip_ts, "pnorm", mean = mean(precip_ts), sd = sd(precip_ts))
+
+# Estimando os parâmetros da distribuição 
+
+library(ismev)
+gev.fit(precip_ts)
+
+# ξ=0, a GEV vira uma distribuição de Gumbel.
+# ξ>0, a GEV vira uma distribuição de Fréchet
+# ξ<0, a GEV vira uma distribuição de Weibull
+
+B=gev.fit(precip_ts)
+
+gev.diag(B)
+
+# CÁLCULO DOS NÍVEIS DE RETORNO 
+
+library(extRemes)
+
+#  NÍVEIS DE RETORNO 
+
+df_precip <- data.frame(Chuva = precip_ts)
+
+fit_gev <- fevd(dados, data = df_precip, type = "GEV")
+
+# 3. Agora o cálculo dos Níveis de Retorno vai rodar perfeitamente!
+niveis_retorno_m0 <- return.level(fit_gev, 
+                                  return.period = c(10, 50, 100), 
+                                  do.ci = TRUE)
+
+print(niveis_retorno_m0)
+
+# Gráfico sem forçar os nomes dos eixos para evitar o conflito
+dev.off()
+plot(fit_gev, type = "rl", 
+     main = "Curva de Nivel de Retorno - GEV Estacionario",
+     pch = 19, col = "black")
+
+aic_gev <- summary(fit_gev)$AIC
+# ====================================================================
+# MODELO DE MISTURA (ZCAS vs Convectiva)
+# LOCAL: Viçosa (MG) - Cenário RCP 4.5
+# ====================================================================
+library(terra)
+library(qmap)
+library(dplyr)
+library(extRemes)
+library(stats)
+
+# ====================================================================
+# FASE 1: DADOS REAIS E CONFIGURAÇÃO ESPACIAL
+# ====================================================================
+# O Vetor Oficial do INMET de Viçosa (1968 a 2005)
+PRECIP <- c(90.0, 59.2, 75.7, 75.8, 72.7, 42.2, 106.0, 96.6, 84.4, 65.8, 
+            73.6, 163.9, 83.6, 91.2, 112.6, 78.4, 82.3, 100.9, 184.8, 110.8, 
+            56.7, 67.3, 67.7, 74.8, 77.0, 44.3, 109.3, 69.5, 54.6, 92.2, 
+            133.4, 73.9, 87.4, 108.6, 72.8, 71.6, 133.4, 80.3)
+
+limites_ajustados <- ext(-44.0, -41.5, -22.0, -19.5)
+pontos_extracao <- data.frame(lon = -42.88, lat = -20.75)
+
+
+# ====================================================================
+# FASE 2: TREINANDO O QUANTILE MAPPING (HISTÓRICO)
+# ====================================================================
+cat("\n=== 2. TREINANDO O QUANTILE MAPPING (HISTÓRICO) ===\n")
+
+dados_chuva_hist <- rast("pr_historical_1961_2005.nc")
+plot(dados_chuva_hist)
+
+chuva_focada_hist <- crop(dados_chuva_hist, limites_ajustados)
+
+vetor_simulado_bruto <- numeric(45) # 1961 a 2005
+for (i in 1:45) {
+  dia_inicial <- ((i - 1) * 360) + 1
+  chuva_extraida <- extract(chuva_focada_hist[[dia_inicial:(i * 360)]], pontos_extracao)
+  vetor_simulado_bruto[i] <- max(chuva_extraida[, -1], na.rm = TRUE)
+}
+
+# Isolando 1968-2005 e criando a "chave" de correção
+vetor_simulado_treino <- vetor_simulado_bruto[8:45] 
+funcao_correcao_VIC <- fitQmap(obs = PRECIP, mod = vetor_simulado_treino, method = "QUANT", wet.day = 0.1)
+
+plot(vetor_simulado_treino)
+plot(PRECIP)
+# ====================================================================
+# FASE 3: EXTRAINDO E CORRIGINDO O SÉCULO XXI (RCP 4.5)
+# ====================================================================
+
+arquivos_futuro_45 <- c("pr_rcp4.5_2006_2041.nc", "pr_rcp4.5_2041_2070.nc", "pr_rcp4.5_2071_2099.nc")
+vetor_futuro_bruto_45 <- c()
+
+for (arquivo in arquivos_futuro_45) {
+  chuva_fatia <- crop(rast(arquivo), limites_ajustados)
+  n_anos <- nlyr(chuva_fatia) / 360
+  temp_max <- numeric(n_anos)
+  for (i in 1:n_anos) {
+    dia_ini <- ((i - 1) * 360) + 1
+    ext_val <- extract(chuva_fatia[[dia_ini:(i * 360)]], pontos_extracao)
+    temp_max[i] <- max(ext_val[, -1], na.rm = TRUE)
+  }
+  vetor_futuro_bruto_45 <- c(vetor_futuro_bruto_45, temp_max)
+}
+
+# Aplicando a chave de correção no futuro
+vetor_futuro_corrigido_45 <- doQmap(x = vetor_futuro_bruto_45, fobj = funcao_correcao_VIC)
+
+
+# ====================================================================
+# FASE 4: CRIANDO A SÉRIE DA MISTURA
+# ====================================================================
+cat("\n=== 4. A GRANDE COSTURA: CRIANDO O VETOR_CHUVA ===\n")
+
+anos_continuos <- 1968:2099
+
+super_serie_VIC_45 <- data.frame(
+  Ano = anos_continuos,
+  Precip_Max = c(PRECIP, vetor_futuro_corrigido_45)
+)
+
+# Adicionando as etiquetas de origem e consolidando a base da Mistura
+super_serie_mistura <- super_serie_VIC_45 %>%
+  mutate(Origem = ifelse(Ano <= 2005, "Real_Observado", "RCP_4.5_Corrigido"))
+
+# O Vetor Oficial que alimenta a estatística
+vetor_chuva <- super_serie_mistura$Precip_Max
+year2=seq(1968, 2099, 1)
+
+# Criando a série temporal
+precip_ts <- ts(vetor_chuva, start = min(year2), frequency = 1)  # frequência = 1 (dados anuais)
+
+# Plotando a série temporal
+plot(precip_ts, type = "o", col = "blue", 
+     ylab = "Precipitacao", xlab = "Ano", 
+     main = "Serie Temporal de Precipitacao")
+
+# Verifica a presença de autocorrelação
+
+Box.test(precip_ts, type = "Ljung-Box")
+
+# Esse teste verifica a existencia de autocorrelaçao no 10lag
+# Para verificar em outros lags basta substituir 10 pelo valor desejado
+# Um complemento visual a esteteste é a inclusão dos gráficos ACF  e PACF
+# Os gráficos darão um retorno visual corroborando com o teste.
+
+# Gráficos de ACF e PACF
+acf(precip_ts)
+pacf(precip_ts)
+
+# teste de tendência
+library(randtests)
+cox.stuart.test(precip_ts)
+# H0: A série não apresenta tendência 
+
+# teste de tendência mais robusto
+library(Kendall)
+MannKendall(precip_ts)
+
+# Teste de estacionariedade
+library(tseries)
+adf.test(precip_ts)
+# H0: A série é não estacionária
+
+# Histograma dos dados
+hist(PRECIP, breaks = 12, col = "lightblue", 
+     main = "Histograma da Precipitacao", xlab = "Precipitacao")
+
+df_precip <- data.frame(Chuva = precip_ts)
+
+fit_gev <- fevd(vetor_chuva, data = df_precip, type = "GEV")
+
+niveis_retorno_m0 <- return.level(fit_gev, 
+                                  return.period = c(10, 50, 100), 
+                                  do.ci = TRUE)
+
+print(niveis_retorno_m0)
+plot(fit_gev)
+
+dev.off()
+plot(fit_gev, type = "rl", 
+     main = "Curva de Nivel de Retorno - GEV Estacionario",
+     pch = 19, col = "black")
+# ====================================================================
+# FASE 5: AJUSTE DO MODELO DE MISTURA (ZCAS vs Convectiva)
+# ====================================================================
+cat("\n=== 5. INICIANDO O AJUSTE DO MODELO DE MISTURA (Penalidade de Leptocurtose) ===\n")
+
+# Função de Log-Verossimilhança Negativa para a Mistura
+nll_mistura <- function(pars) {
+  p    <- pars[1] 
+  mu1  <- pars[2]; sig1 <- pars[3]; xi1 <- pars[4] 
+  mu2  <- pars[5]; sig2 <- pars[6]; xi2 <- pars[7] 
+  
+  if(p <= 0 || p >= 1 || sig1 <= 0 || sig2 <= 0) return(1e9)
+  
+  dens1 <- tryCatch(devd(vetor_chuva, loc=mu1, scale=sig1, shape=xi1, type="GEV"), error=function(e) rep(0, length(vetor_chuva)))
+  dens2 <- tryCatch(devd(vetor_chuva, loc=mu2, scale=sig2, shape=xi2, type="GEV"), error=function(e) rep(0, length(vetor_chuva)))
+  
+  dens_mistura <- p * dens1 + (1 - p) * dens2
+  dens_mistura[is.na(dens_mistura) | dens_mistura <= 0] <- 1e-10
+  return(-sum(log(dens_mistura)))
+}
+
+# Chutes e Limites Estratégicos (Achatando a ZCAS)
+chutes_mix <- c(
+  p = 0.85,         # Indica a probabilidade de se pertecer a primeira moda
+  mu1 = 85,         
+  sig1 = 15, 
+  xi1 = 0.1,  
+  mu2 = 185,        # O pico vermelho cravou forte nos 185
+  sig2 = 35,       
+  xi2 = 0.1   
+)
+
+lim_inf <- c(p = 0.1,  mu1 = 40,  sig1 = 1, xi1 = -0.5, 
+             mu2 = 150, sig2 = 10, xi2 = -0.5)
+
+lim_sup <- c(p = 0.9,  mu1 = 120, sig1 = 60, xi1 = 1.0, 
+             mu2 = 300, sig2 = 80, xi2 = 0.3)
+
+# Otimização
+ajuste_mix <- optim(par = chutes_mix, 
+                    fn = nll_mistura, 
+                    method = "L-BFGS-B", 
+                    lower = lim_inf, 
+                    upper = lim_sup, 
+                    control = list(maxit = 20000))
+
+pars_mix <- ajuste_mix$par
+names(pars_mix) <- c("Peso(p)", "mu1", "sig1", "xi1", "mu2", "sig2", "xi2")
+
+cat("\n=== PARÂMETROS FINAIS DO MODELO DE MISTURA ===\n")
+print(round(pars_mix, 3))
+
+
+# ====================================================================
+# FASE 6: PLOTAGEM AVANÇADA (DISSECANDO A MISTURA)
+# ====================================================================
+cat("\n=== 6. GERANDO GRÁFICO DE DIAGNÓSTICO ===\n")
+
+hist(vetor_chuva, breaks = 30, prob = TRUE, col = "gray90", border = "white",
+     main = "Modelo de Mistura (ZCAS vs Convectiva) em Viçosa - RCP 4.5",
+     xlab = "Precipitação Extrema Anual (mm/dia)", ylab = "Densidade",
+     ylim = c(0, max(density(vetor_chuva)$y) * 1.3))
+
+lines(density(vetor_chuva), lwd = 2, lty = 2, col = "black") 
+
+eixo_x <- seq(min(vetor_chuva), max(vetor_chuva), length.out = 500)
+
+curva1 <- devd(eixo_x, loc=pars_mix[2], scale=pars_mix[3], shape=pars_mix[4], type="GEV")
+curva2 <- devd(eixo_x, loc=pars_mix[5], scale=pars_mix[6], shape=pars_mix[7], type="GEV")
+
+curva1_ponderada <- pars_mix[1] * curva1
+curva2_ponderada <- (1 - pars_mix[1]) * curva2
+curva_total <- curva1_ponderada + curva2_ponderada
+
+polygon(c(eixo_x, rev(eixo_x)), c(curva1_ponderada, rep(0, length(eixo_x))), 
+        col=rgb(0, 0, 1, 0.2), border=NA) 
+polygon(c(eixo_x, rev(eixo_x)), c(curva2_ponderada, rep(0, length(eixo_x))), 
+        col=rgb(1, 0, 0, 0.2), border=NA) 
+
+lines(eixo_x, curva1_ponderada, col="blue", lwd=2)      
+lines(eixo_x, curva2_ponderada, col="red", lwd=2)       
+lines(eixo_x, curva_total, col="darkgreen", lwd=3)      
+
+legend("topright", 
+       legend = c("Densidade Empírica", "GEV 1 (Convectiva)", "GEV 2 (ZCAS)", "Mistura Total"),
+       col = c("black", "blue", "red", "darkgreen"), 
+       lty = c(2, 1, 1, 1), lwd = c(2, 2, 2, 3), cex = 0.8, bg = "white")
+
+
+# ====================================================================
+# FASE 7: CÁLCULO DOS NÍVEIS DE RETORNO (INVERSÃO DA CDF)
+# ====================================================================
+cat("\n=== 7. CALCULANDO NÍVEIS DE RETORNO VIA INVERSÃO NUMÉRICA ===\n")
+
+# Função Cumulativa (CDF) da Mistura
+cdf_mistura <- function(x, pars) {
+  p <- pars[1]
+  cdf1 <- pevd(x, loc=pars[2], scale=pars[3], shape=pars[4], type="GEV")
+  cdf2 <- pevd(x, loc=pars[5], scale=pars[6], shape=pars[7], type="GEV")
+  return(p * cdf1 + (1 - p) * cdf2)
+}
+
+periodos_retorno <- c(2, 5, 10, 25, 50, 100, 200)
+niveis_projetados <- numeric(length(periodos_retorno))
+
+for (i in 1:length(periodos_retorno)) {
+  TR <- periodos_retorno[i]
+  probabilidade_alvo <- 1 - (1 / TR)
+  
+  busca <- uniroot(function(x) cdf_mistura(x, pars_mix) - probabilidade_alvo, 
+                   lower = 0, upper = 1000, extendInt = "yes")
+  
+  niveis_projetados[i] <- busca$root
+}
+
+tabela_TR_Mistura <- data.frame(
+  TR_Anos = periodos_retorno,
+  Probabilidade_Nao_Excedencia = paste0(round((1 - 1/periodos_retorno) * 100, 1), "%"),
+  Precipitacao_Esperada_mm = round(niveis_projetados, 1)
+)
+
+cat("\n=== TABELA FINAL DE NÍVEIS DE RETORNO (VIÇOSA - RCP 4.5 Bimodal) ===\n")
+print(tabela_TR_Mistura)
+
+# ====================================================================
+# [8] CÁLCULO DOS INTERVALOS DE CONFIANÇA (BOOTSTRAP 95%)
+# ====================================================================
+cat("\n=== 8. INICIANDO BOOTSTRAP PARA INTERVALOS DE CONFIANÇA (95%) ===\n")
+cat("Atenção: O R vai rodar o modelo 100 vezes. Isso leva alguns minutos...\n")
+
+# Configurações do Bootstrap
+n_boot <- 100
+niveis_boot <- matrix(NA, nrow = n_boot, ncol = length(periodos_retorno))
+
+# Usamos os parâmetros vencedores da amostra original como "chute inicial"
+# do bootstrap para acelerar muito a convergência do algoritmo
+chutes_boot <- pars_mix 
+
+for(b in 1:n_boot) {
+  # 1. Cria uma nova história climática embaralhando os dados reais (com reposição)
+  amostra_boot <- sample(vetor_chuva, replace = TRUE)
+  
+  # 2. Função de Verossimilhança adaptada para a amostra do universo paralelo
+  nll_boot <- function(pars) {
+    p <- pars[1]; mu1 <- pars[2]; sig1 <- pars[3]; xi1 <- pars[4]
+    mu2 <- pars[5]; sig2 <- pars[6]; xi2 <- pars[7]
+    
+    if(p <= 0 || p >= 1 || sig1 <= 0 || sig2 <= 0) return(1e9)
+    
+    dens1 <- tryCatch(devd(amostra_boot, loc=mu1, scale=sig1, shape=xi1, type="GEV"), error=function(e) rep(0, length(amostra_boot)))
+    dens2 <- tryCatch(devd(amostra_boot, loc=mu2, scale=sig2, shape=xi2, type="GEV"), error=function(e) rep(0, length(amostra_boot)))
+    
+    dens_m <- p * dens1 + (1 - p) * dens2
+    dens_m[is.na(dens_m) | dens_m <= 0] <- 1e-10
+    return(-sum(log(dens_m)))
+  }
+  
+  # 3. Ajusta o Modelo de Mistura para essa nova amostra
+  fit_boot <- tryCatch(
+    optim(par = chutes_boot, fn = nll_boot, method = "L-BFGS-B", 
+          lower = lim_inf, upper = lim_sup, control = list(maxit = 5000)),
+    error = function(e) NULL
+  )
+  
+  # 4. Se o modelo convergiu, calcula os Níveis de Retorno
+  if(!is.null(fit_boot)) {
+    for(i in 1:length(periodos_retorno)) {
+      prob_alvo <- 1 - (1 / periodos_retorno[i])
+      busca <- tryCatch(
+        uniroot(function(x) cdf_mistura(x, fit_boot$par) - prob_alvo, 
+                lower = 0, upper = 1000, extendInt = "yes"),
+        error = function(e) list(root = NA)
+      )
+      niveis_boot[b, i] <- busca$root
+    }
+  }
+  
+  # Imprime o progresso no console
+  if(b %% 10 == 0) cat(" Progresso Bootstrap: ", b, "/", n_boot, " concluídos...\n")
+}
+
+# 5. Calculando os percentis 2.5% (Limite Inferior) e 97.5% (Limite Superior)
+limite_inferior <- apply(niveis_boot, 2, quantile, probs = 0.025, na.rm = TRUE)
+limite_superior <- apply(niveis_boot, 2, quantile, probs = 0.975, na.rm = TRUE)
+
+# ====================================================================
+# [9] A TABELA FINAL DEFINITIVA COM MARGEM DE ERRO
+# ====================================================================
+tabela_TR_Definitiva <- data.frame(
+  TR_Anos = periodos_retorno,
+  Probabilidade = paste0(round((1 - 1/periodos_retorno) * 100, 1), "%"),
+  IC_Inferior_95 = round(limite_inferior, 1),
+  Precipitacao_Esperada_mm = round(niveis_projetados, 1), # A pontual que calculamos antes
+  IC_Superior_95 = round(limite_superior, 1)
+)
+
+print(tabela_TR_Definitiva)
+
+# Calculando a qualidade do modelo com penalidade de parâmetros
+nll_mix <- ajuste_mix$value  # O valor final da Log-Verossimilhança Negativa
+k_mix <- 7                   # Número de parâmetros
+n_dados <- length(vetor_chuva) # Tamanho da amostra (132)
+
+aic_mix <- 2 * k_mix + 2 * nll_mix
+bic_mix <- k_mix * log(n_dados) + 2 * nll_mix
+
+cat("AIC da Mistura:", round(aic_mix, 2), "\n")
+cat("BIC da Mistura:", round(bic_mix, 2), "\n")
+
+
+# Comparando com a GEV sem a mistura (N = 132)
+
+library(extRemes)
+
+# 1. Ajustando a GEV Clássica na mesma super série (132 anos)
+fit_gev_super <- fevd(x = vetor_chuva, type = "GEV")
+
+# 2. Resgatando o AIC
+aic_gev_super <- summary(fit_gev_super)$AIC
+
+cat("AIC da GEV Clássica (3 pars, N=132):", round(aic_gev_super, 2), "\n")
+cat("AIC do Modelo Mistura (7 pars, N=132): 1304.67 \n")
+
+diferenca_real <- aic_gev_super - 1304.67
+diferenca_real
+
+#  NÍVEIS DE RETORNO 
+
+# 3. Agora o cálculo dos Níveis de Retorno vai rodar perfeitamente!
+niveis_retorno_m0 <- return.level(fit_gev_super, 
+                                  return.period = c(10, 50, 100, 200), 
+                                  do.ci = TRUE)
+
+print(niveis_retorno_m0)
+
+# ====================================================================
+# [MISTURA DEFINITIVA] MEGA GRÁFICO DE DIAGNÓSTICO ESTILO EXT_REMES
+# ====================================================================
+cat("\n=== INICIANDO CONSTRUÇÃO DO DIAGNÓSTICO B_MISTURA ===\n")
+
+# Configura o layout para 2 linhas e 2 colunas (MFROW)
+dev.off() # Reseta qualquer plot anterior
+par(mfrow=c(2,2))
+
+# --- PRÉ-REQUISITOS E CÁLCULOS NECESSÁRIOS ---
+dat_sorted <- sort(vetor_chuva) # Dados reais ordenados
+n <- length(dat_sorted)
+# Posições de Plotagem Empíricas (Gringorten) - ideal para extremos
+empirical_probs <- (1:n - 0.44) / (n + 0.12)
+
+# Função auxiliar para vetorizar o uniroot (essencial para QQ e RL)
+q_mistura_vec <- function(p_vector, pars) {
+  sapply(p_vector, function(p) {
+    # Busca a raiz: CDF - prob_alvo = 0
+    uniroot(function(x) cdf_mistura(x, pars) - p, 
+            lower=0, upper=1000, extendInt="yes", tol=1e-8)$root
+  })
+}
+
+# Períodos de Retorno Teóricos para o gráfico (log-X)
+teoricos_anos <- c(seq(1.05, 10, by=0.1), seq(11, 200, by=1))
+teoricas_probs <- 1 - (1 / teoricos_anos)
+
+# ====================================================================
+# [PAINEL 1] PROBABILITY (PP) PLOT (Canto Superior Esquerdo)
+# ====================================================================
+cat(" Gerando Painel 1 (PP)...\n")
+model_probs <- cdf_mistura(dat_sorted, pars_mix)
+
+plot(model_probs, empirical_probs,
+     main = "Probability Plot (Mixed)",
+     xlab = "Model Probability", ylab = "Empirical Probability",
+     pch=16, col=rgb(0,0,1,0.5), # Bolinhas azuis transparentes
+     xlim=c(0,1), ylim=c(0,1))
+abline(0, 1, col="red", lty=2, lwd=2) # Linha 1:1
+
+# ====================================================================
+# [PAINEL 2] QUANTILE (QQ) PLOT (Canto Superior Direito)
+# ====================================================================
+cat(" Gerando Painel 2 (QQ - Vectorized)... aguarde...\n")
+# Calcula quantis teóricos para cada ponto empírico (BUSCA NUMÉRICA)
+model_quantiles <- q_mistura_vec(empirical_probs, pars_mix)
+
+# Replica labels precisos do extRemes
+plot(dat_sorted, model_quantiles,
+     main = "Quantile Plot (Mixed)",
+     xlab = "vetor_chuva Empirical Quantiles",
+     ylab = "Quantiles from Model Simulated Data",
+     pch=16, col=rgb(0,0,1,0.5))
+
+abline(0, 1, col="red", lty=2, lwd=2) # Linha 1:1
+
+# ====================================================================
+# [PAINEL 3] DENSITY PLOT (Canto Inferior Esquerdo)
+# ====================================================================
+cat(" Gerando Painel 3 (Density)...\n")
+hist(vetor_chuva, breaks = 30, prob = TRUE, 
+     col = "gray90", border = "white",
+     main = "Density Plot (Mixed)",
+     xlab = "Precipitação Extrema Anual (mm/dia)", ylab = "Densidade",
+     ylim = c(0, max(density(vetor_chuva)$y) * 1.3))
+
+lines(density(vetor_chuva), lwd = 2, lty = 2, col = "black") # Densidade empírica
+
+eixo_x_dens <- seq(min(vetor_chuva), max(vetor_chuva), length.out = 500)
+curva1_dens <- pars_mix[1] * devd(eixo_x_dens, loc=pars_mix[2], scale=pars_mix[3], shape=pars_mix[4], type="GEV")
+curva2_dens <- (1 - pars_mix[1]) * devd(eixo_x_dens, loc=pars_mix[5], scale=pars_mix[6], shape=pars_mix[7], type="GEV")
+curva_total_dens <- curva1_dens + curva2_dens
+
+lines(eixo_x_dens, curva1_dens, col="blue", lwd=2, lty=1)  # Convectiva
+lines(eixo_x_dens, curva2_dens, col="red", lwd=2, lty=1)   # ZCAS
+lines(eixo_x_dens, curva_total_dens, col="darkgreen", lwd=3, lty=1) # Mistura Total
+
+# ====================================================================
+# [PAINEL 4] RETURN LEVEL PLOT COM IC DO BOOTSTRAP (Canto Inferior Direito)
+# ====================================================================
+cat(" Gerando Painel 4 (Return Level - Vectorized)... aguarde...\n")
+
+# Posições empíricas dos dados reais para TR
+empirical_TRs <- 1 / (1 - empirical_probs)
+
+# Calcula a curva teórica da Mistura (BUSCA NUMÉRICA)
+teoricos_levels <- q_mistura_vec(teoricas_probs, pars_mix)
+
+plot(teoricos_anos, teoricos_levels, type="n", # "n" para não plotar pontos ainda
+     log="x", # Escala logarítmica no eixo X (Período de Retorno)
+     main = "Return Level Plot (Mixed)",
+     xlab = "Return Period (years)", ylab = "Return Level",
+     xlim=c(1, 200), # Garante limite de TR compatível
+     ylim=c(min(dat_sorted, teoricos_levels), max(tabela_TR_Definitiva$IC_Superior_95)))
+
+# Componente 1: Pontos de Confiança do Bootstrap (As "bands")
+lines(tabela_TR_Definitiva$TR_Anos, tabela_TR_Definitiva$IC_Inferior_95, col="gray60", lty=3, lwd=2)
+lines(tabela_TR_Definitiva$TR_Anos, tabela_TR_Definitiva$IC_Superior_95, col="gray60", lty=3, lwd=2)
+
+# Componente 2: Curva Teórica da Mistura Total (Preta Sólida)
+lines(teoricos_anos, teoricos_levels, col="black", lwd=3, lty=1)
+
+# Componente 3: Pontos Observados (Bolinhas transparentes)
+points(empirical_TRs, dat_sorted, pch=16, col=rgb(0,0,1,0.5))
+
+# ====================================================================
+# LEGENDA GLOBAL (PARA REPLICAR O ESTILO DO EXT_REMES)
+# ====================================================================
+# O extRemes coloca a legenda em uma caixa branca opaca
+# Nós replicamos isso focando no que é visível nos plots PP, QQ e RL
+# 4. Legenda Compacta e Bem Posicionada
+legend("bottomright", 
+       legend=c("Mixed GEV Model", "95% Confidence Bands", "Empirical Data"),
+       col=c("black", "gray60", rgb(0,0,1,0.5)), 
+       lty=c(1, 3, NA), pch=c(NA, NA, 16), lwd=c(3, 2, NA),
+       cex=0.45, bg="white", inset=0.02, box.col="gray")
+
+# Reseta o layout MFROW para single plot
+par(mfrow=c(1,1))
+cat("\n=== DIAGNÓSTICO B_MISTURA CONCLUÍDO COM SUCESSO! ===\n")
+
+# ====================================================================
+# CORREÇÃO DO PAINEL 4 (RETURN LEVEL PLOT) - RODE DIRETO NO CONSOLE
+# ====================================================================
+# Como a janela gráfica já deve estar aberta no Painel 4, 
+# podemos reescrever por cima ou gerar de novo:
+
+par(mfrow=c(1,1)) # Vamos plotar ele grande, sozinho, para você ver os detalhes!
+
+plot(teoricos_anos, teoricos_levels, type="n", 
+     log="x", 
+     main = "Return Level Plot (Mixed GEV) - Viçosa",
+     xlab = "Return Period (years)", ylab = "Return Level (mm)",
+     xlim=c(1, 200), 
+     ylim=c(min(dat_sorted) - 10, max(tabela_TR_Definitiva$IC_Superior_95) + 10))
+
+# 1. Bandas de Confiança
+lines(tabela_TR_Definitiva$TR_Anos, tabela_TR_Definitiva$IC_Inferior_95, col="gray60", lty=3, lwd=2)
+lines(tabela_TR_Definitiva$TR_Anos, tabela_TR_Definitiva$IC_Superior_95, col="gray60", lty=3, lwd=2)
+
+# 2. Curva do Modelo
+lines(teoricos_anos, teoricos_levels, col="black", lwd=3, lty=1)
+
+# 3. Dados Empíricos
+points(empirical_TRs, dat_sorted, pch=16, col=rgb(0,0,1,0.5))
+
+# 4. Legenda Compacta e Bem Posicionada
+legend("bottomright", 
+       legend=c("Mixed GEV Model", "95% Confidence Bands", "Empirical Data"),
+       col=c("black", "gray60", rgb(0,0,1,0.5)), 
+       lty=c(1, 3, NA), pch=c(NA, NA, 16), lwd=c(3, 2, NA),
+       cex=0.85, bg="white", inset=0.02, box.col="gray")

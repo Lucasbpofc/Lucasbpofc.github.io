@@ -1,0 +1,126 @@
+# ==============================================================================
+# PREPARAÇÃO DE DADOS PARA GEV ESPACIAL (Baseado no artigo da Nova Zelândia)
+# ==============================================================================
+
+library(terra)
+
+# 1. Carregar o NetCDF (Pode ser o Xavier histórico ou o Eta-HadGEM2 futuro)
+cubo_clima <- rast("pr_historical_1961_2005.nc")
+
+# NOTA: O NetCDF precisa saber que a terceira dimensão é o "tempo". 
+# Se a função time(cubo_clima) retornar NULL, ative a linha abaixo adaptando as datas:
+# time(cubo_clima) <- seq(as.Date("1961-01-01"), as.Date("2005-12-31"), by="day")
+
+# ==============================================================================
+# 2. Definir a Janela Espacial (Bounding Box)
+# ==============================================================================
+# Definindo um retângulo ao redor de Viçosa (ajuste os graus conforme necessário)
+# Ordem: Longitude Mínima, Longitude Máxima, Latitude Mínima, Latitude Máxima
+janela_estudo <- ext(-44.0, -41.0, -22.0, -19.0)
+
+# Fazer o recorte espacial (Spatial Crop) - Isso deixa o arquivo levíssimo!
+cubo_recortado <- crop(cubo_clima, janela_estudo)
+
+# ==============================================================================
+# 3. O "Pulo do Gato": Extrair Máximos Anuais no Raster
+# ==============================================================================
+# Extrair apenas os anos das datas da nossa série
+anos <- as.numeric(format(time(cubo_recortado), "%Y"))
+
+# A função tapp aplica o max() para cada bloco de anos espacialmente
+# O resultado é um novo "cubo", mas agora com apenas 1 camada por ano!
+maximos_anuais_raster <- tapp(cubo_recortado, index = anos, fun = max, na.rm = TRUE)
+
+# ==============================================================================
+# 4. Formatação para o Pacote SpatialExtremes
+# ==============================================================================
+# Agora sim, convertemos para data.frame. O argumento xy=TRUE traz a Lat e Lon.
+df_bruto <- as.data.frame(maximos_anuais_raster, xy = TRUE)
+
+# Matriz 1: Locais e Covariáveis (n_locais x 2)
+# Esta matriz dirá ao modelo ONDE está cada série temporal
+locais_covariaveis <- df_bruto[, c("x", "y")]
+colnames(locais_covariaveis) <- c("lon", "lat")
+
+# Matriz 2: Observações da GEV (n_anos x n_locais)
+# Removemos as colunas de lon/lat e transpomos (t) a matriz. 
+# Pacotes espaciais geralmente exigem que as linhas sejam os Anos e as colunas os Locais.
+matriz_gev <- t(df_bruto[, -c(1, 2)])
+
+# Limpar os nomes das linhas e colunas para não bugar o modelo espacial
+rownames(matriz_gev) <- unique(anos)
+colnames(matriz_gev) <- paste0("Loc_", 1:ncol(matriz_gev))
+rownames(locais_covariaveis) <- paste0("Loc_", 1:nrow(locais_covariaveis))
+
+# Verificar se a estrutura está perfeita:
+dim(matriz_gev)          # Deve retornar algo como: 45 (anos) x N (número de pixels)
+dim(locais_covariaveis)  # Deve retornar algo como: N (número de pixels) x 2 (lon, lat)
+
+
+# ==============================================================================
+# 5. ADICIONANDO ALTITUDE (ELEVAÇÃO) COMO COVARIÁVEL ESPACIAL
+# ==============================================================================
+
+# Instalar o pacote geodata se ainda não o tiver
+install.packages("geodata")
+library(geodata)
+library(terra)
+
+cat("Baixando dados topográficos... (Isso pode levar alguns segundos)\n")
+
+# 1. Baixar o Modelo Digital de Elevação (DEM) para o Brasil
+# O argumento path = tempdir() salva na pasta temporária para não lotar seu PC
+dem_brasil <- elevation_30s(country = "BRA", path = tempdir())
+
+# 2. Recortar o relevo exatamente na mesma janela da chuva (Viçosa e região)
+# Usando a mesma 'janela_estudo' do script anterior: ext(-44.0, -41.0, -22.0, -19.0)
+dem_recortado <- crop(dem_brasil, janela_estudo)
+
+# 3. Transformar as coordenadas da nossa matriz em um objeto espacial
+pontos_chuva <- vect(locais_covariaveis, geom = c("lon", "lat"), crs = crs(dem_recortado))
+
+# 4. Extrair a altitude exata para cada pixel onde temos dados de chuva
+# O R vai "espetar" o mapa de relevo exatamente onde estão os pontos de precipitação
+altitudes <- terra::extract(dem_recortado, pontos_chuva)
+
+# 5. Adicionar a altitude como a 3ª coluna na nossa matriz de covariáveis
+# O nome da coluna gerada pelo geodata geralmente é o código do país (ex: BRA_elv)
+locais_covariaveis$alt <- altitudes[, 2] 
+
+# Visualizar as primeiras linhas para confirmar o sucesso
+head(locais_covariaveis)
+
+# ==============================================================================
+# MODELAGEM ESPACIAL DA GEV (Trend Surface Model)
+# ==============================================================================
+
+# Instalar o pacote se for a sua primeira vez rodando
+install.packages("SpatialExtremes")
+library(SpatialExtremes)
+
+# ==============================================================================
+# LIMPEZA DE DADOS E REAJUSTE DO MODELO
+# ==============================================================================
+
+# 1. Forçar a matriz de chuva a ser uma matriz numérica pura
+matriz_gev_num <- apply(matriz_gev, 2, as.numeric)
+
+# 2. Forçar as covariáveis a serem um data.frame de vetores numéricos (unlist destrói as listas)
+locais_cov_num <- data.frame(
+  lon = as.numeric(unlist(locais_covariaveis$lon)),
+  lat = as.numeric(unlist(locais_covariaveis$lat)),
+  alt = as.numeric(unlist(locais_covariaveis$alt))
+)
+
+# 3. Rodar o modelo com os objetos higienizados
+modelo_espacial <- fitspatgev(
+  data = matriz_gev_num,                 
+  covariables = locais_cov_num,  
+  
+  loc.form = ~ lon + lat + alt,      
+  scale.form = ~ alt,                
+  shape.form = ~ 1                   
+)
+
+# 4. Imprimir o resultado
+summary(modelo_espacial)

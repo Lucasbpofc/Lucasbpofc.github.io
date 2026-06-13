@@ -136,6 +136,25 @@ summary(EXTREMOS$PRECIP)
 datatable(EXTREMOS, options = list(pageLength = 5, scrollX = TRUE), 
           caption = "Tabela 1: Série Histórica de Extremos (Viçosa)")
 
+# Valores em um único vetor 
+
+# 3. Preparar os seus Dados Reais Observados
+Serie_historica <- c(90, 59.2, 75.7, 75.8, 72.7, 42.2, 106, 96.6, 84.4, 65.8, 73.6, 
+                 163.9, 83.6, 91.2, 112.6, 78.4, 82.3, 100.9, 184.8, 110.8,
+                 56.7,67.3, 67.7, 74.8, 77, 44.3, 109.3, 69.5, 54.6, 92.2, 
+                 133.4, 73.9,87.4, 108.6, 72.8, 71.6, 133.4, 80.3, 90.5, 92.7, 
+                 94.4, 80.2,
+```
+
+
+```{r import_data}
+64.2
+```
+
+
+```{r import_data}
+, 89, 89.8, 60.4, 59.6, 110.4, 80.6, 87.2, 50.6, 112.6, 126.1,51.6, 84)
+
 ```
 Historicamente, a série de precipitações máximas diárias para o mês de janeiro apresenta uma média de 58,58 mm. O evento extremo de maior magnitude foi registrado em 1986, com um acumulado de 184,80 mm. Em contrapartida, o ano de 1989 apresentou o menor valor para uma máxima mensal, com apenas 15,10 mm em 24 horas.
 
