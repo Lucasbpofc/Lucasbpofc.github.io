@@ -1,0 +1,110 @@
+---
+title: "WH5_Lucas"
+author: "Lucas Pereira Belo"
+date: "2026-05-27"
+output: html_document
+---
+# Resolução de Exercício: Estimação de Erro Padrão e Bootstrap
+
+**Aluno:** Lucas Pereira Belo  
+**Contato:** luca.p.belo@ufv.br  
+
+---
+
+## Preparação dos Dados e Pacotes
+
+```r
+library(ISLR)
+library(boot)
+
+data("Auto")
+
+head(Auto)  
+names(Auto)
+```
+
+---
+
+## a)	Apresente o histograma para cada variável (dica: use hist(Auto$weight); hist(Auto$acceleration); hist(Auto$horsepower) para criar um histograma básico para cada variável).
+
+```{r, fig.width=6, fig.height=4}
+library(ISLR)
+head(Auto)
+
+# Gráficos
+par(mfrow = c(1,3))
+
+hist(Auto$weight,
+     col = "blue",
+     main = "Weight",
+     xlab = "Weight")
+
+hist(Auto$horsepower,
+     col = "red",
+     main = "Horsepower",
+     xlab = "Horsepower")
+
+hist(Auto$acceleration,
+     col = "green",
+     main = "Acceleration",
+     xlab = "Acceleration")
+```
+
+---
+
+## b)	Para cada variável, calcule o erro padrão da média usando a fórmula fornecida acima.
+
+```r
+# Média de cada variável
+M1 <- mean(Auto$weight); M1
+M2 <- mean(Auto$horsepower); M2
+M3 <- mean(Auto$acceleration); M3
+
+# Tamanho amostral de cada uma (n)
+n1 <- length(Auto$weight); n1
+n2 <- length(Auto$horsepower); n2
+n3 <- length(Auto$acceleration); n3
+
+# Desvio padrão de cada variável (sd)
+s1 <- sd(Auto$weight); s1
+s2 <- sd(Auto$horsepower); s2
+s3 <- sd(Auto$acceleration); s3
+
+# Erro padrão da média utilizando a fórmula
+d1 <- s1/sqrt(n1); d1
+d2 <- s2/sqrt(n2); d2
+d3 <- s3/sqrt(n3); d3
+```
+
+---
+
+## c)	Para cada variável, calcule a estimativa bootstrap do erro padrão da média.
+
+```r
+# Fixando a semente
+set.seed(1)
+
+# Executando o bootstrap (usando R = 1000 replicações) para cada variável
+boot_w <- boot(Auto$weight, media_fn, R = 1000); boot_w
+boot_h <- boot(Auto$horsepower, media_fn, R = 1000); boot_h
+boot_a <- boot(Auto$acceleration, media_fn, R = 1000); boot_a
+```
+
+---
+
+## d)	Compare e discuta as semelhanças ou diferenças observadas após realizar os itens a, b e c acima.
+
+O valor `original` referente à média é a primeira observação da saída da função `boot`. A análise comparativa entre as três variáveis revela os seguintes pontos:
+
+* **Variável `weight` (boot_w):**
+  * A saída indicou o valor original de **2977.584**, que é exatamente o mesmo valor da média calculada no item `M1`.
+  * O viés (`bias`) indicou **-1.142212**, apontando uma diferença muito baixa entre o verdadeiro valor da média e o valor associado à média das 1000 amostras Bootstrap.
+  * O erro padrão calculado pelo Bootstrap foi de **42.96144**, um valor muito próximo do calculado manualmente. Vale destacar que o histograma apresentou uma leve assimetria para a direita, o que corrobora com a presença desse pequeno viés.
+
+* **Variável `horsepower` (boot_h):**
+  * O viés foi de **-0.08902296**, novamente indicando uma baixa diferença entre o verdadeiro valor da média e a média oriunda do Bootstrap.
+  * O erro padrão da média apresentou, de forma consistente, valores muito próximos: o valor calculado manualmente foi de **1.944097** e a função retornou **1.851167**.
+
+* **Variável `acceleration` (boot_a):**
+  * Para esta variável, o viés ficou praticamente nulo, com um valor de **-0.001234439**.
+  * Esse valor reflete diretamente o comportamento visualizado no item (a), visto que o histograma de `acceleration` é aproximadamente simétrico, característica que corrobora fortemente com a redução quase total do viés na reamostragem.
