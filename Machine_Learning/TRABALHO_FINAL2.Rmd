@@ -1,0 +1,193 @@
+---
+title: "APRENDIZADO DE MÁQUINA"
+author: "Lucas Pereira Belo"
+date: "2026-06-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Este relatório apresenta o desenvolvimento e a avaliação de modelos preditivos aplicados a um experimento com cana-de-açúcar conducted sob o Delineamento em Blocos Casualizados (DBC) na estação experimental de Oratórios, MG. O estudo avalia 60 famílias distribuídas em 4 blocos (repetições), totalizando 240 parcelas experimentais. Os dados originais foram sumarizados ao nível de média por família no arquivo dd3.xlsx, totalizando 60 entradas analíticas.
+
+O objetivo central é praticar e comparar técnicas de aprendizado estatístico para problemas de Regressão e Classificação:
+
+Problema de Regressão: Predizer a produtividade contínua das famílias, mensurada em Toneladas de Colmos por Hectare (TSH), visando identificar e selecionar os materiais genéticos mais produtivos antes da pesagem física massiva no campo.
+
+Problema de Classificação: Predizer a classe de rendimento da família (TSH_class), segregada a partir da média geral do experimento, avaliando a acurácia de modelos supervisionados na triagem dicotômica.
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = 'center')
+# Carregar pacotes necessários para o ambiente
+library(tidyverse)
+library(readxl)
+library(corrplot)
+library(car)
+library(leaps)
+library(caret)
+library(class)
+```
+
+```{r}
+
+dd3 <- read_excel("dd3.xlsx")
+
+dados <- dd3 %>%
+  select(
+    Family = Familia,
+    SN     = NC,        # Número médio de colmos por parcela
+    TSH    = TCH.x,     # Toneladas de colmos por hectare
+    SD     = DIAMETRO,  # Diâmetro médio do colmo
+    SH     = ALTURA,    # Altura média do colmo
+    R      = Red,       # Reflectância na banda do Vermelho
+    G      = Green,     # Reflectância na banda do Verde
+    B      = Blue,      # Reflectância na banda do Azul
+    VARI   = VARI,      # Visible Atmospherically Resistant Index
+    GLI    = GLI,       # Green Leaf Index
+    NGRDI  = NGRDI      # Normalized Green Red Difference Index
+  )
+
+dados$Family <- as.factor(dados$Family)
+summary(dados %>% select(-Family))
+```
+Para diagnosticar a estrutura de associação linear entre os preditores e a variável resposta, gerou-se a matriz de correlação gráfica de Pearson focada nas variáveis espectrais e na produtividade.
+
+```{r}
+
+dados_num <- dados %>% select(-Family)
+matriz_corr <- cor(dados_num, use = "complete.obs")
+
+# Plota a matriz de correlação de forma bem visual e profissional
+corrplot(matriz_corr, 
+         method = "color",       # Usa cores para representar a força
+         type = "upper",         # Mostra só a metade de cima da matriz
+         addCoef.col = "black",  # Adiciona os números da correlação em preto
+         tl.col = "black",       # Cor do texto dos eixos
+         tl.srt = 45,            # Rotaciona os nomes das variáveis em 45 graus
+         diag = FALSE,           # Tira a diagonal principal (que é sempre 1)
+         title = "Matriz de Correlação das Variáveis",
+         mar = c(0,0,1,0))       # Ajusta a margem para o título caber direitinho
+
+```
+Ajustou-se inicialmente um modelo linear de mínimos quadrados ordinários contendo todas as 9 covariáveis disponíveis para explicar o comportamento contínuo do TSH.
+
+```{r}
+lm.fit =lm(TSH~. -Family,data=dados )
+summary (lm.fit)
+```
+
+O R^2 ajustado com  0.9043 indica que mais de 90% de toda variação da produtividade da cana de açúcar entre as 60 famílias é explicada pelas variáveis do modelo.
+O modelo apresentou 3 variáveis altamente significativas, SN, SD e SH, indicandoque se a planta tem mais hastes, maior altura e maiores densidades ela pesa mais. O grande problema do modelo é a falta de parcimônia, que será explorada a seguir; Outro ponto importante é que amatriz de correlação plotada anteriormente indicou variáveis altamente correlacionadas, uma forma de confirmar essa autocorrelação é através do VIF
+
+### Diagnóstico de Multicolinearidade (VIF)
+
+Para atestar estatisticamente o excesso de colinearidade observado na matriz de correlação, calculou-se o Fator de Inflação da Variância (VIF) para o modelo completo utilizando o pacote `car`.
+
+```{r diagnostico_vif}
+library(car)
+
+# Calculando o VIF do modelo completo
+valores_vif <- vif(lm.fit)
+
+# Exibindo os valores de forma organizada
+print(valores_vif)
+
+# BÔNUS: Gráfico de barras para ilustrar a gravidade do VIF
+barplot(valores_vif, 
+        main = "Fator de Inflação da Variância (VIF)", 
+        col = ifelse(valores_vif > 10, "red", "steelblue"), 
+        las = 2, 
+        ylab = "Valor do VIF")
+abline(h = 10, col = "black", lty = 2, lwd = 2) 
+```
+
+Os elevados valores do VIF indicam uma multicolinearidade severa, esses achados conjutamente do grafico de correlação indicam que o modelo contendo todas as variáveis se mostra inadequado. Esses indicativos sugerem que devemos utilizar métodos de reduçãod e dimensionalidade para reduzir a multicolinearidade presente nos dados.
+
+Para a construção do modelo PCR, todas as 9 covariáveis preditoras foram submetidas à Análise de Componentes Principais. Como as variáveis originais possuem diferentes unidades de medida (contagens, centímetros, porcentagens de reflectância), a padronização centralizada e escalonada (`scale. = TRUE`) foi rigorosamente aplicada para evitar distorções de escala.
+
+
+```{r pcr_extracao_grafico, fig.width=8, fig.height=5}
+# 1. Execução do PCA com padronização obrigatória
+dados_pca_total <- dados %>% select(-Family, -TSH,)
+pca_total <- prcomp(dados_pca_total, center = TRUE, scale. = TRUE)
+
+# 2. Cálculos das Proporções de Variância
+var_explicada <- pca_total$sdev^2
+prop_var <- var_explicada / sum(var_explicada)
+var_acumulada <- cumsum(prop_var)
+
+# 3. Criação do Dataframe para o Gráfico
+df_pca_var <- data.frame(
+  Componente = factor(paste0("PC", 1:length(prop_var)), levels = paste0("PC", 1:length(prop_var))),
+  Proporcao = prop_var,
+  Acumulada = var_acumulada
+)
+
+# 4. Plotagem do Scree Plot com Variância Acumulada
+grafico_variancia <- ggplot(df_pca_var, aes(x = Componente)) +
+  geom_bar(aes(y = Proporcao), stat = "identity", fill = "steelblue", alpha = 0.85) +
+  geom_line(aes(y = Acumulada, group = 1), color = "firebrick", linewidth = 1.2) +
+  geom_point(aes(y = Acumulada), color = "firebrick", size = 3) +
+  geom_text(aes(y = Acumulada, label = scales::percent(Acumulada, accuracy = 0.1)),
+            vjust = -1.5, color = "darkred", size = 3.5, fontface = "bold") +
+  geom_text(aes(y = Proporcao, label = scales::percent(Proporcao, accuracy = 0.1)),
+            vjust = 1.5, color = "white", size = 3.5, fontface = "bold") +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0, 1.1)) +
+  theme_minimal() +
+  labs(
+    title = "Variância Explicada por Componente Principal (Scree Plot)",
+    subtitle = "Barras: Variância retida por componente | Linha e Pontos: Variância acumulada",
+    x = "Componentes Principais",
+    y = "Proporção da Variância"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(face = "italic", color = "gray40"),
+    axis.text.x = element_text(face = "bold")
+  )
+
+print(grafico_variancia)
+```
+
+
+A análise visual do gráfico orienta a escolha do número de componentes a serem retidos para o modelo de regressão. O primeiro componente (PC1) retém a maior parcela isolada da variância da amostra. Seguindo o critério empírico de retenção de informações, optou-se por utilizar os 4 primeiros componentes principais (PC1 a PC4). Juntos, eles explicam de forma acumulada aproximadamente 85% a 90% de toda a variabilidade presente nas 9 variáveis originais, garantindo que a redução de dimensionalidade elimine a multicolinearidade sem causar perdas significativas de informação preditiva.
+
+```{r}
+# Estruturação do banco de dados com os 4 primeiros Componentes Principais
+dados_regressao_pcr <- cbind(dados %>% select(TSH), pca_total$x[, 1:4])
+
+# Ajuste do Modelo PCR
+modelo_pcr_total <- lm(TSH ~ PC1 + PC2 + PC3 + PC4, data = dados_regressao_pcr)
+summary(modelo_pcr_total)
+```
+Pensando na parcimônia, aplicou-se o algoritimo de seleção de variáveis stepwise sobre o modelo contendo os 4 PC selecionados anteriormente.
+
+```{r}
+# Usando a função step() para fazer a seleção no modelo de componentes
+modelo_pcr_refinado <- step(modelo_pcr_total, direction = "both", trace = 0)
+
+# Verificando quais componentes sobreviveram e a nova precisão
+summary(modelo_pcr_refinado)
+```
+A aplicação do procedimento Stepwise sobre os componentes principais confirmou a ineficiência preditiva do PC2. O modelo PCR refinado, retendo exclusivamente PC1, PC3 e PC4, manteve a acurácia global praticamente inalterada ($R^2_{adj} = 86,79\%$). Contudo, a remoção do componente ruído provocou um aumento substancial na Estatística F do modelo (de 99,54 para 130,3), evidenciando um ganho expressivo de robustez analítica. O Biplot gerado atesta esta dinâmica: o PC1 isola a variação espectral altamente correlacionada (VIF máximo de 27.366 no NGRDI), enquanto o PC2 mapeia a arquitetura física (SN contraposto a SH e SD), fenômeno de compensação que não reflete em acúmulo de tonelagem (TSH).
+
+```{r}
+
+library(factoextra)
+
+# Gerando o Biplot elegante
+grafico_biplot <- fviz_pca_biplot(pca_total, 
+                                  repel = TRUE,                # Evita que os textos se sobreponham
+                                  col.var = "firebrick",       # Cor das setas (Variáveis)
+                                  col.ind = "steelblue",       # Cor dos pontos (Famílias)
+                                  alpha.ind = 0.6,             # Transparência dos pontos
+                                  title = "Biplot PCA: Dispersão das Famílias e Projeção das Variáveis",
+                                  xlab = paste0("PC1 - Contraste Espectral"),
+                                  ylab = paste0("PC2 - Arquitetura da Planta")) +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5))
+
+print(grafico_biplot)
+```
+

@@ -1,16 +1,16 @@
 ---
-title: "Trabalho final"
+title: "Relatório Técnico: Seleção de Famílias Pró-Produtivas de Cana-de-Açúcar via Aprendizado de Máquina"
 subtitle: "Trabalho Final - Disciplina EST 792"
 author: "Lucas Pereira Belo"
 institution: "Universidade Federal de Viçosa (UFV)"
 date: "Junho de 2026"
 output:
-  word_document:
-    toc: true
-    toc_depth: 3
   html_document:
     toc: true
     toc_float: true
+  word_document:
+    toc: true
+    toc_depth: 3
 ---
 
 ```{r setup, include=FALSE}
@@ -23,7 +23,6 @@ library(car)
 library(leaps)
 library(caret)
 library(class)
-# library(factoextra) # Descomente esta linha se já tiver conseguido atualizar o pacote rlang
 ```
 
 # 1. Introdução e Contextualização do Experimento
@@ -107,7 +106,7 @@ A análise do VIF corroborou matematicamente o diagnóstico de multicolinearidad
 
 ## 3.2 Seleção Stepwise Forward (Questão 3)
 
-Aplicou-se o algoritmo de seleção *Stepwise Forward* avaliado pelo critério **BIC (Bayesian Information Criterion)** para garantir parcimônia.
+Aplicou-se o algoritmo de seleção Stepwise Forward avaliado pelo critério BIC (Bayesian Information Criterion) para garantir parcimônia.
 
 # 4. Regressão de Componentes Principais (PCR)
 
@@ -154,48 +153,24 @@ summary(modelo_pcr_refinado)
 
 O procedimento *Stepwise* removeu o **PC2** por ineficiência preditiva. O modelo final refinado (com PC1, PC3 e PC4) preservou o ajuste global (R² Ajustado = 86,79%) elevando a Estatística F para 130.3. O PC2 mapeia a compensação de crescimento (muitos colmos finos contra poucos colmos grossos), o que altera a arquitetura mas não a pesagem final de TSH.
 
----
 
-# 5. Problema de Classificação Supervisionada com KNN
+```{r biplot_pcr}
+# 1. Carregar o pacote obrigatório para o gráfico
+library(factoextra)
 
-## 5.1 Abordagem da Parte 1: Conjunto de Validação (50% Treino / 50% Validação)
+# 2. Gerando o Biplot elegante
+grafico_biplot <- fviz_pca_biplot(pca_total, 
+                                  repel = TRUE,                # Evita que os textos se sobreponham
+                                  col.var = "firebrick",       # Cor das setas (Variaveis)
+                                  col.ind = "steelblue",       # Cor dos pontos (Familias)
+                                  alpha.ind = 0.6,             # Transparencia dos pontos
+                                  title = "Biplot PCA: Dispersao das Familias e Projecao das Variaveis",
+                                  xlab = "PC1 - Contraste Espectral",
+                                  ylab = "PC2 - Arquitetura da Planta") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5))
 
-```{r knn_parte1}
-media_tsh <- mean(dados$TSH)
-dados$TSH_class <- as.factor(ifelse(dados$TSH >= media_tsh, "Classe_1", "Classe_2"))
-
-set.seed(792)
-indices_treino <- sample(1:nrow(dados), size = 0.5 * nrow(dados))
-
-dados_knn_treino <- dados[indices_treino, c("SN", "SD", "SH")]
-dados_knn_validacao <- dados[-indices_treino, c("SN", "SD", "SH")]
-labels_treino <- dados$TSH_class[indices_treino]
-labels_validacao <- dados$TSH_class[-indices_treino]
-
-valores_escala <- preProcess(dados_knn_treino, method = c("center", "scale"))
-treino_padronizado <- predict(valores_escala, dados_knn_treino)
-validacao_padronizada <- predict(valores_escala, dados_knn_validacao)
-
-previsoes_knn <- knn(train = treino_padronizado, test = validacao_padronizada, 
-                     cl = labels_treino, k = 5)
-confusionMatrix(previsoes_knn, labels_validacao)
+print(grafico_biplot)
 ```
 
-## 5.2 Abordagem da Parte 2: Sem Conjunto de Validação (100% Treino)
 
-```{r knn_parte2}
-escala_total <- preProcess(dados[, c("SN", "SD", "SH")], method = c("center", "scale"))
-dados_padronizados_totais <- predict(escala_total, dados[, c("SN", "SD", "SH")])
-
-previsoes_knn_total <- knn(train = dados_padronizados_totais, test = dados_padronizados_totais, 
-                           cl = dados$TSH_class, k = 5)
-confusionMatrix(previsoes_knn_total, dados$TSH_class)
-```
-
----
-
-# 6. Conclusões (Questão 4)
-
-1. A seleção prévia de famílias de cana-de-açúcar via aprendizado estatístico antes da pesagem física é altamente viável.
-2. O modelo reduzido biométrico (SN, SD, SH) via critério BIC conferiu a maior precisão preditiva direta estável (R² Ajustado = 91,31%).
-3. A abordagem por PCR viabilizou com segurança o uso dos dados espectrais de drones, mitigando os efeitos do VIF extremo e mantendo uma excelente capacidade explicativa (R² Ajustado = 86,79%), despontando como uma alternativa tecnológica veloz para triagens automatizadas.
