@@ -1,0 +1,30 @@
+---
+title: "Análise de Dados Biométricos"
+subtitle: "Estruturação e Correlação Inicial"
+author: "Apresentado por: [Nome do Amigo]"
+format: 
+  revealjs:
+    theme: solarized      # Um tema minimalista e elegante
+    slide-number: true # Mostra o número dos slides
+    show-slide-number: all
+execute:
+  echo: true          # Mostra o código nos slides (mude para false se preferir ocultar)
+  warning: false      # Oculta avisos do R
+  message: false      # Oculta mensagens de carregamento de pacotes
+---
+
+## Configuração do Ambiente {visibility="uncounted"}
+
+\`\`\`{r} #\| label: setup #\| include: false
+
+# Este bloco roda os pacotes e carrega os dados nos bastidores
+
+library(readxl) library(tidyverse) library(car) library(MASS)
+
+# Carregamento do arquivo
+
+dd3 \<- read_excel("dd3.xlsx")
+
+# Filtragem e renomeação das variáveis
+
+dados \<- dd3 %\>% dplyr::select( Family = Familia, SN = NC, \# Número médio de colmos por parcela TSH = TCH.x, \# Toneladas de colmos por hectare SD = DIAMETRO, \# Diâmetro médio do colmo SH = ALTURA, \# Altura média do colmo R = Red, \# Reflectância na banda do Vermelho G = Green, \# Reflectância na banda do Verde B = Blue, \# Reflectância na banda do Azul VARI = VARI, \# Visible Atmospherically Resistant Index GLI = GLI, \# Green Leaf Index NGRDI = NGRDI \# Normalized Green Red Difference Index )
