@@ -7,7 +7,7 @@ output:
   html_document:
     toc: true
     toc_float: true
-    theme: flatly        # Adicionei um tema limpo e profissional para o HTML
+    theme: darkly        # Adicionei um tema limpo e profissional para o HTML
     highlight: tango     # Deixa as cores do código R bem destacadas
   word_document:
     toc: true
