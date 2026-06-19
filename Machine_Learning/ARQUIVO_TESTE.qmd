@@ -1,0 +1,86 @@
+---
+title: "Simulação de Sobrevivência Interativa"
+format: 
+  html:
+    theme: darkly
+    toc: true
+    toc-title: "Índice"
+    toc-location: left
+    smooth-scroll: true
+engine: knitr
+jupyter: false
+filters:
+  - webr
+webr:
+  packages: ['survival']
+---
+<style>
+/* 1. Muda a cor do botão 'Run Code' (que era verde) */
+button.qwebr-button-run {
+  background-color: #d35400 !important; /* Laranja escuro */
+  border-color: #e67e22 !important;     /* Borda laranja claro */
+  color: white !important;              /* Texto branco */
+}
+
+/* 2. Muda a cor do botão quando passa o rato por cima */
+button.qwebr-button-run:hover {
+  background-color: #e67e22 !important;
+}
+
+/* 3. Adiciona cor na margem/borda da caixa de código */
+.qwebr-editor {
+  border: 2px solid #d35400 !important; /* Borda laranja à volta de tudo */
+  border-radius: 8px !important;        /* Cantos arredondados */
+  padding: 5px !important;              /* Espaçamento interno */
+}
+</style>
+---
+
+Para praticar a interatividade, altere os parâmetros da simulação abaixo, como as taxas de falha (`taxa_falha`) ou o tamanho da amostra (`n`), e clique em **Run Code** para gerar uma nova curva de Kaplan-Meier.
+
+```{webr-r}
+library(survival)
+
+# 1. Simulacao dos Dados
+set.seed(42)
+n <- 200 # Tamanho total da amostra (100 por grupo)
+
+# Criando os grupos (0 = Controle, 1 = Tratamento)
+grupo <- rep(c(0, 1), each = n/2)
+
+# Simulando os tempos de falha reais (Distribuicao Exponencial)
+# O Tratamento (grupo 1) tem uma taxa de falha menor, logo, sobrevive mais
+taxa_falha <- ifelse(grupo == 0, 0.1, 0.04)
+tempo_real <- rexp(n, rate = taxa_falha)
+
+# Simulando os tempos de censura a direita (Distribuicao Uniforme)
+tempo_censura <- runif(n, min = 1, max = 40)
+
+# O tempo observado e o minimo entre a falha e a censura
+tempo_obs <- pmin(tempo_real, tempo_censura)
+
+# Status do evento (1 = falha observada, 0 = censurado)
+status <- ifelse(tempo_real <= tempo_censura, 1, 0)
+
+# Estruturando o banco de dados
+dados_sobrev <- data.frame(
+  tempo = tempo_obs, 
+  status = status, 
+  grupo = factor(grupo, labels = c("Controle", "Tratamento"))
+)
+
+# 2. Ajuste do Modelo Kaplan-Meier
+ajuste_km <- survfit(Surv(tempo, status) ~ grupo, data = dados_sobrev)
+
+# 3. Visualizacao Grafica
+plot(ajuste_km, col = c("#e68533", "#48bfa2"), lwd = 2,
+     main = "Curvas de Sobrevivencia de Kaplan-Meier",
+     xlab = "Tempo", ylab = "Probabilidade de Sobrevivencia",
+     mark.time = TRUE) # Adiciona as cruzes indicando as censuras
+
+legend("topright", legend = levels(dados_sobrev$grupo),
+       col = c("#e68533", "#48bfa2"), lwd = 2, bty = "n")
+```
+
+```         
+```

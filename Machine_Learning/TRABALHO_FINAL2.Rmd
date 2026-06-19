@@ -77,6 +77,12 @@ lm.fit =lm(TSH~. -Family,data=dados )
 summary (lm.fit)
 ```
 
+
+```{r}
+lm.fit2 =lm(TSH~ SN + SD + SH + G + NGRDI ,data=dados )
+summary (lm.fit2)
+```
+
 O R^2 ajustado com  0.9043 indica que mais de 90% de toda variação da produtividade da cana de açúcar entre as 60 famílias é explicada pelas variáveis do modelo.
 O modelo apresentou 3 variáveis altamente significativas, SN, SD e SH, indicandoque se a planta tem mais hastes, maior altura e maiores densidades ela pesa mais. O grande problema do modelo é a falta de parcimônia, que será explorada a seguir; Outro ponto importante é que amatriz de correlação plotada anteriormente indicou variáveis altamente correlacionadas, uma forma de confirmar essa autocorrelação é através do VIF
 

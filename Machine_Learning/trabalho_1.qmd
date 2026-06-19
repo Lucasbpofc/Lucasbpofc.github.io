@@ -1,0 +1,82 @@
+---
+title: "Simulação de Sobrevivência Interativa"
+format: 
+  html:
+    theme: darkly
+    toc: true
+    toc-title: "Índice"
+    toc-location: left
+    smooth-scroll: true
+engine: knitr
+jupyter: false
+filters:
+  - webr
+webr:
+  packages: ['survival']
+---
+<style>
+/* 1. Muda a cor do botão 'Run Code' (que era verde) */
+button.qwebr-button-run {
+  background-color: #d35400 !important; /* Laranja escuro */
+  border-color: #e67e22 !important;     /* Borda laranja claro */
+  color: white !important;              /* Texto branco */
+}
+
+/* 2. Muda a cor do botão quando passa o rato por cima */
+button.qwebr-button-run:hover {
+  background-color: #e67e22 !important;
+}
+
+/* 3. Adiciona cor na margem/borda da caixa de código */
+.qwebr-editor {
+  border: 2px solid #d35400 !important; /* Borda laranja à volta de tudo */
+  border-radius: 8px !important;        /* Cantos arredondados */
+  padding: 5px !important;              /* Espaçamento interno */
+}
+</style>
+---
+
+Este relatório apresenta o desenvolvimento e a avaliação de modelos preditivos aplicados a um experimento com cana-de-açúcar conducted sob o Delineamento em Blocos Casualizados (DBC) na estação experimental de Oratórios, MG. O estudo avalia 60 famílias distribuídas em 4 blocos (repetições), totalizando 240 parcelas experimentais. Os dados originais foram sumarizados ao nível de média por família no arquivo dd3.xlsx, totalizando 60 entradas analíticas.
+
+O objetivo central é praticar e comparar técnicas de aprendizado estatístico para problemas de Regressão e Classificação:
+
+Problema de Regressão: Predizer a produtividade contínua das famílias, mensurada em Toneladas de Colmos por Hectare (TSH), visando identificar e selecionar os materiais genéticos mais produtivos antes da pesagem física massiva no campo.
+
+Problema de Classificação: Predizer a classe de rendimento da família (TSH_class), segregada a partir da média geral do experimento, avaliando a acurácia de modelos supervisionados na triagem dicotômica.
+
+```{webr-r}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = 'center')
+# Carregar pacotes necessários para o ambiente
+library(tidyverse)
+library(readxl)
+library(corrplot)
+library(car)
+library(leaps)
+library(caret)
+library(class)
+```
+
+Importação do conjunto de dados
+
+```{webr-r}
+
+dd3 <- read_excel("dd3.xlsx")
+
+dados <- dd3 %>%
+  select(
+    Family = Familia,
+    SN     = NC,        # Número médio de colmos por parcela
+    TSH    = TCH.x,     # Toneladas de colmos por hectare
+    SD     = DIAMETRO,  # Diâmetro médio do colmo
+    SH     = ALTURA,    # Altura média do colmo
+    R      = Red,       # Reflectância na banda do Vermelho
+    G      = Green,     # Reflectância na banda do Verde
+    B      = Blue,      # Reflectância na banda do Azul
+    VARI   = VARI,      # Visible Atmospherically Resistant Index
+    GLI    = GLI,       # Green Leaf Index
+    NGRDI  = NGRDI      # Normalized Green Red Difference Index
+  )
+
+dados$Family <- as.factor(dados$Family)
+summary(dados %>% select(-Family))
+```
