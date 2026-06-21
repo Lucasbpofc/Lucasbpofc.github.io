@@ -31,7 +31,7 @@
 
 library(ISLR)
 set.seed (1)
-train <- sample (392 ,196) #Seleciona 196 linhas dentre as 392 existentes
+train <- sample (392 ,196)
 
 # (Here we use a shortcut in the sample command; see ?sample for details.)
 # We then use the subset option in lm() to fit a linear regression using only
@@ -46,10 +46,6 @@ lm.fit <- lm(mpg ~ horsepower ,data = Auto ,subset = train )
 
 attach (Auto)
 mean((mpg - predict (lm.fit ,Auto))[-train ]^2)
-
-#comparing:
-cbind(mpg, predict(lm.fit, Auto))
-cbind(mpg[-train], predict(lm.fit, Auto[,-train]))
 
 # Therefore, the estimated test MSE for the linear regression fit is 26.14. We
 # can use the poly() function to estimate the test error for the quadratic
@@ -82,9 +78,7 @@ mean((mpg - predict (lm.fit3 ,Auto))[-train ]^2)
 # little evidence in favor of a model that uses a cubic function of horsepower.
 
 ########################################
-
 ## 5.3.2 Leave-One-Out Cross-Validation
-
 ########################################
 
 # The LOOCV estimate can be automatically computed for any generalized

@@ -2,17 +2,19 @@
 title: "Relatório Técnico: Seleção de Famílias Pró-Produtivas de Cana-de-Açúcar via Aprendizado de Máquina"
 subtitle: "Trabalho Final - Disciplina EST 792"
 author: "Lucas Pereira Belo"
-institution: "Universidade Federal de Viçosa (UFV)"
+institute: "Universidade Federal de Viçosa (UFV)"
 date: "Junho de 2026"
-output:
-  html_document:
-    toc: true
-    toc_float: true
-    theme: readable        # Outros temas: "bootstrap", "cerulean", "cosmo", "darkly", "flatly", "journal", "lumen", "paper", "readable", "sandstone", "simplex", "spacelab", "united", "yeti"
-    highlight: tango     # Deixa as cores do código R bem destacadas
-  word_document:
-    toc: true
-    toc_depth: 3
+format:
+  revealjs:
+    toc: true                       # Gera o sumário dos slides automaticamente
+    toc-title: "Sumário"
+    slide-number: true              # Mostra o número dos slides
+    highlight-style: tango          # Mantém o estilo de cores do R que você gosta
+    theme: default                  # Temas de slide: default, clean, serif, solarized, etc.
+filters:
+  - webr
+webr:
+  packages: ['readxl']   # <--- É aqui que a mágica acontece
 ---
 
 ```{r setup, include=FALSE}
@@ -33,15 +35,23 @@ Este relatório apresenta o desenvolvimento e a avaliação de modelos preditivo
 
 O objetivo central é comparar técnicas de aprendizado estatístico para problemas de **Regressão** (predizer a produtividade contínua em TSH) e **Classificação** (triagem dicotômica baseada na média).
 
----
+------------------------------------------------------------------------
 
 # 2. Preparação e Análise Exploratória dos Dados (EDA)
 
 ## 2.1 Importação e Estruturação
 
 ```{r importacao}
-# Leitura e reestruturação do dataframe original
+library(readxl)
+
+# Define o caminho dos dados
+url_dados <- "https://raw.githubusercontent.com/Lucasbpofc/Lucasbpofc.github.io/main/Machine_Learning/dd3.xlsx"
+
+# 3. Baixa o arquivo para rodar virtualmente 
+download.file(url_dados, destfile = "dd3.xlsx", mode = "wb")
+
 dd3 <- read_excel("dd3.xlsx")
+head(dd3)
 
 dados <- dd3 %>%
   select(
@@ -61,7 +71,7 @@ dados <- dd3 %>%
 dados$Family <- as.factor(dados$Family)
 ```
 
-## Análise Gráfica de Correlação 
+## Análise Gráfica de Correlação
 
 ```{r correlacao_espectral}
 # Seleciona apenas as variáveis numéricas
@@ -82,11 +92,11 @@ corrplot(matriz_corr,
 
 ```
 
----
+------------------------------------------------------------------------
 
 # Modelagem por Regressão Linear Múltipla e Seleção de Variáveis
 
-## Abordagem com Modelo Completo e Diagnóstico de VIF 
+## Abordagem com Modelo Completo e Diagnóstico de VIF
 
 Ajustou-se inicialmente um modelo linear contendo todas as 9 covariáveis disponíveis. Para atestar o efeito da colinearidade, calculou-se o Fator de Inflação da Variância (VIF).
 
@@ -155,7 +165,6 @@ summary(modelo_pcr_refinado)
 
 O procedimento *Stepwise* removeu o **PC2** por ineficiência preditiva. O modelo final refinado (com PC1, PC3 e PC4) preservou o ajuste global (R² Ajustado = 86,79%) elevando a Estatística F para 130.3. O PC2 mapeia a compensação de crescimento (muitos colmos finos contra poucos colmos grossos), o que altera a arquitetura mas não a pesagem final de TSH.
 
-
 ```{r biplot_pcr}
 # 1. Carregar o pacote obrigatório para o gráfico
 library(factoextra)
@@ -174,5 +183,3 @@ grafico_biplot <- fviz_pca_biplot(pca_total,
 
 print(grafico_biplot)
 ```
-
-

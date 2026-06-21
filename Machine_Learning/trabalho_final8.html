@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script src="trabalho_final8_files/libs/clipboard/clipboard.min.js"></script>
+<script src="trabalho_final8_files/libs/quarto-html/tabby.min.js"></script>
+<script src="trabalho_final8_files/libs/quarto-html/popper.min.js"></script>
+<script src="trabalho_final8_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="trabalho_final8_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="trabalho_final8_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="trabalho_final8_files/libs/quarto-html/quarto-syntax-highlighting-e41caad1b6b9b62eb3087831f3b4c651.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.8.25">
+
+  <meta name="author" content="Lucas Pereira Belo">
+  <meta name="dcterms.date" content="2026-06-01">
+  <title>Relatório Técnico: Seleção de Famílias Pró-Produtivas de Cana-de-Açúcar via Aprendizado de Máquina</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="trabalho_final8_files/libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="trabalho_final8_files/libs/revealjs/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {  background-color: #f8f8f8; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ef2929; } /* Alert */
+    code span.an { color: #8f5902; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #204a87; } /* Attribute */
+    code span.bn { color: #0000cf; } /* BaseN */
+    code span.cf { color: #204a87; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4e9a06; } /* Char */
+    code span.cn { color: #8f5902; } /* Constant */
+    code span.co { color: #8f5902; font-style: italic; } /* Comment */
+    code span.cv { color: #8f5902; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #8f5902; font-weight: bold; font-style: italic; } /* Documentation */
+    code span.dt { color: #204a87; } /* DataType */
+    code span.dv { color: #0000cf; } /* DecVal */
+    code span.er { color: #a40000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #0000cf; } /* Float */
+    code span.fu { color: #204a87; font-weight: bold; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #8f5902; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #204a87; font-weight: bold; } /* Keyword */
+    code span.op { color: #ce5c00; font-weight: bold; } /* Operator */
+    code span.ot { color: #8f5902; } /* Other */
+    code span.pp { color: #8f5902; font-style: italic; } /* Preprocessor */
+    code span.sc { color: #ce5c00; font-weight: bold; } /* SpecialChar */
+    code span.ss { color: #4e9a06; } /* SpecialString */
+    code span.st { color: #4e9a06; } /* String */
+    code span.va { color: #000000; } /* Variable */
+    code span.vs { color: #4e9a06; } /* VerbatimString */
+    code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="trabalho_final8_files/libs/revealjs/dist/theme/quarto-180c62c9bcf69a0506044dd7f3253a18.css">
+  <link href="trabalho_final8_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="trabalho_final8_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="trabalho_final8_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="trabalho_final8_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+</head>
+<body class="quarto-light">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" class="quarto-title-block center">
+  <h1 class="title">Relatório Técnico: Seleção de Famílias Pró-Produtivas de Cana-de-Açúcar via Aprendizado de Máquina</h1>
+  <p class="subtitle">Trabalho Final - Disciplina EST 792</p>
+
+<div class="quarto-title-authors">
+<div class="quarto-title-author">
+<div class="quarto-title-author-name">
+Lucas Pereira Belo 
+</div>
+        <p class="quarto-title-affiliation">
+            Universidade Federal de Viçosa (UFV)
+          </p>
+    </div>
+</div>
+
+  <p class="date">2026-06-01</p>
+</section><section id="TOC">
+<nav role="doc-toc"> 
+<h2 id="toc-title">Sumário</h2>
+<ul>
+<li><a href="#/introdução-e-contextualização-do-experimento" id="/toc-introdução-e-contextualização-do-experimento">1. Introdução e Contextualização do Experimento</a>
+<ul>
+
+</ul></li>
+<li><a href="#/preparação-e-análise-exploratória-dos-dados-eda" id="/toc-preparação-e-análise-exploratória-dos-dados-eda">2. Preparação e Análise Exploratória dos Dados (EDA)</a>
+<ul>
+<li><a href="#/importação-e-estruturação" id="/toc-importação-e-estruturação">2.1 Importação e Estruturação</a></li>
+<li><a href="#/análise-gráfica-de-correlação" id="/toc-análise-gráfica-de-correlação">Análise Gráfica de Correlação</a></li>
+
+</ul></li>
+<li><a href="#/modelagem-por-regressão-linear-múltipla-e-seleção-de-variáveis" id="/toc-modelagem-por-regressão-linear-múltipla-e-seleção-de-variáveis">Modelagem por Regressão Linear Múltipla e Seleção de Variáveis</a>
+<ul>
+<li><a href="#/abordagem-com-modelo-completo-e-diagnóstico-de-vif" id="/toc-abordagem-com-modelo-completo-e-diagnóstico-de-vif">Abordagem com Modelo Completo e Diagnóstico de VIF</a></li>
+<li><a href="#/seleção-stepwise-forward-questão-3" id="/toc-seleção-stepwise-forward-questão-3">3.2 Seleção Stepwise Forward (Questão 3)</a></li>
+</ul></li>
+<li><a href="#/regressão-de-componentes-principais-pcr" id="/toc-regressão-de-componentes-principais-pcr">4. Regressão de Componentes Principais (PCR)</a>
+<ul>
+<li><a href="#/extração-do-pca-e-análise-de-variância-scree-plot" id="/toc-extração-do-pca-e-análise-de-variância-scree-plot">Extração do PCA e Análise de Variância (Scree Plot)</a></li>
+<li><a href="#/ajuste-do-modelo-pcr-e-seleção-stepwise" id="/toc-ajuste-do-modelo-pcr-e-seleção-stepwise">4.2 Ajuste do Modelo PCR e Seleção Stepwise</a></li>
+</ul></li>
+</ul>
+</nav>
+</section>
+<section>
+<section id="introdução-e-contextualização-do-experimento" class="title-slide slide level1 center">
+<h1>1. Introdução e Contextualização do Experimento</h1>
+<p>Este relatório apresenta o desenvolvimento e a avaliação de modelos preditivos aplicados a um experimento com cana-de-açúcar conduzido sob o Delineamento em Blocos Casualizados (DBC) na estação experimental de Oratórios, MG. O estudo avalia <strong>60 famílias</strong> distribuídas em <strong>4 blocos (repetições)</strong>, totalizando <strong>240 parcelas experimentais</strong>. Os dados originais foram sumarizados ao nível de média por família no arquivo <code>dd3.xlsx</code>, totalizando 60 entradas analíticas.</p>
+<p>O objetivo central é comparar técnicas de aprendizado estatístico para problemas de <strong>Regressão</strong> (predizer a produtividade contínua em TSH) e <strong>Classificação</strong> (triagem dicotômica baseada na média).</p>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="preparação-e-análise-exploratória-dos-dados-eda" class="title-slide slide level1 center">
+<h1>2. Preparação e Análise Exploratória dos Dados (EDA)</h1>
+
+</section>
+<section id="importação-e-estruturação" class="slide level2">
+<h2>2.1 Importação e Estruturação</h2>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href=""></a><span class="fu">library</span>(readxl)</span>
+<span id="cb1-2"><a href=""></a></span>
+<span id="cb1-3"><a href=""></a><span class="co"># Define o caminho dos dados</span></span>
+<span id="cb1-4"><a href=""></a>url_dados <span class="ot">&lt;-</span> <span class="st">"https://raw.githubusercontent.com/Lucasbpofc/Lucasbpofc.github.io/main/Machine_Learning/dd3.xlsx"</span></span>
+<span id="cb1-5"><a href=""></a></span>
+<span id="cb1-6"><a href=""></a><span class="co"># 3. Baixa o arquivo para rodar virtualmente </span></span>
+<span id="cb1-7"><a href=""></a><span class="fu">download.file</span>(url_dados, <span class="at">destfile =</span> <span class="st">"dd3.xlsx"</span>, <span class="at">mode =</span> <span class="st">"wb"</span>)</span>
+<span id="cb1-8"><a href=""></a></span>
+<span id="cb1-9"><a href=""></a>dd3 <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"dd3.xlsx"</span>)</span>
+<span id="cb1-10"><a href=""></a><span class="fu">head</span>(dd3)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 33
+  Familia Group.1 BLOCO    Al    Ca     H     m    Mg     P    pH    SB  SB_T
+    &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1     219     219   2.5 0.942 0.728  6.25  45.9 0.268  4.44  4.44 1.11   2.07
+2     223     223   2.5 0.841 0.857  5.93  40.4 0.310  4.56  4.56 1.26   2.11
+3     224     224   2.5 1.17  1.06   6.26  56.7 0.213  4.38  4.38 0.883  2.07
+4     232     232   2.5 1.10  0.593  6.25  54.3 0.232  4.41  4.41 0.937  2.05
+5     234     234   2.5 1.18  0.694  6.52  55.8 0.217  4.36  4.36 0.914  2.09
+6     244     244   2.5 1.10  0.561  6.04  55.8 0.210  4.39  4.39 0.882  2.01
+# ℹ 21 more variables: v &lt;dbl&gt;, BRIX.x &lt;dbl&gt;, TCH.x &lt;dbl&gt;, Red &lt;dbl&gt;,
+#   Green &lt;dbl&gt;, Blue &lt;dbl&gt;, VARI &lt;dbl&gt;, GLI &lt;dbl&gt;, NGRDI &lt;dbl&gt;,
+#   Indivíduo &lt;dbl&gt;, Progênie &lt;dbl&gt;, Repetição &lt;dbl&gt;, Parcela &lt;dbl&gt;,
+#   Árvore &lt;dbl&gt;, BRIX.y &lt;dbl&gt;, ALTURA &lt;dbl&gt;, DIAMETRO &lt;dbl&gt;, NC &lt;dbl&gt;,
+#   PESO &lt;dbl&gt;, TCH.y &lt;dbl&gt;, TBH &lt;dbl&gt;</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href=""></a>dados <span class="ot">&lt;-</span> dd3 <span class="sc">%&gt;%</span></span>
+<span id="cb3-2"><a href=""></a>  <span class="fu">select</span>(</span>
+<span id="cb3-3"><a href=""></a>    <span class="at">Family =</span> Familia,</span>
+<span id="cb3-4"><a href=""></a>    <span class="at">SN     =</span> NC,        <span class="co"># Número médio de colmos por parcela</span></span>
+<span id="cb3-5"><a href=""></a>    <span class="at">TSH    =</span> TCH.x,     <span class="co"># Toneladas de colmos por hectare</span></span>
+<span id="cb3-6"><a href=""></a>    <span class="at">SD     =</span> DIAMETRO,  <span class="co"># Diâmetro médio do colmo</span></span>
+<span id="cb3-7"><a href=""></a>    <span class="at">SH     =</span> ALTURA,    <span class="co"># Altura média do colmo</span></span>
+<span id="cb3-8"><a href=""></a>    <span class="at">R      =</span> Red,       <span class="co"># Reflectância na banda do Vermelho</span></span>
+<span id="cb3-9"><a href=""></a>    <span class="at">G      =</span> Green,     <span class="co"># Reflectância na banda do Verde</span></span>
+<span id="cb3-10"><a href=""></a>    <span class="at">B      =</span> Blue,      <span class="co"># Reflectância na banda do Azul</span></span>
+<span id="cb3-11"><a href=""></a>    <span class="at">VARI   =</span> VARI,      <span class="co"># Visible Atmospherically Resistant Index</span></span>
+<span id="cb3-12"><a href=""></a>    <span class="at">GLI    =</span> GLI,       <span class="co"># Green Leaf Index</span></span>
+<span id="cb3-13"><a href=""></a>    <span class="at">NGRDI  =</span> NGRDI      <span class="co"># Normalized Green Red Difference Index</span></span>
+<span id="cb3-14"><a href=""></a>  )</span>
+<span id="cb3-15"><a href=""></a></span>
+<span id="cb3-16"><a href=""></a>dados<span class="sc">$</span>Family <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(dados<span class="sc">$</span>Family)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="análise-gráfica-de-correlação" class="slide level2">
+<h2>Análise Gráfica de Correlação</h2>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href=""></a><span class="co"># Seleciona apenas as variáveis numéricas</span></span>
+<span id="cb4-2"><a href=""></a>dados_num <span class="ot">&lt;-</span> dados <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>Family)</span>
+<span id="cb4-3"><a href=""></a></span>
+<span id="cb4-4"><a href=""></a><span class="co"># Calcula a matriz de correlação (Pearson)</span></span>
+<span id="cb4-5"><a href=""></a>matriz_corr <span class="ot">&lt;-</span> <span class="fu">cor</span>(dados_num, <span class="at">use =</span> <span class="st">"complete.obs"</span>)</span>
+<span id="cb4-6"><a href=""></a></span>
+<span id="cb4-7"><a href=""></a><span class="fu">corrplot</span>(matriz_corr, </span>
+<span id="cb4-8"><a href=""></a>         <span class="at">method =</span> <span class="st">"color"</span>,       <span class="co"># Usa cores para representar a força</span></span>
+<span id="cb4-9"><a href=""></a>         <span class="at">type =</span> <span class="st">"upper"</span>,         <span class="co"># Mostra só a metade de cima da matriz</span></span>
+<span id="cb4-10"><a href=""></a>         <span class="at">addCoef.col =</span> <span class="st">"black"</span>,  <span class="co"># Adiciona os números da correlação em preto</span></span>
+<span id="cb4-11"><a href=""></a>         <span class="at">tl.col =</span> <span class="st">"black"</span>,       <span class="co"># Cor do texto dos eixos</span></span>
+<span id="cb4-12"><a href=""></a>         <span class="at">tl.srt =</span> <span class="dv">45</span>,            <span class="co"># Rotaciona os nomes das variáveis em 45 graus</span></span>
+<span id="cb4-13"><a href=""></a>         <span class="at">diag =</span> <span class="cn">FALSE</span>,           <span class="co"># Tira a diagonal principal (que é sempre 1)</span></span>
+<span id="cb4-14"><a href=""></a>         <span class="at">title =</span> <span class="st">"Matriz de Correlacao das Variaveis"</span>,</span>
+<span id="cb4-15"><a href=""></a>         <span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">0</span>))       <span class="co"># Ajusta a margem para o título caber direitinho</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+
+</div>
+<img data-src="trabalho_final8_files/figure-revealjs/correlacao_espectral-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="modelagem-por-regressão-linear-múltipla-e-seleção-de-variáveis" class="title-slide slide level1 center">
+<h1>Modelagem por Regressão Linear Múltipla e Seleção de Variáveis</h1>
+
+</section>
+<section id="abordagem-com-modelo-completo-e-diagnóstico-de-vif" class="slide level2">
+<h2>Abordagem com Modelo Completo e Diagnóstico de VIF</h2>
+<p>Ajustou-se inicialmente um modelo linear contendo todas as 9 covariáveis disponíveis. Para atestar o efeito da colinearidade, calculou-se o Fator de Inflação da Variância (VIF).</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href=""></a>modelo_completo <span class="ot">&lt;-</span> <span class="fu">lm</span>(TSH <span class="sc">~</span> . <span class="sc">-</span> Family, <span class="at">data =</span> dados)</span>
+<span id="cb5-2"><a href=""></a><span class="fu">summary</span>(modelo_completo)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = TSH ~ . - Family, data = dados)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-13.3225  -4.6598   0.0325   4.3193  18.5219 
+
+Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  -241.0510    67.7506  -3.558  0.00083 ***
+SN             14.2627     1.1217  12.715  &lt; 2e-16 ***
+SD              7.3541     0.7578   9.705 4.36e-13 ***
+SH             28.5597     6.5013   4.393 5.82e-05 ***
+R               3.5302     6.9454   0.508  0.61349    
+G              -5.3200    10.1599  -0.524  0.60285    
+B               2.0935    16.0470   0.130  0.89673    
+VARI          908.4688  2621.0912   0.347  0.73035    
+GLI           181.4646  5303.7626   0.034  0.97284    
+NGRDI       -1001.5408  8531.1345  -0.117  0.90701    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 6.962 on 50 degrees of freedom
+Multiple R-squared:  0.9189,    Adjusted R-squared:  0.9043 
+F-statistic: 62.98 on 9 and 50 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href=""></a><span class="co"># Cálculo e plotagem do VIF</span></span>
+<span id="cb7-2"><a href=""></a>valores_vif <span class="ot">&lt;-</span> <span class="fu">vif</span>(modelo_completo)</span>
+<span id="cb7-3"><a href=""></a></span>
+<span id="cb7-4"><a href=""></a><span class="fu">barplot</span>(valores_vif, </span>
+<span id="cb7-5"><a href=""></a>        <span class="at">main =</span> <span class="st">"Fator de Inflacao da Variancia (VIF)"</span>, </span>
+<span id="cb7-6"><a href=""></a>        <span class="at">col =</span> <span class="fu">ifelse</span>(valores_vif <span class="sc">&gt;</span> <span class="dv">10</span>, <span class="st">"red"</span>, <span class="st">"steelblue"</span>), </span>
+<span id="cb7-7"><a href=""></a>        <span class="at">las =</span> <span class="dv">2</span>, </span>
+<span id="cb7-8"><a href=""></a>        <span class="at">ylab =</span> <span class="st">"Valor do VIF"</span>)</span>
+<span id="cb7-9"><a href=""></a><span class="fu">abline</span>(<span class="at">h =</span> <span class="dv">10</span>, <span class="at">col =</span> <span class="st">"black"</span>, <span class="at">lty =</span> <span class="dv">2</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+
+</div>
+<img data-src="trabalho_final8_files/figure-revealjs/modelo_completo-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"><p>A análise do VIF corroborou matematicamente o diagnóstico de multicolinearidade extrema. Enquanto as variáveis biométricas (SN, SD e SH) apresentam valores próximos a 1, os índices espectrais exibiram valores catastróficos, ultrapassando 25.000 para o NGRDI. Isso justifica de forma inequívoca o colapso do modelo completo e a necessidade de redução de dimensionalidade.</p>
+</section>
+<section id="seleção-stepwise-forward-questão-3" class="slide level2">
+<h2>3.2 Seleção Stepwise Forward (Questão 3)</h2>
+<p>Aplicou-se o algoritmo de seleção Stepwise Forward avaliado pelo critério BIC (Bayesian Information Criterion) para garantir parcimônia.</p>
+</section></section>
+<section>
+<section id="regressão-de-componentes-principais-pcr" class="title-slide slide level1 center">
+<h1>4. Regressão de Componentes Principais (PCR)</h1>
+<p>Como alternativa para reter a informação espectral sem violações matemáticas, implementou-se a PCR.</p>
+</section>
+<section id="extração-do-pca-e-análise-de-variância-scree-plot" class="slide level2">
+<h2>Extração do PCA e Análise de Variância (Scree Plot)</h2>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href=""></a>dados_pca_total <span class="ot">&lt;-</span> dados <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>Family, <span class="sc">-</span>TSH)</span>
+<span id="cb8-2"><a href=""></a>pca_total <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(dados_pca_total, <span class="at">center =</span> <span class="cn">TRUE</span>, <span class="at">scale. =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-3"><a href=""></a></span>
+<span id="cb8-4"><a href=""></a>var_explicada <span class="ot">&lt;-</span> pca_total<span class="sc">$</span>sdev<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb8-5"><a href=""></a>prop_var <span class="ot">&lt;-</span> var_explicada <span class="sc">/</span> <span class="fu">sum</span>(var_explicada)</span>
+<span id="cb8-6"><a href=""></a>var_acumulada <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(prop_var)</span>
+<span id="cb8-7"><a href=""></a></span>
+<span id="cb8-8"><a href=""></a>df_pca_var <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb8-9"><a href=""></a>  <span class="at">Componente =</span> <span class="fu">factor</span>(<span class="fu">paste0</span>(<span class="st">"PC"</span>, <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(prop_var)), <span class="at">levels =</span> <span class="fu">paste0</span>(<span class="st">"PC"</span>, <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(prop_var))),</span>
+<span id="cb8-10"><a href=""></a>  <span class="at">Proporcao =</span> prop_var,</span>
+<span id="cb8-11"><a href=""></a>  <span class="at">Acumulada =</span> var_acumulada</span>
+<span id="cb8-12"><a href=""></a>)</span>
+<span id="cb8-13"><a href=""></a></span>
+<span id="cb8-14"><a href=""></a><span class="fu">ggplot</span>(df_pca_var, <span class="fu">aes</span>(<span class="at">x =</span> Componente)) <span class="sc">+</span></span>
+<span id="cb8-15"><a href=""></a>  <span class="fu">geom_bar</span>(<span class="fu">aes</span>(<span class="at">y =</span> Proporcao), <span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">fill =</span> <span class="st">"steelblue"</span>, <span class="at">alpha =</span> <span class="fl">0.85</span>) <span class="sc">+</span></span>
+<span id="cb8-16"><a href=""></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> Acumulada, <span class="at">group =</span> <span class="dv">1</span>), <span class="at">color =</span> <span class="st">"firebrick"</span>, <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb8-17"><a href=""></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">y =</span> Acumulada), <span class="at">color =</span> <span class="st">"firebrick"</span>, <span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb8-18"><a href=""></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">percent_format</span>(), <span class="at">limits =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">1.1</span>)) <span class="sc">+</span></span>
+<span id="cb8-19"><a href=""></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb8-20"><a href=""></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Variância Explicada por Componente Principal (Scree Plot)"</span>,</span>
+<span id="cb8-21"><a href=""></a>       <span class="at">x =</span> <span class="st">"Componentes Principais"</span>, <span class="at">y =</span> <span class="st">"Proporção da Variância"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+
+</div>
+<img data-src="trabalho_final8_files/figure-revealjs/pcr_extracao_grafico-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"><p>Optou-se por reter os 4 primeiros componentes, que acumulam a maior parte da variabilidade dos preditores originais.</p>
+</section>
+<section id="ajuste-do-modelo-pcr-e-seleção-stepwise" class="slide level2">
+<h2>4.2 Ajuste do Modelo PCR e Seleção Stepwise</h2>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href=""></a>dados_regressao_pcr <span class="ot">&lt;-</span> <span class="fu">cbind</span>(dados <span class="sc">%&gt;%</span> <span class="fu">select</span>(TSH), pca_total<span class="sc">$</span>x[, <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>])</span>
+<span id="cb9-2"><a href=""></a>modelo_pcr_total <span class="ot">&lt;-</span> <span class="fu">lm</span>(TSH <span class="sc">~</span> PC1 <span class="sc">+</span> PC2 <span class="sc">+</span> PC3 <span class="sc">+</span> PC4, <span class="at">data =</span> dados_regressao_pcr)</span>
+<span id="cb9-3"><a href=""></a></span>
+<span id="cb9-4"><a href=""></a><span class="co"># Refinamento Stepwise no modelo PCR</span></span>
+<span id="cb9-5"><a href=""></a>modelo_pcr_refinado <span class="ot">&lt;-</span> <span class="fu">step</span>(modelo_pcr_total, <span class="at">direction =</span> <span class="st">"both"</span>, <span class="at">trace =</span> <span class="dv">0</span>)</span>
+<span id="cb9-6"><a href=""></a><span class="fu">summary</span>(modelo_pcr_refinado)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = TSH ~ PC1 + PC3 + PC4, data = dados_regressao_pcr)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-20.991  -5.856  -1.171   4.310  25.220 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) 119.0865     1.0561  112.76  &lt; 2e-16 ***
+PC1          -6.0700     0.4574  -13.27  &lt; 2e-16 ***
+PC3          11.4882     1.1073   10.38 1.18e-14 ***
+PC4         -13.6804     1.3225  -10.35 1.32e-14 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 8.181 on 56 degrees of freedom
+Multiple R-squared:  0.8747,    Adjusted R-squared:  0.8679 
+F-statistic: 130.3 on 3 and 56 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<p>O procedimento <em>Stepwise</em> removeu o <strong>PC2</strong> por ineficiência preditiva. O modelo final refinado (com PC1, PC3 e PC4) preservou o ajuste global (R² Ajustado = 86,79%) elevando a Estatística F para 130.3. O PC2 mapeia a compensação de crescimento (muitos colmos finos contra poucos colmos grossos), o que altera a arquitetura mas não a pesagem final de TSH.</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href=""></a><span class="co"># 1. Carregar o pacote obrigatório para o gráfico</span></span>
+<span id="cb11-2"><a href=""></a><span class="fu">library</span>(factoextra)</span>
+<span id="cb11-3"><a href=""></a></span>
+<span id="cb11-4"><a href=""></a><span class="co"># 2. Gerando o Biplot elegante</span></span>
+<span id="cb11-5"><a href=""></a>grafico_biplot <span class="ot">&lt;-</span> <span class="fu">fviz_pca_biplot</span>(pca_total, </span>
+<span id="cb11-6"><a href=""></a>                                  <span class="at">repel =</span> <span class="cn">TRUE</span>,                <span class="co"># Evita que os textos se sobreponham</span></span>
+<span id="cb11-7"><a href=""></a>                                  <span class="at">col.var =</span> <span class="st">"firebrick"</span>,       <span class="co"># Cor das setas (Variaveis)</span></span>
+<span id="cb11-8"><a href=""></a>                                  <span class="at">col.ind =</span> <span class="st">"steelblue"</span>,       <span class="co"># Cor dos pontos (Familias)</span></span>
+<span id="cb11-9"><a href=""></a>                                  <span class="at">alpha.ind =</span> <span class="fl">0.6</span>,             <span class="co"># Transparencia dos pontos</span></span>
+<span id="cb11-10"><a href=""></a>                                  <span class="at">title =</span> <span class="st">"Biplot PCA: Dispersao das Familias e Projecao das Variaveis"</span>,</span>
+<span id="cb11-11"><a href=""></a>                                  <span class="at">xlab =</span> <span class="st">"PC1 - Contraste Espectral"</span>,</span>
+<span id="cb11-12"><a href=""></a>                                  <span class="at">ylab =</span> <span class="st">"PC2 - Arquitetura da Planta"</span>) <span class="sc">+</span></span>
+<span id="cb11-13"><a href=""></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb11-14"><a href=""></a>  <span class="fu">theme</span>(<span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>))</span>
+<span id="cb11-15"><a href=""></a></span>
+<span id="cb11-16"><a href=""></a><span class="fu">print</span>(grafico_biplot)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+
+</div>
+
+<img data-src="trabalho_final8_files/figure-revealjs/biplot_pcr-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section></section>
+    </div>
+  <div class="quarto-auto-generated-content" style="display: none;">
+<div class="footer footer-default">
+
+</div>
+</div></div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="trabalho_final8_files/libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="trabalho_final8_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="trabalho_final8_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="trabalho_final8_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="trabalho_final8_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="trabalho_final8_files/libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="trabalho_final8_files/libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="trabalho_final8_files/libs/revealjs/plugin/search/search.js"></script>
+  <script src="trabalho_final8_files/libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="trabalho_final8_files/libs/revealjs/plugin/math/math.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': true,
+'previewLinksAuto': false,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'jumpToSlide': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleScrollView(event)\"><kbd>r</kbd> Scroll View Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"5\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'smaller': false,
+ 
+        // Display controls in the bottom right corner
+        controls: false,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: 'c/t',
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'none',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'none',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1050,
+
+        height: 700,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        math: {
+          mathjax: 'https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, QuartoSupport,
+
+          RevealMath,
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    
+
+    <script>
+
+      // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+
+      // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+
+      // slide changes (different for each slide format).
+
+      (function () {
+
+        // dispatch for htmlwidgets
+
+        function fireSlideEnter() {
+
+          const event = window.document.createEvent("Event");
+
+          event.initEvent("slideenter", true, true);
+
+          window.document.dispatchEvent(event);
+
+        }
+
+    
+
+        function fireSlideChanged(previousSlide, currentSlide) {
+
+          fireSlideEnter();
+
+    
+
+          // dispatch for shiny
+
+          if (window.jQuery) {
+
+            if (previousSlide) {
+
+              window.jQuery(previousSlide).trigger("hidden");
+
+            }
+
+            if (currentSlide) {
+
+              window.jQuery(currentSlide).trigger("shown");
+
+            }
+
+          }
+
+        }
+
+    
+
+        // hookup for slidy
+
+        if (window.w3c_slidy) {
+
+          window.w3c_slidy.add_observer(function (slide_num) {
+
+            // slide_num starts at position 1
+
+            fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+
+          });
+
+        }
+
+    
+
+      })();
+
+    </script>
+
+    
+
+    <script id="quarto-html-after-body" type="application/javascript">
+      window.document.addEventListener("DOMContentLoaded", function (event) {
+        const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+        tabsets.forEach(function(tabset) {
+          const tabby = new Tabby('#' + tabset.id);
+        });
+        const isCodeAnnotation = (el) => {
+          for (const clz of el.classList) {
+            if (clz.startsWith('code-annotation-')) {                     
+              return true;
+            }
+          }
+          return false;
+        }
+        const onCopySuccess = function(e) {
+          // button target
+          const button = e.trigger;
+          // don't keep focus
+          button.blur();
+          // flash "checked"
+          button.classList.add('code-copy-button-checked');
+          var currentTitle = button.getAttribute("title");
+          button.setAttribute("title", "Copied!");
+          let tooltip;
+          if (window.bootstrap) {
+            button.setAttribute("data-bs-toggle", "tooltip");
+            button.setAttribute("data-bs-placement", "left");
+            button.setAttribute("data-bs-title", "Copied!");
+            tooltip = new bootstrap.Tooltip(button, 
+              { trigger: "manual", 
+                customClass: "code-copy-button-tooltip",
+                offset: [0, -8]});
+            tooltip.show();    
+          }
+          setTimeout(function() {
+            if (tooltip) {
+              tooltip.hide();
+              button.removeAttribute("data-bs-title");
+              button.removeAttribute("data-bs-toggle");
+              button.removeAttribute("data-bs-placement");
+            }
+            button.setAttribute("title", currentTitle);
+            button.classList.remove('code-copy-button-checked');
+          }, 1000);
+          // clear code selection
+          e.clearSelection();
+        }
+        const getTextToCopy = function(trigger) {
+          const outerScaffold = trigger.parentElement.cloneNode(true);
+          const codeEl = outerScaffold.querySelector('code');
+          for (const childEl of codeEl.children) {
+            if (isCodeAnnotation(childEl)) {
+              childEl.remove();
+            }
+          }
+          return codeEl.innerText;
+        }
+        const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+          text: getTextToCopy
+        });
+        clipboard.on('success', onCopySuccess);
+        if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+          const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+            text: getTextToCopy,
+            container: window.document.getElementById('quarto-embedded-source-code-modal')
+          });
+          clipboardModal.on('success', onCopySuccess);
+        }
+          var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+          var mailtoRegex = new RegExp(/^mailto:/);
+            var filterRegex = new RegExp('/' + window.location.host + '/');
+          var isInternal = (href) => {
+              return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+          }
+          // Inspect non-navigation links and adorn them if external
+         var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+          for (var i=0; i<links.length; i++) {
+            const link = links[i];
+            if (!isInternal(link.href)) {
+              // undo the damage that might have been done by quarto-nav.js in the case of
+              // links that we want to consider external
+              if (link.dataset.originalHref !== undefined) {
+                link.href = link.dataset.originalHref;
+              }
+            }
+          }
+        function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+          const config = {
+            allowHTML: true,
+            maxWidth: 500,
+            delay: 100,
+            arrow: false,
+            appendTo: function(el) {
+                return el.closest('section.slide') || el.parentElement;
+            },
+            interactive: true,
+            interactiveBorder: 10,
+            theme: 'light-border',
+            placement: 'bottom-start',
+          };
+          if (contentFn) {
+            config.content = contentFn;
+          }
+          if (onTriggerFn) {
+            config.onTrigger = onTriggerFn;
+          }
+          if (onUntriggerFn) {
+            config.onUntrigger = onUntriggerFn;
+          }
+            config['offset'] = [0,0];
+            config['maxWidth'] = 700;
+          window.tippy(el, config); 
+        }
+        const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+        for (var i=0; i<noterefs.length; i++) {
+          const ref = noterefs[i];
+          tippyHover(ref, function() {
+            // use id or data attribute instead here
+            let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+            try { href = new URL(href).hash; } catch {}
+            const id = href.replace(/^#\/?/, "");
+            const note = window.document.getElementById(id);
+            if (note) {
+              return note.innerHTML;
+            } else {
+              return "";
+            }
+          });
+        }
+        const findCites = (el) => {
+          const parentEl = el.parentElement;
+          if (parentEl) {
+            const cites = parentEl.dataset.cites;
+            if (cites) {
+              return {
+                el,
+                cites: cites.split(' ')
+              };
+            } else {
+              return findCites(el.parentElement)
+            }
+          } else {
+            return undefined;
+          }
+        };
+        var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+        for (var i=0; i<bibliorefs.length; i++) {
+          const ref = bibliorefs[i];
+          const citeInfo = findCites(ref);
+          if (citeInfo) {
+            tippyHover(citeInfo.el, function() {
+              var popup = window.document.createElement('div');
+              citeInfo.cites.forEach(function(cite) {
+                var citeDiv = window.document.createElement('div');
+                citeDiv.classList.add('hanging-indent');
+                citeDiv.classList.add('csl-entry');
+                var biblioDiv = window.document.getElementById('ref-' + cite);
+                if (biblioDiv) {
+                  citeDiv.innerHTML = biblioDiv.innerHTML;
+                }
+                popup.appendChild(citeDiv);
+              });
+              return popup.innerHTML;
+            });
+          }
+        }
+      });
+      </script>
+    
+
+</body></html>

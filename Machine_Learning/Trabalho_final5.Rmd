@@ -195,7 +195,7 @@ Diferente dos modelos anteriores, o KNN baseia-se na distância entre as observa
 > * **K pequeno (ex: 1):** Fronteira de decisão muito flexível. É passível de captação de ruído e sofre muito com *overfitting*.
 > * **K grande:** Cria uma fronteira de decisão rígida demais, o que gera um viés alto e uma separação ruim das classes.
 
-```{r}
+```{r warning=FALSE, message=FALSE}
 library(class)
 
 # Selecionando apenas as variáveis preditoras para o KNN
@@ -215,7 +215,7 @@ train.TSH_class <- dados$TSH_class[l_treino]
 ## 10. Encontrando o Melhor Valor de K
 Com os dados padronizados, ajustamos o modelo variando o número de vizinhos de 1 a 4. O objetivo é encontrar o modelo com a menor taxa de erro no conjunto de teste.
 
-```{r}
+```{r warning=FALSE, message=FALSE}
 # Testando K = 1
 set.seed(1)
 knn.pred = knn(train.X, test.X, train.TSH_class, k = 1)
@@ -258,7 +258,7 @@ Para ilustrar o impacto do número de vizinhos na performance do modelo, criamos
 
 Neste cenário visual, fica evidente o clássico dilema: modelos muito flexíveis (valores altos de $1/K$) reduzem o erro de treino a zero, mas começam a errar mais nos dados de teste devido ao *overfitting*. A linha tracejada preta serve como base de comparação com o nosso melhor modelo linear.
 
-```{r}
+```{r warning=FALSE, message=FALSE}
 library(ggplot2)
 
 # 1. Preparando o dataframe com os resultados do modelo
@@ -324,7 +324,7 @@ Realizamos a validação cruzada (cv.tree) para verificar se uma árvore menor m
 ## 13. Random Forest (Floresta Aleatória)
 Para melhorar a capacidade preditiva da árvore simples, utilizamos o Random Forest. Este método cria múltiplas árvores usando reamostragem dos dados de treino (Bootstrap) e sorteio de variáveis, reduzindo a variância do modelo.
 
-```{r}
+```{r warning=FALSE, message=FALSE}
 library(randomForest)
 
 set.seed(1)
@@ -348,7 +348,7 @@ cat("Taxa de Erro do Random Forest no Teste:", erro_test_rf * 100, "%\n")
 ## 14. Comparação Geral das Metodologias
 Por fim, compilamos as taxas de erro de todos os modelos avaliados no conjunto de teste para determinar a melhor abordagem de classificação para este conjunto de dados.
 
-```{r}
+```{r warning=FALSE, message=FALSE}
 # Organizando os resultados percentuais
 erro_logistica <- erro_teste_l_glm * 100
 erro_lda       <- erro_teste_lda * 100

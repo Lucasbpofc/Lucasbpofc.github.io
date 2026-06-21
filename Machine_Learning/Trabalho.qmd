@@ -2,20 +2,27 @@
 title: "Relatório Técnico: Seleção de Famílias Pró-Produtivas de Cana-de-Açúcar via Aprendizado de Máquina"
 subtitle: "Trabalho Final - Disciplina EST 792"
 author: "Lucas Pereira Belo"
-institution: "Universidade Federal de Viçosa (UFV)"
+institute: "Universidade Federal de Viçosa (UFV)"
 date: "Junho de 2026"
-output:
-  html_document:
+engine: knitr
+format:
+  html:
+    embed-resources: true
     toc: true
-    toc_float: true
-    theme: readable        # Outros temas: "bootstrap", "cerulean", "cosmo", "darkly", "flatly", "journal", "lumen", "paper", "readable", "sandstone", "simplex", "spacelab", "united", "yeti"
-    highlight: tango     # Deixa as cores do código R bem destacadas
-  word_document:
+    toc-float: true                # Mantém o sumário flutuante na lateral
+    theme: readable                 # Mantém o seu tema "readable" original
+    highlight-style: tango
+  docx:                             # O substituto moderno do word_document
     toc: true
-    toc_depth: 3
----
+    toc-depth: 3
+filters:
+  - webr
+webr:
+  # Os pacotes utilizados ficam aqui
+  packages: ['readxl', 'dplyr', 'ggplot2', 'corrplot', 'car', 'leaps', 'caret', 'class']
+---                     
 
-```{r setup, include=FALSE}
+```{webr setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = 'center')
 # Carregar pacotes necessários para o ambiente
 library(tidyverse)
@@ -39,9 +46,17 @@ O objetivo central é comparar técnicas de aprendizado estatístico para proble
 
 ## 2.1 Importação e Estruturação
 
-```{r importacao}
-# Leitura e reestruturação do dataframe original
+```{webr importacao}
+library(readxl)
+
+# Define o caminho dos dados
+url_dados <- "https://raw.githubusercontent.com/Lucasbpofc/Lucasbpofc.github.io/main/Machine_Learning/dd3.xlsx"
+
+# 3. Baixa o arquivo para rodar virtualmente 
+download.file(url_dados, destfile = "dd3.xlsx", mode = "wb")
+
 dd3 <- read_excel("dd3.xlsx")
+head(dd3)
 
 dados <- dd3 %>%
   select(
@@ -63,7 +78,7 @@ dados$Family <- as.factor(dados$Family)
 
 ## Análise Gráfica de Correlação 
 
-```{r correlacao_espectral}
+```{webr correlacao_espectral}
 # Seleciona apenas as variáveis numéricas
 dados_num <- dados %>% select(-Family)
 
@@ -90,7 +105,7 @@ corrplot(matriz_corr,
 
 Ajustou-se inicialmente um modelo linear contendo todas as 9 covariáveis disponíveis. Para atestar o efeito da colinearidade, calculou-se o Fator de Inflação da Variância (VIF).
 
-```{r modelo_completo}
+```{webr modelo_completo}
 modelo_completo <- lm(TSH ~ . - Family, data = dados)
 summary(modelo_completo)
 # Cálculo e plotagem do VIF
@@ -116,7 +131,7 @@ Como alternativa para reter a informação espectral sem violações matemática
 
 ## Extração do PCA e Análise de Variância (Scree Plot)
 
-```{r pcr_extracao_grafico}
+```{webr pcr_extracao_grafico}
 dados_pca_total <- dados %>% select(-Family, -TSH)
 pca_total <- prcomp(dados_pca_total, center = TRUE, scale. = TRUE)
 
@@ -144,7 +159,7 @@ Optou-se por reter os 4 primeiros componentes, que acumulam a maior parte da var
 
 ## 4.2 Ajuste do Modelo PCR e Seleção Stepwise
 
-```{r pcr_modelo_ajuste}
+```{webr pcr_modelo_ajuste}
 dados_regressao_pcr <- cbind(dados %>% select(TSH), pca_total$x[, 1:4])
 modelo_pcr_total <- lm(TSH ~ PC1 + PC2 + PC3 + PC4, data = dados_regressao_pcr)
 
@@ -156,7 +171,7 @@ summary(modelo_pcr_refinado)
 O procedimento *Stepwise* removeu o **PC2** por ineficiência preditiva. O modelo final refinado (com PC1, PC3 e PC4) preservou o ajuste global (R² Ajustado = 86,79%) elevando a Estatística F para 130.3. O PC2 mapeia a compensação de crescimento (muitos colmos finos contra poucos colmos grossos), o que altera a arquitetura mas não a pesagem final de TSH.
 
 
-```{r biplot_pcr}
+```{webr biplot_pcr}
 # 1. Carregar o pacote obrigatório para o gráfico
 library(factoextra)
 

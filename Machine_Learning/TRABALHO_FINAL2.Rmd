@@ -79,7 +79,7 @@ summary (lm.fit)
 
 
 ```{r}
-lm.fit2 =lm(TSH~ SN + SD + SH + G + NGRDI ,data=dados )
+lm.fit2 =lm(TSH~ SN + SD + SH + G + GLI ,data=dados )
 summary (lm.fit2)
 ```
 
