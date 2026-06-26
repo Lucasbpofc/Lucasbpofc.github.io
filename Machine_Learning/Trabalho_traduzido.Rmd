@@ -1,0 +1,295 @@
+---
+title: "APRENDIZADO DE MÁQUINA"
+author: "Lucas Pereira Belo"
+date: "2026-06-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This report presents the development and evaluation of predictive models applied to a sugarcane experiment conducted under a Randomized Complete Block Design (RCBD) at the Oratórios experimental station, MG. The study evaluates 60 families distributed in 4 blocks (replications), totaling 240 experimental plots. The original data were summarized at the mean level per family in the dd3.xlsx file, totaling 60 analytical entries.
+
+The central objective is to practice and compare statistical learning techniques for Regression and Classification problems:
+
+Regression Problem: Predict the continuous productivity of families, measured in Tons of Stalks per Hectare (TSH), aiming to identify and select the most productive genetic materials before massive physical weighing in the field.
+
+Classification Problem: Predict the family income class (TSH_class), segregated from the overall mean of the experiment, evaluating the accuracy of supervised models in dichotomous screening.
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = 'center')
+# Carregar pacotes necessários para o ambiente
+library(tidyverse)
+library(readxl)
+library(corrplot)
+library(car)
+library(leaps)
+library(caret)
+library(class)
+```
+
+```{r}
+
+dd3 <- read_excel("dd3.xlsx")
+
+dados <- dd3 %>%
+  select(
+    Family = Familia,
+    SN     = NC,        # Número médio de colmos por parcela
+    TSH    = TCH.x,     # Toneladas de colmos por hectare
+    SD     = DIAMETRO,  # Diâmetro médio do colmo
+    SH     = ALTURA,    # Altura média do colmo
+    R      = Red,       # Reflectância na banda do Vermelho
+    G      = Green,     # Reflectância na banda do Verde
+    B      = Blue,      # Reflectância na banda do Azul
+    VARI   = VARI,      # Visible Atmospherically Resistant Index
+    GLI    = GLI,       # Green Leaf Index
+    NGRDI  = NGRDI      # Normalized Green Red Difference Index
+  )
+
+dados$Family <- as.factor(dados$Family)
+summary(dados %>% select(-Family))
+```
+To diagnose the linear association structure between the predictors and the response variable, a Pearson graphical correlation matrix was generated focusing on the spectral variables and productivity.
+
+```{r}
+
+dados_num <- dados %>% select(-Family)
+matriz_corr <- cor(dados_num, use = "complete.obs")
+
+# Plota a matriz de correlação de forma bem visual e profissional
+corrplot(matriz_corr, 
+         method = "color",       # Usa cores para representar a força
+         type = "upper",         # Mostra só a metade de cima da matriz
+         addCoef.col = "black",  # Adiciona os números da correlação em preto
+         tl.col = "black",       # Cor do texto dos eixos
+         tl.srt = 45,            # Rotaciona os nomes das variáveis em 45 graus
+         diag = FALSE,           # Tira a diagonal principal (que é sempre 1)
+         title = "Matriz de Correlação das Variáveis",
+         mar = c(0,0,1,0))       # Ajusta a margem para o título caber direitinho
+
+```
+A linear model containing all 9 available covariates was initially fitted to explain the continuous behavior of TSH.
+
+```{r}
+lm.fit =lm(TSH~. -Family,data=dados )
+summary (lm.fit)
+```
+
+
+```{r}
+lm.fit2 =lm(TSH~ SN + SD + SH + G + GLI ,data=dados )
+summary (lm.fit2)
+```
+
+The adjusted R^2 of 0.9043 indicates that more than 90% of all variation in sugarcane productivity among the 60 families is explained by the model variables.
+The model presented 3 highly significant variables, SN, SD, and SH, indicating that if the plant has more stems, greater height, and higher densities, it weighs more. The major problem with the model is the lack of parsimony, which will be explored below; Another important point is that the correlation matrix plotted previously indicated highly correlated variables, and one way to confirm this autocorrelation is through VIF.
+
+### Multicollinearity Diagnosis (VIF)
+
+To statistically verify the excess collinearity observed in the correlation matrix, the Variance Inflation Factor (VIF) was calculated for the complete model using the `car` package.
+
+```{r diagnostico_vif}
+library(car)
+
+# Calculando o VIF do modelo completo
+valores_vif <- vif(lm.fit)
+
+# Exibindo os valores de forma organizada
+print(valores_vif)
+
+# BÔNUS: Gráfico de barras para ilustrar a gravidade do VIF
+barplot(valores_vif, 
+        main = "Fator de Inflação da Variância (VIF)", 
+        col = ifelse(valores_vif > 10, "red", "steelblue"), 
+        las = 2, 
+        ylab = "Valor do VIF")
+abline(h = 10, col = "black", lty = 2, lwd = 2) 
+```
+
+The high VIF values indicate severe multicollinearity; these findings, together with the correlation graph, indicate that the model containing all variables is inadequate. These indicators suggest that we should use dimensionality reduction methods to reduce the multicollinearity present in the data.
+
+For the construction of the PCR model, all 9 predictor covariates were subjected to Principal Component Analysis. As the original variables have different units of measurement (counts, centimeters, reflectance percentages), centralized and scaled standardization (`scale. = TRUE`) was rigorously applied to avoid scaling distortions.
+
+
+```{r pcr_extracao_grafico, fig.width=8, fig.height=5}
+# 1. Execução do PCA com padronização obrigatória
+dados_pca_total <- dados %>% select(-Family, -TSH,)
+pca_total <- prcomp(dados_pca_total, center = TRUE, scale. = TRUE)
+
+# 2. Cálculos das Proporções de Variância
+var_explicada <- pca_total$sdev^2
+prop_var <- var_explicada / sum(var_explicada)
+var_acumulada <- cumsum(prop_var)
+
+# 3. Criação do Dataframe para o Gráfico
+df_pca_var <- data.frame(
+  Componente = factor(paste0("PC", 1:length(prop_var)), levels = paste0("PC", 1:length(prop_var))),
+  Proporcao = prop_var,
+  Acumulada = var_acumulada
+)
+
+# 4. Plotagem do Scree Plot com Variância Acumulada
+grafico_variancia <- ggplot(df_pca_var, aes(x = Componente)) +
+  geom_bar(aes(y = Proporcao), stat = "identity", fill = "steelblue", alpha = 0.85) +
+  geom_line(aes(y = Acumulada, group = 1), color = "firebrick", linewidth = 1.2) +
+  geom_point(aes(y = Acumulada), color = "firebrick", size = 3) +
+  geom_text(aes(y = Acumulada, label = scales::percent(Acumulada, accuracy = 0.1)),
+            vjust = -1.5, color = "darkred", size = 3.5, fontface = "bold") +
+  geom_text(aes(y = Proporcao, label = scales::percent(Proporcao, accuracy = 0.1)),
+            vjust = 1.5, color = "white", size = 3.5, fontface = "bold") +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0, 1.1)) +
+  theme_minimal() +
+  labs(
+    title = "Variância Explicada por Componente Principal (Scree Plot)",
+    subtitle = "Barras: Variância retida por componente | Linha e Pontos: Variância acumulada",
+    x = "Componentes Principais",
+    y = "Proporção da Variância"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(face = "italic", color = "gray40"),
+    axis.text.x = element_text(face = "bold")
+  )
+
+print(grafico_variancia)
+```
+
+
+Visual analysis of the graph guides the choice of the number of components to be retained for the regression model. The first component (PC1) retains the largest isolated share of the sample variance. Following the empirical criterion of information retention, the first 4 principal components (PC1 to PC4) were chosen. Together, they cumulatively explain approximately 85% to 90% of all the variability present in the 9 original variables, ensuring that dimensionality reduction eliminates multicollinearity without causing significant losses of predictive information.
+
+```{r}
+# Estruturação do banco de dados com os 4 primeiros Componentes Principais
+dados_regressao_pcr <- cbind(dados %>% select(TSH), pca_total$x[, 1:4])
+
+# Ajuste do Modelo PCR
+modelo_pcr_total <- lm(TSH ~ PC1 + PC2 + PC3 + PC4, data = dados_regressao_pcr)
+summary(modelo_pcr_total)
+```
+Pensando na parcimônia, aplicou-se o algoritimo de seleção de variáveis stepwise sobre o modelo contendo os 4 PC selecionados anteriormente.
+
+```{r}
+# Usando a função step() para fazer a seleção no modelo de componentes
+modelo_pcr_refinado <- step(modelo_pcr_total, direction = "both", trace = 0)
+
+# Verificando quais componentes sobreviveram e a nova precisão
+summary(modelo_pcr_refinado)
+```
+Applying the Stepwise procedure to the principal components confirmed the predictive inefficiency of PC2. The refined PCR model, retaining only PC1, PC3, and PC4, maintained the overall accuracy virtually unchanged ($R^2_{adj} = 86.79%$). However, removing the noise component caused a substantial increase in the model's F-statistic (from 99.54 to 130.3), demonstrating a significant gain in analytical robustness. The generated Biplot confirms this dynamic: PC1 isolates the highly correlated spectral variation (maximum VIF of 27,366 in the NGRDI), while PC2 maps the physical architecture (SN versus SH and SD), a compensation phenomenon that does not reflect in tonnage accumulation (TSH).
+
+```{r}
+
+library(factoextra)
+
+# Gerando o Biplot elegante
+grafico_biplot <- fviz_pca_biplot(pca_total, 
+                                  repel = TRUE,                # Evita que os textos se sobreponham
+                                  col.var = "firebrick",       # Cor das setas (Variáveis)
+                                  col.ind = "steelblue",       # Cor dos pontos (Famílias)
+                                  alpha.ind = 0.6,             # Transparência dos pontos
+                                  title = "Biplot PCA: Dispersão das Famílias e Projeção das Variáveis",
+                                  xlab = paste0("PC1 - Contraste Espectral"),
+                                  ylab = paste0("PC2 - Arquitetura da Planta")) +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5))
+
+print(grafico_biplot)
+```
+
+Análise de resíduos 
+
+```{r}
+par(mfrow=c(2,2))
+plot(modelo_pcr_refinado)
+```
+
+```{r}
+library(caret)
+library(dplyr)
+library(knitr) 
+
+set.seed(123)
+
+# 1. Configurando os métodos de Validação Cruzada
+controle_kfold <- trainControl(method = "cv", number = 10)
+controle_loocv <- trainControl(method = "LOOCV")
+
+# 2. Treinando o modelo com 10-Fold CV
+# Usando o modelo refinado: TSH em função dos componentes que sobreviveram
+modelo_kfold <- train(
+  TSH ~ PC1 + PC3 + PC4,
+  data = dados_regressao_pcr,
+  method = "lm",
+  trControl = controle_kfold
+)
+
+# 3. Treinando o modelo com Leave-One-Out (LOOCV)
+modelo_loocv <- train(
+  TSH ~ PC1 + PC3 + PC4,
+  data = dados_regressao_pcr,
+  method = "lm",
+  trControl = controle_loocv
+)
+
+# 4. Extraindo as métricas de cada modelo para comparar
+metricas_kfold <- modelo_kfold$results %>% select(RMSE, Rsquared, MAE)
+metricas_loocv <- modelo_loocv$results %>% select(RMSE, Rsquared, MAE)
+
+# 5. Criando um Dataframe de comparação
+tabela_comparacao <- rbind(
+  "10-Fold CV" = metricas_kfold,
+  "LOOCV (Deixa um de fora)" = metricas_loocv
+)
+
+# 6. Imprimindo a tabela formatada
+kable(tabela_comparacao, 
+      caption = "Comparação de Métricas de Validação Cruzada: 10-Fold vs LOOCV", 
+      digits = 3, 
+      align = "c")
+```
+
+```{r}
+# Carregando os pacotes necessários
+library(caret)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+
+# Garantindo a reprodutibilidade da separação dos dados no 10-Fold
+set.seed(123)
+controle_kfold <- trainControl(method = "cv", number = 10)
+
+# Criando um dataframe vazio para guardar os resultados
+resultados_poly <- data.frame(Grau = integer(), RMSE = numeric(), Rsquared = numeric())
+
+# Loop para testar polinômios do Grau 1 ao Grau 4
+for (grau in 1:4) {
+  
+  # Criando a fórmula dinamicamente para o grau atual
+  # Exemplo no grau 2: TSH ~ poly(PC1, 2) + poly(PC3, 2) + poly(PC4, 2)
+  formula_poly <- as.formula(paste0("TSH ~ poly(PC1, ", grau, ") + poly(PC3, ", grau, ") + poly(PC4, ", grau, ")"))
+  
+  # Treinando o modelo com 10-Fold CV
+  modelo_temp <- train(
+    formula_poly,
+    data = dados_regressao_pcr,
+    method = "lm",
+    trControl = controle_kfold
+  )
+  
+  # Guardando as métricas de validação deste grau
+  resultados_poly <- rbind(resultados_poly, data.frame(
+    Grau = grau,
+    RMSE = modelo_temp$results$RMSE,
+    Rsquared = modelo_temp$results$Rsquared
+  ))
+}
+
+# 1. Imprimindo a tabela de comparação no relatório
+kable(resultados_poly, 
+      caption = "Desempenho da Validação Cruzada (10-Fold) por Grau do Polinômio", 
+      digits = 3, align = "c")
+
+```
+

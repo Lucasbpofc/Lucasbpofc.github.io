@@ -27,17 +27,17 @@ library(caret)
 library(class)
 ```
 
-# 1. Introdução e Contextualização do Experimento
+# 1. Introduction and Contextualization of the Experiment
 
-Este relatório apresenta o desenvolvimento e a avaliação de modelos preditivos aplicados a um experimento com cana-de-açúcar conduzido sob o Delineamento em Blocos Casualizados (DBC) na estação experimental de Oratórios, MG. O estudo avalia **60 famílias** distribuídas em **4 blocos (repetições)**, totalizando **240 parcelas experimentais**. Os dados originais foram sumarizados ao nível de média por família no arquivo `dd3.xlsx`, totalizando 60 entradas analíticas.
+This report presents the development and evaluation of predictive models applied to a sugarcane experiment conducted under a Randomized Block Design (RBD) at the Oratórios experimental station, MG. The study evaluates **60 families** distributed in **4 blocks (replications)**, totaling **240 experimental plots**. The original data were summarized at the mean level per family in the file `dd3.xlsx`, totaling 60 analytical entries.
 
-O objetivo central é comparar técnicas de aprendizado estatístico para problemas de **Regressão** (predizer a produtividade contínua em TSH) e **Classificação** (triagem dicotômica baseada na média).
+The central objective is to compare statistical learning techniques for **Regression** (predicting continuous productivity in TSH) and **Classification** (dichotomous sorting based on the mean) problems.
 
 ---
 
-# 2. Preparação e Análise Exploratória dos Dados (EDA)
+# 2. Preparation and Exploratory Data Analysis (EDA)
 
-## 2.1 Importação e Estruturação
+## 2.1 Import and Structuring
 
 ```{r importacao}
 # Leitura e reestruturação do dataframe original
@@ -61,7 +61,7 @@ dados <- dd3 %>%
 dados$Family <- as.factor(dados$Family)
 ```
 
-## Análise Gráfica de Correlação 
+## Graphical Correlation Analysis 
 
 ```{r correlacao_espectral}
 # Seleciona apenas as variáveis numéricas
@@ -84,11 +84,11 @@ corrplot(matriz_corr,
 
 ---
 
-# Modelagem por Regressão Linear Múltipla e Seleção de Variáveis
+# Multiple Linear Regression Modeling and Variable Selection
 
-## Abordagem com Modelo Completo e Diagnóstico de VIF 
+## Approach with a Complete Model and VIF Diagnosis 
 
-Ajustou-se inicialmente um modelo linear contendo todas as 9 covariáveis disponíveis. Para atestar o efeito da colinearidade, calculou-se o Fator de Inflação da Variância (VIF).
+A linear model containing all 9 available covariates was initially fitted. To assess the effect of collinearity, the Variance Inflation Factor (VIF) was calculated.
 
 ```{r modelo_completo}
 modelo_completo <- lm(TSH ~ . - Family, data = dados)
@@ -104,17 +104,17 @@ barplot(valores_vif,
 abline(h = 10, col = "black", lty = 2, lwd = 2)
 ```
 
-A análise do VIF corroborou matematicamente o diagnóstico de multicolinearidade extrema. Enquanto as variáveis biométricas (SN, SD e SH) apresentam valores próximos a 1, os índices espectrais exibiram valores catastróficos, ultrapassando 25.000 para o NGRDI. Isso justifica de forma inequívoca o colapso do modelo completo e a necessidade de redução de dimensionalidade.
+The VIF analysis mathematically corroborated the diagnosis of extreme multicollinearity. While the biometric variables (SN, SD, and SH) showed values ​​close to 1, the spectral indices exhibited catastrophic values, exceeding 25,000 for the NGRDI. This unequivocally justifies the collapse of the complete model and the need for dimensionality reduction.
 
-## 3.2 Seleção Stepwise Forward (Questão 3)
+## 3.2 Seleção Stepwise Forward
 
-Aplicou-se o algoritmo de seleção Stepwise Forward avaliado pelo critério BIC (Bayesian Information Criterion) para garantir parcimônia.
+The Stepwise Forward selection algorithm, evaluated using the Bayesian Information Criterion (BIC), was applied to ensure parsimony.
 
-# 4. Regressão de Componentes Principais (PCR)
+# 4. Principal Component Regression (PCR)
 
-Como alternativa para reter a informação espectral sem violações matemáticas, implementou-se a PCR.
+As an alternative to retaining spectral information without mathematical violations, PCR was implemented.
 
-## Extração do PCA e Análise de Variância (Scree Plot)
+## PCA Extraction and Analysis of Variance (Scree Plot)
 
 ```{r pcr_extracao_grafico}
 dados_pca_total <- dados %>% select(-Family, -TSH)
@@ -140,9 +140,9 @@ ggplot(df_pca_var, aes(x = Componente)) +
        x = "Componentes Principais", y = "Proporção da Variância")
 ```
 
-Optou-se por reter os 4 primeiros componentes, que acumulam a maior parte da variabilidade dos preditores originais.
+The decision was made to retain the first 4 components, which account for most of the variability of the original predictors.
 
-## 4.2 Ajuste do Modelo PCR e Seleção Stepwise
+## 4.2 PCR Model Adjustment and Stepwise Selection
 
 ```{r pcr_modelo_ajuste}
 dados_regressao_pcr <- cbind(dados %>% select(TSH), pca_total$x[, 1:4])
@@ -153,7 +153,7 @@ modelo_pcr_refinado <- step(modelo_pcr_total, direction = "both", trace = 0)
 summary(modelo_pcr_refinado)
 ```
 
-O procedimento *Stepwise* removeu o **PC2** por ineficiência preditiva. O modelo final refinado (com PC1, PC3 e PC4) preservou o ajuste global (R² Ajustado = 86,79%) elevando a Estatística F para 130.3. O PC2 mapeia a compensação de crescimento (muitos colmos finos contra poucos colmos grossos), o que altera a arquitetura mas não a pesagem final de TSH.
+The *Stepwise* procedure removed **PC2** due to predictive inefficiency. The final refined model (with PC1, PC3, and PC4) preserved the overall fit (Adjusted R² = 86.79%), raising the F-statistic to 130.3. PC2 maps to growth compensation (many thin stalks versus few thick stalks), which alters the architecture but not the final TSH weight.
 
 
 ```{r biplot_pcr}
@@ -175,4 +175,350 @@ grafico_biplot <- fviz_pca_biplot(pca_total,
 print(grafico_biplot)
 ```
 
+Waste analysis
 
+```{r}
+par(mfrow=c(2,2))
+plot(modelo_pcr_refinado)
+```
+
+```{r}
+library(caret)
+library(dplyr)
+library(knitr) 
+
+set.seed(123)
+
+# 1. Configurando os métodos de Validação Cruzada
+controle_kfold <- trainControl(method = "cv", number = 10)
+controle_loocv <- trainControl(method = "LOOCV")
+
+# 2. Treinando o modelo com 10-Fold CV
+# Usando o modelo refinado: TSH em função dos componentes que sobreviveram
+modelo_kfold <- train(
+  TSH ~ PC1 + PC3 + PC4,
+  data = dados_regressao_pcr,
+  method = "lm",
+  trControl = controle_kfold
+)
+
+# 3. Treinando o modelo com Leave-One-Out (LOOCV)
+modelo_loocv <- train(
+  TSH ~ PC1 + PC3 + PC4,
+  data = dados_regressao_pcr,
+  method = "lm",
+  trControl = controle_loocv
+)
+
+# 4. Extraindo as métricas de cada modelo para comparar
+metricas_kfold <- modelo_kfold$results %>% select(RMSE, Rsquared, MAE)
+metricas_loocv <- modelo_loocv$results %>% select(RMSE, Rsquared, MAE)
+
+# 5. Criando um Dataframe de comparação
+tabela_comparacao <- rbind(
+  "10-Fold CV" = metricas_kfold,
+  "LOOCV (Deixa um de fora)" = metricas_loocv
+)
+
+# 6. Imprimindo a tabela formatada
+kable(tabela_comparacao, 
+      caption = "Comparação de Métricas de Validação Cruzada: 10-Fold vs LOOCV", 
+      digits = 3, 
+      align = "c")
+```
+
+```{r}
+# Carregando os pacotes necessários
+library(caret)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+
+# Garantindo a reprodutibilidade da separação dos dados no 10-Fold
+set.seed(123)
+controle_kfold <- trainControl(method = "cv", number = 10)
+
+# Criando um dataframe vazio para guardar os resultados
+resultados_poly <- data.frame(Grau = integer(), RMSE = numeric(), Rsquared = numeric())
+
+# Loop para testar polinômios do Grau 1 ao Grau 4
+for (grau in 1:4) {
+  
+  # Criando a fórmula dinamicamente para o grau atual
+  # Exemplo no grau 2: TSH ~ poly(PC1, 2) + poly(PC3, 2) + poly(PC4, 2)
+  formula_poly <- as.formula(paste0("TSH ~ poly(PC1, ", grau, ") + poly(PC3, ", grau, ") + poly(PC4, ", grau, ")"))
+  
+  # Treinando o modelo com 10-Fold CV
+  modelo_temp <- train(
+    formula_poly,
+    data = dados_regressao_pcr,
+    method = "lm",
+    trControl = controle_kfold
+  )
+  
+  # Guardando as métricas de validação deste grau
+  resultados_poly <- rbind(resultados_poly, data.frame(
+    Grau = grau,
+    RMSE = modelo_temp$results$RMSE,
+    Rsquared = modelo_temp$results$Rsquared
+  ))
+}
+
+kable(resultados_poly, 
+      caption = "Desempenho da Validação Cruzada (10-Fold) por Grau do Polinômio", 
+      digits = 3, align = "c")
+
+```
+
+# Partial Least Squares
+
+```{r}
+library(pls)
+
+# 1. Ajuste inicial do PLS com Validação Cruzada para escolher o número de componentes
+set.seed(1)
+pls.fit = plsr(TSH ~ . - Family, data = dados, scale = TRUE, validation = "CV")
+
+# Exibe o resumo do modelo (R² cumulativo e erro por componente)
+summary(pls.fit)
+
+# Plota o MSEP (Mean Squared Error of Prediction) para identificar o ponto de mínimo
+validationplot(pls.fit, val.type = "MSEP", main = "Erro de Predição (MSEP) por Componente")
+```
+## Ajuste do Modelo Final com o Número Ideal de Componentes
+Após analisar o gráfico, podemos perceber que o MSEP para de cair a partir do ponto referente ao quarto componente.
+
+```{r}
+
+pls.final = plsr(TSH ~ . - Family, data = dados, scale = TRUE, ncomp = 3)
+
+summary(pls.final)
+```
+O modelo final ajustado por Mínimos Quadrados Parciais (PLS) com 3 componentes demonstrou excelente capacidade preditiva e alta eficiência na redução de dimensionalidade. As três variáveis latentes construídas foram capazes de sintetizar 79.34% da variabilidade contida no conjunto original de preditores ($X$), eliminando as redundâncias causadas pela multicolinearidade severa observada anteriormente.
+
+```{r}
+# Extrai as cargas das variáveis preditoras para os 3 componentes
+cargas_pls <- loadings(pls.final)[, 1:3]
+print(cargas_pls)
+
+# Uma forma excelente de visualizar é usando um gráfico de barras
+par(mfrow = c(1, 3))
+for(i in 1:3) {
+  barplot(cargas_pls[, i], 
+          main = paste("Pesos do Componente", i), 
+          col = "steelblue", las = 2)
+  abline(h = 0, lty = 2)
+}
+```
+A interpretação dos pesos (loadings) das variáveis latentes trouxe alguns pontos interessantes entre os componentes do PLS. O Componente 1 se caracterizou pelo forte contraste entre os índices espectrais positivos (NGRDI = 0.422; VARI = 0.421) e as bandas do visível negativas (R = -0.424; B = -0.380), associando-se também a plantas mais altas (SH = 0.309). O Componente 2, responsável pelo expressivo incremento na explicação do TSH (elevando o $R^2$ para 89.59%), caracterizou-se como o componente de robustez e arquitetura estrutural. Neste componente, as variáveis biométricas de número de colmos (SN = 0.461) e diâmetro (SD = 0.476) assumiram o protagonismo absoluto, demonstrando que, além do vigor foliar capturado no Comp 1, a estrutura física de suporte e armazenamento é determinante para o rendimento final do TSH. Por fim, o Componente 3 atuou como um ajuste fino da eficiência clorofílica, exibindo forte peso negativo na banda do verde (G = -0.629) e no índice GLI (-0.495), refinando o modelo ao capturar nuances da saturação foliar associadas ao crescimento contínuo em altura (SH = 0.257).
+
+```{r}
+library(dplyr)
+library(knitr)
+library(ggplot2)
+
+# --- 1. EXTRAÇÃO DAS PREDIÇÕES ---
+
+# Predições do PCR Refinado (Ajustado via lm no seu código anterior)
+pred_pcr <- predict(modelo_pcr_refinado, newdata = dados_regressao_pcr)
+
+# Predições do PLS Final (Ajustado com 3 componentes via plsr)
+# O [,,3] serve para pegar a predição específica do modelo com 3 componentes
+pred_pls <- as.vector(predict(pls.final, ncomp = 3, newdata = dados))
+
+# Valores reais observados do TSH
+reais <- dados$TSH
+
+# --- 2. FUNÇÃO PARA CALCULAR AS MÉTRICAS ---
+calcular_metricas <- function(pred, reais) {
+  rmse <- sqrt(mean((reais - pred)^2))
+  mae  <- mean(abs(reais - pred))
+  
+  # R2 Tradicional (Soma dos Quadrados da Regressão / Soma dos Quadrados Total)
+  ss_res <- sum((reais - pred)^2)
+  ss_tot <- sum((reais - mean(reais))^2)
+  r2     <- 1 - (ss_res / ss_tot)
+  
+  return(data.frame(RMSE = rmse, R2 = r2, MAE = mae))
+}
+
+# --- 3. CONSTRUÇÃO DA TABELA COMPARATIVA ---
+tabela_pcr <- calcular_metricas(pred_pcr, reais)
+tabela_pls <- calcular_metricas(pred_pls, reais)
+
+tabela_final <- rbind(
+  "PCR (PC1 + PC3 + PC4)" = tabela_pcr,
+  "PLS (3 Componentes)"   = tabela_pls
+)
+
+# Imprime a tabela formatada para o RMarkdown
+kable(tabela_final, 
+      caption = "Comparação Global de Desempenho: PCR Refinado vs. PLS Final", 
+      digits = 4, 
+      align = "c")
+
+# --- 4. GRÁFICO VISUAL DE VALORES PREDITOS VS. OBSERVADOS ---
+df_grafico <- data.frame(
+  Real = rep(reais, 2),
+  Predito = c(pred_pcr, pred_pls),
+  Modelo = rep(c("PCR Refinado", "PLS Final"), each = length(reais))
+)
+
+ggplot(df_grafico, aes(x = Real, y = Predito, color = Modelo)) +
+  geom_point(alpha = 0.7, size = 2.5) +
+  geom_abline(intercept = 0, slope = 1, lty = 2, color = "black", linewidth = 0.8) +
+  scale_color_manual(values = c("firebrick", "steelblue")) +
+  theme_minimal() +
+  labs(
+    title = "Valores Preditos vs. Observados (TSH)",
+    subtitle = "A proximidade da linha pontilhada indica maior precisão do modelo",
+    x = "TSH Observado (Real)",
+    y = "TSH Predito pelo Modelo"
+  ) +
+  facet_wrap(~Modelo) +
+  theme(plot.title = element_text(face = "bold"), legend.position = "none")
+```
+
+# Validação 50% treino e 50% teste 
+
+```{r}
+# 1. Preparando os dados: Removendo a coluna Family (ID/Fator) para evitar erro de novos níveis
+dados_modelagem <- dados %>% select(-Family)
+
+# 2. Divisão reproduzível dos dados (50/50)
+set.seed(123)
+indices_treino <- sample(1:nrow(dados_modelagem), size = 0.5 * nrow(dados_modelagem))
+
+treino <- dados_modelagem[indices_treino, ]
+teste  <- dados_modelagem[-indices_treino, ]
+
+# 3. Extração do PCA REFEITA APENAS NO TREINO (Sem TSH)
+dados_pca_treino_covariadas <- treino %>% select(-TSH)
+pca_treino <- prcomp(dados_pca_treino_covariadas, center = TRUE, scale. = TRUE)
+
+# 4. Criação do banco de dados do PCR para o Treino
+dados_pcr_treino <- cbind(treino %>% select(TSH), pca_treino$x[, 1:4])
+
+# 5. Projetando os dados de teste no espaço do PCA de treino
+pred_pca_teste <- as.data.frame(predict(pca_treino, newdata = teste %>% select(-TSH))[, 1:4])
+
+# --- AJUSTE DOS MODELOS NO TREINO ---
+
+# A. Modelo Completo (Agora sem Family no banco, usamos apenas TSH ~ .)
+mod_completo_vs <- lm(TSH ~ ., data = treino)
+
+# B. Seleção Stepwise Forward no Treino
+mod_step_vs <- step(lm(TSH ~ 1, data = treino), 
+                    scope = formula(lm(TSH ~ ., data = treino)), 
+                    direction = "forward", trace = 0)
+
+# C. PCR Refinado no Treino
+mod_pcr_vs <- lm(TSH ~ PC1 + PC3 + PC4, data = dados_pcr_treino)
+
+# D. PLS Final no Treino (3 Componentes)
+mod_pls_vs <- plsr(TSH ~ ., data = treino, scale = TRUE, ncomp = 3)
+
+# --- PREDIÇÕES NO CONJUNTO DE VALIDAÇÃO (TESTE) ---
+p_completo_vs <- predict(mod_completo_vs, newdata = teste)
+p_step_vs     <- predict(mod_step_vs, newdata = teste)
+p_pcr_vs      <- predict(mod_pcr_vs, newdata = pred_pca_teste)
+p_pls_vs      <- as.vector(predict(mod_pls_vs, ncomp = 3, newdata = teste))
+
+# --- CÁLCULO DAS MÉTRICAS ---
+reais_teste <- teste$TSH
+
+metricas_vs <- data.frame(
+  Modelo = c("Linear Completo", "Stepwise Forward", "PCR (3 Comp)", "PLS (3 Comp)"),
+  RMSE = c(sqrt(mean((reais_teste - p_completo_vs)^2)),
+           sqrt(mean((reais_teste - p_step_vs)^2)),
+           sqrt(mean((reais_teste - p_pcr_vs)^2)),
+           sqrt(mean((reais_teste - p_pls_vs)^2))),
+  R2 = c(1 - sum((reais_teste - p_completo_vs)^2)/sum((reais_teste - mean(reais_teste))^2),
+         1 - sum((reais_teste - p_step_vs)^2)/sum((reais_teste - mean(reais_teste))^2),
+         1 - sum((reais_teste - p_pcr_vs)^2)/sum((reais_teste - mean(reais_teste))^2),
+         1 - sum((reais_teste - p_pls_vs)^2)/sum((reais_teste - mean(reais_teste))^2)),
+  MAE = c(mean(abs(reais_teste - p_completo_vs)),
+          mean(abs(reais_teste - p_step_vs)),
+          mean(abs(reais_teste - p_pcr_vs)),
+          mean(abs(reais_teste - p_pls_vs)))
+)
+
+knitr::kable(metricas_vs, digits = 4, align = "c", 
+             caption = "Métricas de Desempenho no Cenário 1: Validation Set (50/50)")
+```
+
+
+```{r}
+# Reajustando o Stepwise Forward para o banco completo (Faltava no script)
+mod_step_total <- step(lm(TSH ~ 1, data = dados %>% select(-Family)), 
+                       scope = formula(lm(TSH ~ . - Family, data = dados)), 
+                       direction = "forward", trace = 0)
+
+# Predições de todos no banco completo
+p_completo_tot <- predict(modelo_completo, newdata = dados)
+p_step_tot     <- predict(mod_step_total, newdata = dados)
+p_pcr_tot      <- predict(modelo_pcr_refinado, newdata = dados_regressao_pcr)
+p_pls_tot      <- as.vector(predict(pls.final, ncomp = 3, newdata = dados))
+
+reais_tot <- dados$TSH
+
+metricas_tot <- data.frame(
+  Modelo = c("Linear Completo", "Stepwise Forward", "PCR (3 Comp)", "PLS (3 Comp)"),
+  RMSE = c(sqrt(mean((reais_tot - p_completo_tot)^2)),
+           sqrt(mean((reais_tot - p_step_tot)^2)),
+           sqrt(mean((reais_tot - p_pcr_tot)^2)),
+           sqrt(mean((reais_tot - p_pls_tot)^2))),
+  R2 = c(1 - sum((reais_tot - p_completo_tot)^2)/sum((reais_tot - mean(reais_tot))^2),
+         1 - sum((reais_tot - p_step_tot)^2)/sum((reais_tot - mean(reais_tot))^2),
+         1 - sum((reais_tot - p_pcr_tot)^2)/sum((reais_tot - mean(reais_tot))^2),
+         1 - sum((reais_tot - p_pls_tot)^2)/sum((reais_tot - mean(reais_tot))^2)),
+  MAE = c(mean(abs(reais_tot - p_completo_tot)),
+          mean(abs(reais_tot - p_step_tot)),
+          mean(abs(reais_tot - p_pcr_tot)),
+          mean(abs(reais_tot - p_pls_tot)))
+)
+
+kable(metricas_tot, digits = 4, align = "c", 
+      caption = "Métricas de Desempenho no Cenário 2: Sem Partição (Dataset Completo)")
+```
+
+# Análise dos resíduos dos modelos 
+
+```{r}
+# 5.3 Análise de Adequação e Pressupostos do Modelo Stepwise Final
+
+# 1. Análise Gráfica dos Resíduos
+par(mfrow = c(2, 2))
+plot(mod_step_total, main = "Diagnóstico Stepwise:")
+
+# 2. Testes Formais de Pressupostos
+library(lmtest)
+
+# A. Teste de Normalidade (Shapiro-Wilk)
+shapiro_step <- shapiro.test(residuals(mod_step_total))
+
+# B. Teste de Homocedasticidade (Breusch-Pagan)
+bp_step <- lmtest::bptest(mod_step_total)
+
+# C. Teste de Independência/Autocorrelação (Durbin-Watson)
+dw_step <- lmtest::dwtest(mod_step_total)
+
+# 3. Criando uma tabela elegante com os p-valores
+tabela_pressupostos <- data.frame(
+  Pressuposto = c("Normalidade (Shapiro-Wilk)", "Homocedasticidade (Breusch-Pagan)", "Independência (Durbin-Watson)"),
+  Estatistica = c(shapiro_step$statistic, bp_step$statistic, dw_step$statistic),
+  p_valor = c(shapiro_step$p.value, bp_step$p.value, dw_step$p.value),
+  Decisao = c(
+    ifelse(shapiro_step$p.value > 0.05, "Atendido (p > 0.05)", "Violado (p <= 0.05)"),
+    ifelse(bp_step$p.value > 0.05, "Homocedástico (p > 0.05)", "Heterocedástico (p <= 0.05)"),
+    ifelse(dw_step$p.value > 0.05, "Independentes (p > 0.05)", "Autocorrelação (p <= 0.05)")
+  )
+)
+
+knitr::kable(tabela_pressupostos, digits = 4, align = "c",
+             caption = "Testes Formais de Adequação dos Resíduos (Modelo Stepwise Final)")
+summary(mod_step_total)
+```
+
+
+foram selecionados o modelo de Regressão Linear Múltipla (com processo de seleção via Stepwise) e o modelo de Mínimos Quadrados Parciais (PLS). A escolha de ambos se justifica-se pela versatilidade e pelo contraste na forma como ambas as metodologias contornam o problema da multicolinearidade catastrófica detectada no diagnóstico do VIF:Modelo Linear Múltiplo (Stepwise): Atua por meio de uma seleção de variáveis eliminando de forma abrupta os preditores não necessários. Essa abordagem provou-se altamente eficaz no Cenário de Validação (50/50), entregando os melhores índices de precisão geral, com o menor erro absoluto ($\text{RMSE} = 7.6076$) e excelente capacidade de generalização em dados novos.*Mínimos Quadrados Parciais (PLS): Funciona como uma abordagem alternativa e robusta de contração e projeção. Ao invés de descartar variáveis, o PLS retém a informação de todo o ecossistema de preditores, reduzindo o espaço amostral para componentes ortogonais supervisionados.

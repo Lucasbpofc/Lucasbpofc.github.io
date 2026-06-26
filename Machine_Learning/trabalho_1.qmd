@@ -14,6 +14,8 @@ filters:
 webr:
   packages: ['survival']
 ---
+
+```{=html}
 <style>
 /* 1. Muda a cor do botão 'Run Code' (que era verde) */
 button.qwebr-button-run {
@@ -34,7 +36,9 @@ button.qwebr-button-run:hover {
   padding: 5px !important;              /* Espaçamento interno */
 }
 </style>
----
+```
+
+------------------------------------------------------------------------
 
 Este relatório apresenta o desenvolvimento e a avaliação de modelos preditivos aplicados a um experimento com cana-de-açúcar conducted sob o Delineamento em Blocos Casualizados (DBC) na estação experimental de Oratórios, MG. O estudo avalia 60 famílias distribuídas em 4 blocos (repetições), totalizando 240 parcelas experimentais. Os dados originais foram sumarizados ao nível de média por família no arquivo dd3.xlsx, totalizando 60 entradas analíticas.
 

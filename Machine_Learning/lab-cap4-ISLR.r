@@ -5,7 +5,7 @@
 ##########################################################################
 
 #chapter 4 from textbook - with adaptations
-
+#classification 
 #4.6 Lab: Logistic Regression, LDA, QDA, and KNN
 #4.6.1 The Stock Market Data
 
@@ -17,7 +17,7 @@
 # through Lag5. We have also recorded Volume (the number of shares traded
 # on the previous day, in billions), Today (the percentage return on the date
 # in question) and Direction (whether the market was Up or Down on this date).
-
+##(Prediction)
 library (ISLR)
 names(Smarket )
 dim(Smarket )
@@ -40,8 +40,8 @@ cor(Smarket [,-9])
 
 attach (Smarket )
 plot(Volume )
-
-
+?Smarket
+View(Smarket)
 ## 4.6.2 Logistic Regression
 
 # Next, we will fit a logistic regression model in order to predict Direction
@@ -50,11 +50,11 @@ plot(Volume )
 # of the glm() function is similar to that of lm(), except that we must pass in 
 # the argument family=binomial in order to tell R to run a logistic regression
 # rather than some other type of generalized linear model.
-
-glm.fit = glm(Direction ~ Lag1+Lag2+Lag3+Lag4+Lag5+Volume,
+#classificação, subiu ou desceu.Modelo linear genralizado 
+lmg.fit = glm(Direction ~ Lag1+Lag2+Lag3+Lag4+Lag5+Volume,
             data=Smarket ,family =binomial )
 summary (glm.fit )
-
+# nenhum foi significante.
 # The smallest p-value here is associated with Lag1. The negative coefficient
 # for this predictor suggests that if the market had a positive return yesterday,
 # then it is less likely to go up today. However, at a value of 0.15, the p-value
@@ -66,7 +66,7 @@ summary (glm.fit )
 
 coef(glm.fit)
 summary (glm.fit )$coef
-summary (glm.fit )$coef [,4]
+summary (glm.fit )$coef [,4] # pegando valores específicos de uma coluna do summary
 
 # The predict() function can be used to predict the probability that the
 # market will go up, given values of the predictors. The type="response"
@@ -91,7 +91,7 @@ contrasts (Direction )
 
 glm.pred=rep (0 ,1250)
 glm.pred[glm.probs >.5]= 1
-
+table(glm.pred)
 # The first command creates a vector of 1,250 Down elements. The second line
 # transforms to Up all of the elements for which the predicted probability of a
 # market increase exceeds 0.5. Given these predictions, the table() function
@@ -99,13 +99,17 @@ glm.pred[glm.probs >.5]= 1
 # observations were correctly or incorrectly classified.
 
 table(glm.pred ,Direction )
-(507+145) /1250
-1-0.5216 # taxa de erros - matriz de confusão
-# A média é igual a txa de acertos
+(507+145) /1250 #acertos
+1-0.5216 # taxa de erros- matriz de confusão. (error rate, taxa de acerto, questão de prova)
 
-mean(glm.pred== Direction ) #cuidado!
+mean(glm.pred== Direction ) #CUIDADO!
+# não tem relação entre uma coisa e outra. deveria ter transformado primeiro.
+#No caso transformar direction para zero e um.
+#quando transforma contabiliza os casos compatíveis e divide pelo número total.
 class.direction <- ifelse(Direction == "Up", 1, 0)
-mean(glm.pred == class.direction)
+mean(glm.pred== class.direction ) # ATENÇÃO!!
+#a média é igual a taxa de acerto.
+#1- media a taxa de erro. 
 
 # The diagonal elements of the confusion matrix indicate correct predictions,
 # while the off-diagonals represent incorrect predictions. Hence our model
@@ -130,14 +134,12 @@ mean(glm.pred == class.direction)
 # to the observations from 2001 through 2004. We will then use this vector
 # to create a held out data set of observations from 2005.
 
-train =(Year <2005) # Conjunto de treino 
+train =(Year <2005)
 
-Smarket.2005= Smarket [! train ,]  # Conjunto de teste
+Smarket.2005= Smarket [! train ,] #conjunto de teste ( não estão treino, "!")
 dim(Smarket.2005)
-
 Direction.2005= Direction [! train]
-
-# Questão da prova ? 
+# 2 questão do exame: precisa pensar, não faz sentido, não dá usar cross validation? Da sim, mas restrito ao conjunto de 2005
 # The object train is a vector of 1, 250 elements, corresponding to the observations
 # in our data set. The elements of the vector that correspond to
 # observations that occurred before 2005 are set to TRUE, whereas those that
@@ -168,21 +170,18 @@ glm.probs =predict (glm.fit ,Smarket.2005 , type="response")
 # and testing was performed using only the dates in 2005. Finally, we compute
 # the predictions for 2005 and compare them to the actual movements
 # of the market over that time period.
-
+# MUITO LEGAL
 glm.pred=rep ("Down " ,252)
-glm.pred[glm.probs >.5]=" Up"
-glm.pred.2 <- ifelse(glm.probs >.5, "Up", "Down") # another way
-cbind(glm.pred, glm.pred.2) # the same
-
-#glm.pred=rep (0 ,252)
-#glm.pred[glm.probs >.5]= 1
-
-real<- ifelse(Direction.2005 == "Up", 1,0) # now it works (the mean)
+ glm.pred[glm.probs >.5]=" Up"
+glm.pred=rep (0 ,252)
+glm.pred[glm.probs >.5]= 1
+#cuidado com o espaço, pode ser que fique guardado no conjunto " Up", então ao transformar
+#os resultados preditos para " Up" para entender que é a mesma coisa
 table(glm.pred ,Direction.2005)
+class.direction2005 <- ifelse(Direction.2005 == "Up", 1, 0)
+mean(glm.pred== class.direction2005)
 
-mean(glm.pred== Direction.2005)
-
-mean(glm.pred!= Direction.2005)
+mean(glm.pred!= class.direction2005)
 
 # The != notation means not equal to, and so the last command computes
 # the test set error rate. The results are rather disappointing: the test error
@@ -200,6 +199,8 @@ mean(glm.pred!= Direction.2005)
 # error rate (since such predictors cause an increase in variance without a
 # corresponding decrease in bias), and so removing such predictors may in
 # turn yield an improvement. Below we have refit the logistic regression using
+
+
 # just Lag1 and Lag2, which seemed to have the highest predictive power in
 # the original logistic regression model.
 
@@ -212,8 +213,10 @@ table(glm.pred ,Direction.2005)
 
 mean(glm.pred== Direction.2005)
 
-106/(106+76) # taxa de acerto
-
+106/(106+76)
+35/(35+35)
+# de tudo que disse ser certo, teve um acerto de 0.58.
+# Deveria ser próximo de 1, em ambos os casos
 # Now the results appear to be a little better: 56% of the daily movements
 # have been correctly predicted. It is worth noting that in this case, a much
 # simpler strategy of predicting that the market will increase every day will
@@ -230,11 +233,15 @@ mean(glm.pred== Direction.2005)
 # day when Lag1 and Lag2 equal 1.2 and 1.1, respectively, and on a day when
 # they equal 1.5 and −0.8. We do this using the predict() function.
 
+# Novas observações!!!!
 predict (glm.fit ,newdata =data.frame(Lag1=c(1.2 ,1.5) ,
                                         Lag2=c(1.1 , -0.8) ),type ="response")
 
+#####################################################
 
 ## 4.6.3 Linear Discriminant Analysis
+
+#####################################################
 
 # Now we will perform LDA on the Smarket data. In R, we fit an LDA model
 # using the lda() function, which is part of the MASS library. Notice that the
@@ -302,8 +309,11 @@ sum(lda.pred$posterior [,1]>.9)
 
 # No days in 2005 meet that threshold! In fact, the greatest posterior probability
 # of decrease in all of 2005 was 52.02%.
+###############################
 
-## 4.6.4 Quadratic Discriminant Analysis 
+## 4.6.4 Quadratic Discriminant Analysis PULAR ESSA PARTE
+
+#####################################
 
 # We will now fit a QDA model to the Smarket data. QDA is implemented
 # in R using the qda() function, which is also part of the MASS library. The
@@ -330,9 +340,11 @@ mean(qda.class == Direction.2005)
 # forms assumed by LDA and logistic regression. However, we recommend
 # evaluating this method’s performance on a larger test set before betting
 # that this approach will consistently beat the market!
-
+##############################
+# EM CASA
 ## 4.6.5 K-Nearest Neigbors
 
+############################################
 # We will now perform KNN using the knn() function, which is part of the
 # class library. This function works rather differently from the other modelfitting
 # functions that we have encountered thus far. Rather than a two-step

@@ -14,6 +14,7 @@ filters:
 webr:
   packages: ['survival']
 ---
+
 <style>
 /* 1. Muda a cor do botão 'Run Code' (que era verde) */
 button.qwebr-button-run {
@@ -34,7 +35,8 @@ button.qwebr-button-run:hover {
   padding: 5px !important;              /* Espaçamento interno */
 }
 </style>
----
+
+------------------------------------------------------------------------
 
 Para praticar a interatividade, altere os parâmetros da simulação abaixo, como as taxas de falha (`taxa_falha`) ou o tamanho da amostra (`n`), e clique em **Run Code** para gerar uma nova curva de Kaplan-Meier.
 

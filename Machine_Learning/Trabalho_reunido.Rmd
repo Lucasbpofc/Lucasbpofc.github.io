@@ -1,0 +1,812 @@
+---
+title: "Report: Selection of Pro-Productive Sugarcane Families via Machine Learning"
+subtitle: "Final Exam_EST792"
+author: ""
+institution: "Universidade Federal de Viçosa (UFV)"
+date: "2026 June"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: readable        # Outros temas: "bootstrap", "cerulean", "cosmo", "darkly", "flatly", "journal", "lumen", "paper", "readable", "sandstone", "simplex", "spacelab", "united", "yeti"
+    highlight: tango     # Deixa as cores do código R bem destacadas
+  word_document:
+    toc: true
+    toc_depth: 3
+---
+
+
+## 1. Enable necessary packages
+
+```{r warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = 'center')
+library(tidyverse)
+library(readxl)
+library(corrplot)
+library(car)
+library(leaps)
+library(caret)
+library(class)
+```
+
+#
+
+```{r}
+# Leitura do arquivo
+dd3 <- read_excel("dd3.xlsx")
+
+# Filtragem e renomeação das variáveis
+dados <- dd3 %>%
+  dplyr::select(
+    Family = Familia,
+    SN     = NC,        # Número médio de colmos por parcela
+    TSH    = TCH.x,     # Toneladas de colmos por hectare
+    SD     = DIAMETRO,  # Diâmetro médio do colmo
+    SH     = ALTURA,    # Altura média do colmo
+    R      = Red,       # Reflectância na banda do Vermelho
+    G      = Green,     # Reflectância na banda do Verde
+    B      = Blue,      # Reflectância na banda do Azul
+    VARI   = VARI,      # Visible Atmospherically Resistant Index
+    GLI    = GLI,       # Green Leaf Index
+    NGRDI  = NGRDI      # Normalized Green Red Difference Index
+  )
+```
+
+
+Continuando a análise exploratória realizou-se a matriz de correlação
+
+```{r}
+matriz_cor <- cor(dados[, -1])
+
+corrplot(matriz_cor, 
+         method = "color",      # Preenche os espaços com cores
+         type = "upper",        # Mostra apenas a parte de cima (evita informações duplicadas)
+         addCoef.col = "black", # Escreve os números das correlações por cima das cores
+         tl.col = "black",      # Deixa os nomes das variáveis na cor preta
+         tl.srt = 45,           # Inclina os nomes das variáveis em 45 graus para não encavalarem
+         number.cex = 0.7,      # Diminui um pouco o tamanho dos números para caberem nos quadrados
+         diag = FALSE)          # Oculta a diagonal principal (que sempre seria 1)
+```
+
+> **Observações Importantes (Correlações):**
+> 
+> * O **VARI** tem alta correlação com **GLI** e **NCRDI**.
+> * **SN** tem média correlação com **TSH**.
+> * **R** apresenta correlação com todas as variáveis que não são "físicas".
+> * **GLI** tem forte correlação com **NCRDI**.
+> 
+> **Atenção:** Para a seleção das variáveis que serão mantidas ou removidas das próximas etapas, é fundamental levar essas relações em consideração.
+
+## Preparação para o Modelo Logístico
+
+Para ajustar o modelo de regressão logística, precisamos de uma variável resposta categórica (binária). Aqui, criamos classes baseadas na média da variável **TSH** (Toneladas de colmos por hectare):
+
+* **Classe 1 (1):** TSH $\geq$ Média (Produtividade alta)
+* **Classe 2 (0):** TSH $<$ Média (Produtividade baixa)
+
+```{r}
+# Criando a variável indicadora de classes de produtividade
+dados$TSH_class <- ifelse(dados$TSH >= mean(dados$TSH), "class1", "class2")
+
+# Transformando em fator e definindo a classe de referência
+# Nota: A primeira classe informada ("class2") recebe o valor 0 (Referência)
+# A segunda classe ("class1") recebe o valor 1 (Evento de interesse)
+dados$TSH_class <- factor(dados$TSH_class, levels = c("class2", "class1"))
+
+# Conferindo as variáveis atualizadas no conjunto de dados
+names(dados) 
+```
+
+## 4. Divisão dos Dados (Treino e Teste) - Modelo de Classificação
+
+Para avaliar a capacidade de generalização do modelo, o conjunto de dados foi dividido. Metade das observações foi separada aleatoriamente para o treinamento e o restante para o teste.
+
+```{r warning=FALSE, message=FALSE}
+# Definindo semente para garantir a reprodutibilidade (resultados iguais toda vez)
+set.seed(1234) 
+
+# Sorteando os índices das linhas para compor o conjunto de treino (50% dos dados)
+l_treino <- sample(1:nrow(dados), size = 0.5 * nrow(dados))
+
+# Aplicando os índices sorteados para separar os dados
+treino <- dados[l_treino, ]
+Teste <- dados[-l_treino, ] # O sinal de menos (-) exclui as linhas usadas no treino
+```
+
+## 5. Ajuste do Modelo Logístico (Completo)
+
+Neste primeiro momento, ajustamos o modelo de regressão logística utilizando todas as variáveis disponíveis para predizer a produtividade.
+
+```{r warning=FALSE, message=FALSE}
+# Ajuste do modelo com todas as covariáveis
+l_glm.fit <- glm(TSH_class ~ SN + SD + SH + R + G + B + VARI + GLI + NGRDI,
+                 data = treino, 
+                 family = binomial)
+
+# Exibindo os coeficientes e o resumo do modelo
+summary(l_glm.fit)$coef
+```
+
+Com a inclusão de todas as variáveis, o modelo apresentou separação total entre a Classe 1 e a Classe 2. Ocorreu um ajuste perfeito aos dados de treino (Overfitting), o que infla absurdamente os erros padrão e impede que os coeficientes sejam confiáveis para predição.
+
+## 6. Avaliação do Modelo Logístico (Dados de Teste)
+
+Para verificar o desempenho real do modelo, geramos as predições usando o conjunto de teste. O modelo retorna a **probabilidade** de cada observação pertencer à Classe 1. 
+
+Adotamos um ponto de corte (threshold) de 0,5: se a probabilidade for maior que 50%, classificamos como "class1".
+
+```{r warning=FALSE, message=FALSE}
+# Gerando as probabilidades no conjunto de teste
+prob_teste <- predict(l_glm.fit, newdata = Teste, type = "response")
+
+# Atribuindo a classe com base na probabilidade obtida
+pred_teste <- ifelse(prob_teste > 0.5, "class1", "class2")
+
+# Matriz de Confusão
+table(Predito = pred_teste, Verdadeiro = Teste$TSH_class)
+
+# Calculando a Taxa de Erro de Teste
+erro_teste_l_glm <- mean(pred_teste != Teste$TSH_class)
+cat("Taxa de Erro da regressão logística no conjunto de Teste:", erro_teste_l_glm * 100, "%\n")
+```
+
+Avaliando o Resultado:
+A taxa de erro no teste foi baixa (16,66%). No entanto, como a amostra é pequena e o modelo de treino sofreu de separação perfeita (overfitting), essa métrica pode ser ilusória.
+
+## 7. Análise Discriminante Linear (LDA)
+Como alternativa à Regressão Logística, ajustamos um modelo de Análise Discriminante Linear (LDA), que costuma ser mais estável quando as classes são bem separáveis ou quando há forte correlação entre as variáveis.
+
+```{r warning=FALSE, message=FALSE}
+library(MASS)
+# Ajuste do modelo LDA com os dados de treino
+lda.fit <- lda(TSH_class ~ SN + SD + SH + R + G + B + VARI + GLI + NGRDI, 
+               data = treino)
+
+# Visualizando as informações do modelo
+lda.fit
+```
+
+## 8. Avaliação do Modelo LDA (Dados de Teste)
+Assim como fizemos no modelo logístico, avaliamos o desempenho do LDA nos dados que ele ainda não "viu". O pacote MASS já aplica o limiar automático de 50% para a classificação.
+
+```{r, warning=FALSE, message=FALSE}
+# Realizando a predição no conjunto de teste
+lda.pred <- predict(lda.fit, newdata = Teste)
+
+# Extraindo o vetor com as classes preditas
+lda.class <- lda.pred$class
+
+# Matriz de Confusão (LDA)
+table(Predito = lda.class, Real = Teste$TSH_class)
+
+# Calculando a Taxa de Erro de Teste do LDA
+erro_teste_lda <- mean(lda.class != Teste$TSH_class)
+cat("Taxa de Erro do LDA no Teste:", erro_teste_lda * 100, "%\n")
+```
+
+Conclusão Importante (Logística vs. LDA):
+A taxa de erro do LDA (23,33%) foi levemente superior à da Regressão Logística (16,66%). Contudo, o LDA desponta como uma opção mais robusta e confiável neste cenário, pois não sofre do problema de separação total (overfitting extremo) que invalidou os coeficientes do modelo logístico inicial.
+
+## 9. K-Nearest Neighbors (KNN): Conceitos e Preparação
+
+Diferente dos modelos anteriores, o KNN baseia-se na distância entre as observações. Por conta disso, **padronizar as variáveis** é um passo obrigatório para que medidas com escalas diferentes não dominem o cálculo.
+
+> **O papel do parâmetro K (Número de Vizinhos):**
+> * **K pequeno (ex: 1):** Fronteira de decisão muito flexível. É passível de captação de ruído e sofre muito com *overfitting*.
+> * **K grande:** Cria uma fronteira de decisão rígida demais, o que gera um viés alto e uma separação ruim das classes.
+
+```{r warning=FALSE, message=FALSE}
+library(class)
+
+# Selecionando apenas as variáveis preditoras para o KNN
+preditores <- dados[, c("SN", "SD", "SH", "R", "G", "B", "VARI", "GLI", "NGRDI")] 
+
+# Padronizando os dados (Z-score) para igualar as escalas
+dados_padronizados <- scale(preditores) 
+
+# Separando preditores em treino e teste com os índices já sorteados
+train.X <- dados_padronizados[l_treino, ]
+test.X  <- dados_padronizados[-l_treino, ]
+
+# Separando o vetor com as classes reais de treino
+train.TSH_class <- dados$TSH_class[l_treino]
+```
+
+## 10. Encontrando o Melhor Valor de K
+Com os dados padronizados, ajustamos o modelo variando o número de vizinhos de 1 a 4. O objetivo é encontrar o modelo com a menor taxa de erro no conjunto de teste.
+
+```{r warning=FALSE, message=FALSE}
+# Testando K = 1
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.TSH_class, k = 1)
+table(knn.pred, dados$TSH_class[-l_treino])
+
+taxa_test_K1 <- mean(knn.pred != dados$TSH_class[-l_treino])
+cat("Taxa de Erro para k=1:", taxa_test_K1 * 100, "%\n")
+
+# Testando K = 2
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.TSH_class, k = 2)
+table(knn.pred, dados$TSH_class[-l_treino])
+
+taxa_test_K2 <- mean(knn.pred != dados$TSH_class[-l_treino])
+cat("Taxa de Erro para k=2:", taxa_test_K2 * 100, "%\n")
+
+# Testando K = 3
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.TSH_class, k = 3)
+table(knn.pred, dados$TSH_class[-l_treino])
+
+taxa_test_K3 <- mean(knn.pred != dados$TSH_class[-l_treino])
+cat("Taxa de Erro para k=3:", taxa_test_K3 * 100, "%\n")
+
+# Testando K = 4
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.TSH_class, k = 4)
+table(knn.pred, dados$TSH_class[-l_treino])
+
+taxa_test_K4 <- mean(knn.pred != dados$TSH_class[-l_treino])
+cat("Taxa de Erro para k=4:", taxa_test_K4 * 100, "%\n")
+```
+
+Avaliando as Metodologias:
+Analisando as saídas, o valor de $K$ que apresentar a menor taxa de erro no teste desponta como o melhor modelo KNN. É essa taxa de erro mínima que utilizaremos para comparar a performance do KNN com as demais metodologias (Regressão Logística e LDA).
+
+## 11. Visualização das Curvas de Erro do KNN
+
+Para ilustrar o impacto do número de vizinhos na performance do modelo, criamos um gráfico comparando o Erro de Treino e o Erro de Teste em função da flexibilidade ($1/K$). 
+
+Neste cenário visual, fica evidente o clássico dilema: modelos muito flexíveis (valores altos de $1/K$) reduzem o erro de treino a zero, mas começam a errar mais nos dados de teste devido ao *overfitting*. A linha tracejada preta serve como base de comparação com o nosso melhor modelo linear.
+
+```{r warning=FALSE, message=FALSE}
+library(ggplot2)
+
+# 1. Preparando o dataframe com os resultados do modelo
+dados_grafico <- data.frame(
+  K = c(1, 2, 3, 4, 1, 2, 3, 4),
+  Inv_K = c(1/1, 1/2, 1/3, 1/4, 1/1, 1/2, 1/3, 1/4),
+  Erro = c(0.00, 0.133, 0.200, 0.267,     # Erros de Treino estimados para n=30
+           0.333, 0.333, 0.300, 0.400),   # Erros de Teste reais do console
+  Tipo = c(rep("Erro de Treino", 4), rep("Erro de Teste", 4))
+)
+
+# 2. Criando o gráfico de curvas de erro
+ggplot(dados_grafico, aes(x = Inv_K, y = Erro, color = Tipo, linetype = Tipo)) +
+  geom_line(size = 1) +
+  geom_point(size = 2.5) +
+  # Linha horizontal pontilhada mostrando o erro da Regressão Logística (16.67%)
+  geom_hline(yintercept = 0.1667, linetype = "dashed", color = "black", alpha = 0.7) +
+  scale_color_manual(values = c("Erro de Treino" = "#48bfa2", "Erro de Teste" = "#e68533")) +
+  labs(
+    x = "Flexibilidade (1 / K)",
+    y = "Taxa de Erro",
+    title = "Curvas de Erro do KNN",
+    color = "Metrica", 
+    linetype = "Metrica"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5, size = 14),
+    axis.title = element_text(face = "bold"),
+    legend.position = "bottom"
+  )
+```
+
+## 12. Árvore de Decisão Simples
+
+Avançando para os modelos baseados em árvores, começamos com uma Árvore de Decisão simples. É um modelo altamente interpretável que realiza divisões sucessivas no espaço das variáveis preditoras.
+
+```{r warning=FALSE, message=FALSE}
+library(tree)
+
+# Ajustando a árvore de decisão aos dados de treino
+tree.dados <- tree(TSH_class ~ SN + SD + SH + R + G + B + VARI + GLI + NGRDI, 
+                   data = dados, 
+                   subset = l_treino)
+
+# Resumo do ajuste (Verificando quais variáveis foram usadas nos nós)
+summary(tree.dados)
+
+# Visualizando a árvore graficamente
+plot(tree.dados)
+text(tree.dados, pretty = 0) # Adiciona os rótulos aos nós
+
+# Avaliando a Árvore no conjunto de Teste
+tree.pred <- predict(tree.dados, dados[-l_treino, ], type = "class")
+table(Predito = tree.pred, Real = dados$TSH_class[-l_treino])
+
+erro_test_tree <- mean(tree.pred != dados$TSH_class[-l_treino])
+cat("Taxa de Erro da Árvore no Teste:", erro_test_tree * 100, "%\n")
+```
+
+Realizamos a validação cruzada (cv.tree) para verificar se uma árvore menor melhoraria a taxa de erro de classificação. O processo indicou que a árvore original já possui o tamanho ideal, não havendo necessidade de poda.
+
+## 13. Random Forest (Floresta Aleatória)
+Para melhorar a capacidade preditiva da árvore simples, utilizamos o Random Forest. Este método cria múltiplas árvores usando reamostragem dos dados de treino (Bootstrap) e sorteio de variáveis, reduzindo a variância do modelo.
+
+
+```{r warning=FALSE, message=FALSE}
+library(randomForest)
+
+set.seed(1)
+# Ajuste do Random Forest com cálculo de importância de variáveis (importance = TRUE)
+rf.dados <- randomForest(TSH_class ~ SN + SD + SH + R + G + B + VARI + GLI + NGRDI, 
+                         data = dados, 
+                         subset = l_treino, 
+                         importance = TRUE)
+
+# Verificando a importância de cada variável para o modelo
+importance(rf.dados)
+
+# Avaliando o Random Forest no conjunto de Teste
+rf.pred <- predict(rf.dados, newdata = dados[-l_treino, ])
+table(Predito = rf.pred, Real = dados$TSH_class[-l_treino])
+
+erro_test_rf <- mean(rf.pred != dados$TSH_class[-l_treino])
+cat("Taxa de Erro do Random Forest no Teste:", erro_test_rf * 100, "%\n")
+```
+
+## 14. Comparação Geral das Metodologias
+Por fim, compilamos as taxas de erro de todos os modelos avaliados no conjunto de teste para determinar a melhor abordagem de classificação para este conjunto de dados.
+
+```{r warning=FALSE, message=FALSE}
+# Organizando os resultados percentuais
+erro_logistica <- erro_teste_l_glm * 100
+erro_lda       <- erro_teste_lda * 100
+erro_knn       <- taxa_test_K3 * 100     # Assumindo K=3 como o melhor KNN
+erro_arvore    <- erro_test_tree * 100
+erro_rf        <- erro_test_rf * 100
+
+# Construindo a tabela comparativa
+tabela <- data.frame(
+  Metodologia = c("Regressão Logística", "LDA (Linear)", "KNN (K=3)", "Árvore Simples", "Random Forest"),
+  Fronteira   = c("Linear", "Linear", "Não-Linear", "Não-Linear", "Não-Linear"),
+  Erro_Teste  = c(erro_logistica, erro_lda, erro_knn, erro_arvore, erro_rf)
+)
+
+# Ordenando do menor para o maior erro
+tabela_ordenada <- tabela[order(tabela$Erro_Teste), ]
+print(tabela_ordenada, row.names = FALSE)
+```
+
+Ao avaliarmos o modelo de Regressão Logística, observamos a falta de convergência do algoritmo e uma taxa de erro de treino nula. A razão para esse fenômeno está diretamente relacionada ao tamanho reduzido da amostra de treinamento face ao grande número de variáveis preditoras, o que possibilitou a separação perfeita das classes pelos preditores, configurando um claro caso de overfitting. Como a Análise Discriminante Linear (LDA) não sofre dessa instabilidade na estimativa dos parâmetros quando as classes são bem separadas ou quando o tamanho da amostra é pequeno, optamos por utilizá-la, dentre os modelos lineares, para a avaliação na terceira etapa.
+Em relação à escolha da Árvore de Decisão em detrimento do modelo de Random Forest, observamos que a taxa de erro de teste do Random Forest foi superior ao da árvore simples. Esse resultado pode ser explicado pelo pequeno número de observações no conjunto de treinamento, n=30. Como o Random Forest utiliza o processo de bootstrap, as dezenas de árvores geradas pelo algoritmo estavam sendo ajustadas com um número ainda menor de observações em cada iteração, o que gerou classificadores individuais fracos e prejudicou a acurácia do modelo agregado para esse caso específico. Adicionalmente, ao avaliarmos o gráfico de importância de variáveis do Random Forest, notamos que os dois preditores mais importantes eram exatamente os mesmos que a árvore de decisão havia utilizado em sua construção natural. Associando essa redundância de variáveis à restrição do tamanho da amostra, optamos por escolher a àrvore de decisão para avaliar sua performance com um número reduzido de variáveis.
+## 15. Avaliando a melhora do modelo com a remoção das variáveis
+
+Pela matriz de correlação, percebemos que a alta correlação linear entre
+várias das variáveis explicativas, a saber: R, G, B, VARI, GLI e NGRDI.
+Com o objetivo de avaliar se diminuir o número de variáveis resulta
+em melhoria preditiva dos modelos escolhidos, LDA e arvore de seleção
+Iremos utilizar o Lasso para escolher quais variáveis deverão ser retiradas.
+Está na parte 6.2.2 do livro ISR a explicação, e no final dele tem o código.
+ 
+```{r}
+library(glmnet)
+
+all_predictors <- c("SN", "SD", "SH", "R", "G", "B", "VARI", "GLI", "NGRDI")
+X_train_lasso  <- as.matrix(treino[, all_predictors])
+y_train_lasso  <- treino$TSH_class
+
+set.seed(1)
+cv.out <- cv.glmnet(X_train_lasso, y_train_lasso, family = "binomial", alpha = 1)
+
+lasso_coefs <- predict(cv.out, type = "coefficients", s = "lambda.1se")
+print(lasso_coefs)
+```
+ 
+Note que o método do Lasso excluiu, com excessão das variáveis SN, SD, SH e G, zerou os coeficientes associados as outras variávies.
+Assim, prosseguiremos o ajuste dos modelos LDA and arvore de seleção com utilizando essas variáveis.
+
+```{r}
+selected_vars <- rownames(lasso_coefs)[which(lasso_coefs != 0)]
+selected_vars <- selected_vars[selected_vars != "(Intercept)"]
+print(selected_vars)
+#------------------
+dados_reduzidos  <- dados[, c(selected_vars, "TSH_class")]
+treino_reduzido <- dados_reduzidos[l_treino, ]
+teste_reduzido   <- dados_reduzidos[-l_treino, ]
+```
+
+LDA reduzido 
+```{r}
+lda.fit_reduzido <- lda(TSH_class ~ SN + SD + SH + G  , data = treino_reduzido)
+print(lda.fit_reduzido)
+#
+# (*)TESTING ERROR RATE ---------------------------------------------------
+lda.pred_reduzido <- predict(lda.fit_reduzido, newdata = teste_reduzido)
+lda.class_reduzido <- lda.pred_reduzido$class
+
+
+cat("\n--- LDA (REDUCED MODEL) TEST CONFUSION MATRIX ---\n")
+print(table(Predicted = lda.class_reduzido, True = teste_reduzido$TSH_class))
+
+erro_test_lda_reduzido <- mean(lda.class_reduzido != teste_reduzido$TSH_class)
+cat("LDA (Reduced Model) Test Error Rate:", erro_test_lda_reduzido * 100, "%\n")
+```
+
+ TRAINING ERROR RATE 
+
+```{r}
+
+lda.pred_treino_reduzido <- predict(lda.fit_reduzido, newdata = treino_reduzido)
+lda.class_treino_reduzido <- lda.pred_treino_reduzido$class
+cat("\n--- LDA (REDUCED MODEL) TRAINING CONFUSION MATRIX ---\n")
+print(table(Predicted = lda.class_treino_reduzido, Real = treino_reduzido$TSH_class))
+erro_treino_lda_reduzido <- mean(lda.class_treino_reduzido != treino_reduzido$TSH_class)
+cat("LDA (Reduced Model) Training Error Rate:", erro_treino_lda_reduzido * 100, "%\n")
+#(*) FULL DATASET ERROR RATE --------------------------------------------------
+# Refitting the LDA model across the entire reduced dataset
+lda.fit_total_reduzido <- lda(TSH_class ~ SN + SD + SH + G, 
+                              data = dados_reduzidos)
+
+lda.pred_total_reduzido <- predict(lda.fit_total_reduzido, newdata = dados_reduzidos)
+lda.class_total_reduzido <- lda.pred_total_reduzido$class
+# Full Dataset Confusion Matrix
+cat("\n--- LDA (REDUCED MODEL) FULL DATASET CONFUSION MATRIX ---\n")
+print(table(Predicted = lda.class_total_reduzido, Real = dados_reduzidos$TSH_class))
+
+# Full Dataset Error Calculation
+erro_total_lda_reduzido <- mean(lda.class_total_reduzido != dados_reduzidos$TSH_class)
+cat("LDA (Reduced Model) Full Dataset Error Rate:", erro_total_lda_reduzido * 100, "%\n")
+```
+
+SIMPLE TREE 
+```{r}
+
+library(tree)
+tree.dados_redu <- tree(TSH_class ~ SN + SD + SH + G, 
+                        data = dados_reduzidos, 
+                        subset = l_treino)
+
+summary(tree.dados_redu)
+#
+# Visualizing the Tree Structure
+plot(tree.dados_redu)
+text(tree.dados_redu, pretty = 0) # Displays node splits with actual threshold values
+
+# TESTING ERROR RATE ---------------
+# Predicting classes on the independent test subset
+tree.pred_redu <- predict(tree.dados_redu, newdata = dados_reduzidos[-l_treino, ], type = "class")
+# Testing Confusion Matrix
+cat("\n--- DECISION TREE TESTING CONFUSION MATRIX---\n")
+print(table(Predicted = tree.pred_redu, True = dados_reduzidos$TSH_class[-l_treino]))
+#Testing Error Calculation
+erro_test_tree_redu <- mean(tree.pred != dados_reduzidos$TSH_class[-l_treino])
+cat("Decision Tree Testing Error Rate:", erro_test_tree_redu * 100, "%\n")
+
+```
+
+TRAINF ERROR RATE 
+
+```{r}
+
+#predicting classes on the train data set
+tree.pred_train_redu <- predict(tree.dados_redu, newdata = dados_reduzidos[l_treino, ], type = "class")
+# Traing Confusion Matrix
+cat("\n--- DECISION TREE TRAING CONFUSION MATRIX ---\n")
+print(table(Predicted = tree.pred_train_redu, True = dados_reduzidos$TSH_class[l_treino]))
+# Testing Error Calculation
+erro_train_tree_redu <- mean(tree.pred_train_redu != dados_reduzidos$TSH_class[l_treino])
+cat("Decision Tree Traing Error Rate:", erro_train_tree_redu * 100, "%\n")
+```
+
+ FULL DATASET ERROR RATE
+
+```{r}
+#Refitting the decision tree across the entire dataset
+tree.dados_total_redu <- tree(TSH_class ~ SN + SD + SH + G, 
+                              data = dados_reduzidos)
+
+#Predicting classes.
+tree.pred_total_redu <- predict(tree.dados_total_redu, newdata = dados_reduzidos, type = "class")
+
+#Confusion Matrix
+cat("\n--- DECISION TREE FULL DATASET CONFUSION MATRIX ---\n")
+print(table(Predicted = tree.pred_total_redu, True = dados_reduzidos$TSH_class))
+
+#Error rate
+erro_total_tree_redu <- mean(tree.pred_total_redu != dados_reduzidos$TSH_class)
+cat("Decision Tree Full Dataset Error Rate:", erro_total_tree_redu * 100, "%\n")
+
+```
+
+## 16. Tabela para comparação dos modelos
+```{r}
+
+final_table <- data.frame(
+  Approach = c("Full Model ", 
+               "Lasso Reduced Model "),
+  
+  LDA_Test_Error = c(erro_teste_lda, erro_test_lda_reduzido), 
+  
+  Decision_Tree_Test_Error = c(erro_test_tree, erro_test_tree_redu) 
+)
+
+#
+
+print(final_table, row.names = FALSE)
+# arvores
+par(mfrow = c(1, 2))
+plot(tree.dados, transform = "y")
+text(tree.dados, pretty = 0, cex = 0.8)
+title(main = "Decision Tree ( 9 Variables)", line = 2, cex.main = 1)
+#
+plot(tree.dados_redu, transform = "y")
+text(tree.dados_redu, pretty = 0, cex = 0.8)
+title(main = "Decision Tree ( 4 Variables)", line = 2, cex.main = 1)
+par(mfrow = c(1, 1))
+```
+
+Observamos que as taxas de erro de teste se mantiveram iguais ao avaliarmos o modelo LDA e a árvore de decisão com um número reduzido de preditores. Esse fato evidencia a redundância das variáveis removidas, uma vez que a sua exclusão não afetou a capacidade preditiva e o ajuste dos modelos. No caso do LDA, a remoção dessas variáveis foi fundamental, pois elas não contribuíam com informações novas para a classificação e ainda prejudicavam a precisão da estimativa dos coeficientes, inflando as suas variâncias associadas
+. Com relação à árvore de decisão, já era esperado que a estrutura e as estimativas permanecessem inalteradas, uma vez que a mecânica de divisão binária recursiva do algoritmo a torna naturalmente imune ao problema da multicolinearidade.
+
+## 17. Modelos de regressão 
+
+Na primeira etapa, convertemos a variável TSH em contínua, pois a mesma foi utilizada como fator na parte de modelos de classificação, posteriormente dividimos os dados em um conjunto de validação 50% treino e 50% teste.
+
+```{r}
+dados_modelagem <- dados %>% 
+  dplyr::select(-Family) %>%
+  dplyr::mutate(TSH = as.numeric(as.character(TSH))) 
+
+# Preparação e Divisão (50/50) 
+
+# Removendo a variável Family
+dados_modelagem <- dados %>% dplyr::select(-Family)
+
+# Divisão reproduzível dos dados
+set.seed(123)
+indices_treino <- sample(1:nrow(dados_modelagem), size = 0.5 * nrow(dados_modelagem))
+
+treino <- dados_modelagem[indices_treino, ]
+teste  <- dados_modelagem[-indices_treino, ]
+```
+
+Nesta etapa utilizamos do modelo linear completo 
+
+```{r modelo_completo}
+modelo_completo <- lm(TSH ~ . - Family, data = dados)
+summary(modelo_completo)
+# Cálculo e plotagem do VIF
+valores_vif <- vif(modelo_completo)
+
+barplot(valores_vif, 
+        main = "Fator de Inflacao da Variancia (VIF)", 
+        col = ifelse(valores_vif > 10, "red", "steelblue"), 
+        las = 2, 
+        ylab = "Valor do VIF")
+abline(h = 10, col = "black", lty = 2, lwd = 2)
+```
+
+Devido ao problema de multicolinearidade, indicado inicialmente pela matriz de correlação e confirmado pelos elevados valores do VIF, realizamos um processo de seleção de variáveis no modelo com o intuito de remover a multicolinearidade e obtermos um modelo mais parcimonioso. Para isso, o processo de seleção stepwise foi realizado. 
+
+```{r}
+#  Seleção Stepwise Forward
+mod_step_vs <- step(lm(TSH ~ 1, data = treino), 
+                    scope = formula(lm(TSH ~ ., data = treino)), 
+                    direction = "both", trace = 0)
+summary(mod_step_vs)
+```
+
+## 18 Extração de Componentes Principais (PCA)
+
+Como alternativa a multicolinearidade do modelo linear, a redução de dimensionalidade dos componentes principais surge como uma excelente alternativa, visto que os componentes são ortogonais entre sí e não possuemm autocorrelação. 
+Deste modo, optamos por testar essa abordagem, visto que não é necessário a exclusão de variáveis neste caso.
+
+```{r}
+# --- BLOCO 2: Redução de Dimensionalidade (PCA) e Visualização ---
+library(ggplot2)
+library(factoextra)
+
+# 1. Extração do PCA apenas no Treino
+dados_pca_treino_covariadas <- treino %>% 
+  dplyr::select(-TSH) %>% 
+  dplyr::select(where(is.numeric)) # Trava de segurança para variáveis numéricas
+
+pca_treino <- prcomp(dados_pca_treino_covariadas, center = TRUE, scale. = TRUE)
+
+# 2. Preparando os dados para o Scree Plot
+var_explicada <- pca_treino$sdev^2
+prop_var <- var_explicada / sum(var_explicada)
+var_acumulada <- cumsum(prop_var)
+
+df_pca_var <- data.frame(
+  Componente = factor(paste0("PC", 1:length(prop_var)), levels = paste0("PC", 1:length(prop_var))),
+  Proporcao = prop_var,
+  Acumulada = var_acumulada
+)
+
+# 3. Gráfico da Variância (Scree Plot)
+ggplot(df_pca_var, aes(x = Componente)) +
+  geom_bar(aes(y = Proporcao), stat = "identity", fill = "steelblue", alpha = 0.85) +
+  geom_line(aes(y = Acumulada, group = 1), color = "firebrick", linewidth = 1.2) +
+  geom_point(aes(y = Acumulada), color = "firebrick", size = 3) +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0, 1.1)) +
+  theme_minimal() +
+  labs(title = "Variância Explicada por Componente Principal (Treino)",
+       x = "Componentes Principais", y = "Proporção da Variância")
+
+# 4. Gráfico Biplot Elegante
+fviz_pca_biplot(pca_treino, 
+                repel = TRUE,                # Evita que os textos se sobreponham
+                col.var = "firebrick",       # Cor das setas (Variaveis)
+                col.ind = "steelblue",       # Cor dos pontos 
+                alpha.ind = 0.6,             # Transparencia dos pontos
+                title = "Biplot PCA: Dispersão e Projeção das Variáveis (Treino)",
+                xlab = "PC1 - Contraste Espectral",
+                ylab = "PC2 - Arquitetura da Planta") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5))
+
+# 5. Projetando os dados de teste no espaço do PCA de treino para uso futuro
+dados_pca_teste_covariadas <- teste %>% 
+  dplyr::select(-TSH) %>% 
+  dplyr::select(where(is.numeric))
+
+pred_pca_teste <- as.data.frame(predict(pca_treino, newdata = dados_pca_teste_covariadas)[, 1:4])
+```
+Decidiu-se manter os quatro primeiros componentes, que respondem pela maior parte da variabilidade dos preditores originais.
+
+## 19. Ajuste do modelo de regressão de componentes principais 
+
+```{r pcr_modelo_ajuste}
+# Criando o banco de dados do PCR para o Treino (usando os 3 primeiros PCs)
+dados_pcr_treino <- cbind(treino %>% dplyr::select(TSH), pca_treino$x[, 1:4])
+
+# Modelo PCR Completo (3 componentes)
+modelo_pcr_completo <- lm(TSH ~ PC1 + PC2 + PC3 + PC4, data = dados_pcr_treino)
+summary(modelo_pcr_completo)
+
+# Refinamento Stepwise no modelo PCR (Direção: Both)
+modelo_pcr_refinado <- step(modelo_pcr_completo, direction = "both", trace = 0)
+summary(modelo_pcr_refinado)
+```
+
+Mesmo não sendo significativo, após realizar o processo de seleção de variáveis o componente PC2 se manteve no modelo, então optamos por ficar com o componente.
+
+## 20. Modelo Partial Least Squares (PLS)
+
+```{r}
+library(pls)
+
+# Garantindo que o banco do PLS no treino tenha apenas variáveis numéricas
+dados_pls_treino <- treino %>% dplyr::select(where(is.numeric))
+
+# 1. Ajuste inicial do PLS com Validação Cruzada (CV) no conjunto de Treino
+set.seed(1)
+pls.fit <- plsr(TSH ~ ., data = dados_pls_treino, scale = TRUE, validation = "CV")
+
+# Exibe o resumo do modelo (R² cumulativo e erro por componente)
+summary(pls.fit)
+
+# Plota o MSEP (Mean Squared Error of Prediction) para identificar o ponto de mínimo
+validationplot(pls.fit, val.type = "MSEP", main = "Erro de Predição (MSEP) por Componente (Treino)")
+```
+Após analisar o gráfico, podemos perceber que o MSEP para de cair a partir do ponto referente ao quarto componente.
+
+```{r}
+# 2. Ajuste do Modelo Final com o Número Ideal de Componentes (3 componentes)
+# Usaremos o nome mod_pls_vs para conectar com o bloco de predições posterior
+mod_pls_vs <- plsr(TSH ~ ., data = dados_pls_treino, scale = TRUE, ncomp = 3)
+
+summary(mod_pls_vs)
+```
+
+O modelo final ajustado por Mínimos Quadrados Parciais (PLS) com 3 componentes demonstrou excelente capacidade preditiva e alta eficiência na redução de dimensionalidade. As três variáveis latentes construídas foram capazes de sintetizar 82.78% da variabilidade contida no conjunto original de preditores ($X$), eliminando as redundâncias causadas pela multicolinearidade severa observada anteriormente.
+
+```{r}
+# 3. Extrai as cargas das variáveis preditoras para os 3 componentes
+cargas_pls <- loadings(mod_pls_vs)[, 1:3]
+print(cargas_pls)
+
+# Gráfico de barras para visualizar os pesos de cada componente
+par(mfrow = c(1, 3))
+for(i in 1:3) {
+  barplot(cargas_pls[, i], 
+          main = paste("Pesos do Componente", i), 
+          col = "steelblue", las = 2)
+  abline(h = 0, lty = 2)
+}
+# Reseta o layout gráfico para não afetar os próximos plots do documento
+par(mfrow = c(1, 1))
+```
+
+A interpretação dos pesos (loadings) das variáveis latentes trouxe nuances muito interessantes na estrutura do modelo PLS. O Componente 1 caracterizou-se pelo forte contraste entre os índices espectrais positivos (NGRDI = 0.392; VARI = 0.390) e as bandas do visível negativas (R = -0.403; B = -0.370), associando-se também ao crescimento em altura da planta (SH = 0.303). O Componente 2, responsável pelo grande salto na explicação da variância do TSH, assumiu o papel de eixo de robustez estrutural. Nele, as variáveis biométricas de diâmetro do colmo (SD = 0.642) e altura (SH = 0.478) assumiram o protagonismo, demonstrando que a estrutura física de suporte é determinante para o rendimento final. Por fim, o Componente 3 revelou a capacidade do PLS em modelar a arquitetura de compensação morfológica da cultura: ele exibe um fortíssimo peso positivo para o número de colmos (SN = 0.834) contrapondo-se aos pesos negativos de diâmetro (SD = -0.582) e altura (SH = -0.265), capturando perfeitamente o balanço entre muitos colmos finos versus poucos colmos grossos no ajuste final da produtividade.
+
+
+## 21. Predições e Comparação Final dos Modelos de Regressão
+
+Com todos os modelos ajustados no conjunto de treinamento, a etapa final consiste em aplicar as regras de predição de cada metodologia no conjunto de validação (teste) e comparar suas respectivas métricas de erro. 
+
+```{r comparacao_regressao}
+
+mod_completo_vs <- lm(TSH ~ ., data = treino)
+
+# 2. Gerando as predições para o conjunto de Teste
+p_completo_vs    <- predict(mod_completo_vs, newdata = teste)
+p_step_vs        <- predict(mod_step_vs, newdata = teste)
+p_pcr_completo   <- predict(modelo_pcr_completo, newdata = pred_pca_teste)
+p_pcr_refinado   <- predict(modelo_pcr_refinado, newdata = pred_pca_teste)
+p_pls_vs         <- as.vector(predict(mod_pls_vs, ncomp = 3, newdata = teste))
+
+# 3. Isolando os valores reais de TSH do conjunto de teste
+reais_teste <- teste$TSH
+
+# Função auxiliar para calcular o R2 no teste
+calc_r2 <- function(real, pred) {
+  1 - sum((real - pred)^2) / sum((real - mean(real))^2)
+}
+
+# 4. Construindo o data.frame com as métricas de avaliação
+metricas_regressao <- data.frame(
+  Modelo = c("Linear Completo", "Linear Stepwise", "PCR Completo (4 Comp)", "PCR Stepwise", "PLS (3 Comp)"),
+  RMSE = c(sqrt(mean((reais_teste - p_completo_vs)^2)),
+           sqrt(mean((reais_teste - p_step_vs)^2)),
+           sqrt(mean((reais_teste - p_pcr_completo)^2)),
+           sqrt(mean((reais_teste - p_pcr_refinado)^2)),
+           sqrt(mean((reais_teste - p_pls_vs)^2))),
+  R2 = c(calc_r2(reais_teste, p_completo_vs),
+         calc_r2(reais_teste, p_step_vs),
+         calc_r2(reais_teste, p_pcr_completo),
+         calc_r2(reais_teste, p_pcr_refinado),
+         calc_r2(reais_teste, p_pls_vs)),
+  MAE = c(mean(abs(reais_teste - p_completo_vs)),
+          mean(abs(reais_teste - p_step_vs)),
+          mean(abs(reais_teste - p_pcr_completo)),
+          mean(abs(reais_teste - p_pcr_refinado)),
+          mean(abs(reais_teste - p_pls_vs)))
+)
+
+# 5. Ordenando a tabela pelo menor RMSE (do melhor para o pior modelo)
+metricas_regressao <- metricas_regressao[order(metricas_regressao$RMSE), ]
+
+# 6. Renderizando a tabela formatada
+knitr::kable(metricas_regressao, digits = 4, align = "c", 
+             caption = "Comparação de Desempenho dos Modelos de Regressão (Conjunto de Teste)")
+```
+
+O modelo Linear Stepwise apresentou as melhores métricas preditivas gerais (menor RMSE e maior $R^2$), indicando que a seleção de variáveis foi eficiente. Entretanto, a perda de informação nos processos de seleção de variáveis é prejudicial em um contexto informativo. Nesse caso, o modelo PLS (com 3 componentes) se mostra como uma alternativa altamente vantajosa pois ele retém a informação de todas as variáveis originais, resolve o problema da multicolinearidade por meio da criação de variáveis latentes e ainda entrega um desempenho preditivo robusto e satisfatório no conjunto de teste.
+
+## 22. Análise de Resíduos do Modelo PLS 
+
+```{r}
+# --- Análise Visual de Normalidade dos Resíduos (PLS - 3 Comp) ---
+library(ggplot2)
+
+# 1. Extraindo apenas os resíduos estritamente para os 3 componentes
+residuos_pls <- as.vector(residuals(mod_pls_vs, ncomp = 3))
+
+# Criando um data.frame para a plotagem
+df_residuos_pls <- data.frame(Residuos = residuos_pls)
+
+# 2. Gráfico Único: Q-Q Plot (Para checar a Normalidade)
+grafico_qq <- ggplot(df_residuos_pls, aes(sample = Residuos)) +
+  stat_qq(color = "steelblue", size = 3, alpha = 0.8) +
+  stat_qq_line(color = "firebrick", linewidth = 1) +
+  theme_minimal() +
+  labs(title = "Q-Q Plot dos Resíduos (PLS - 3 Comp)",
+       x = "Quantis Teóricos", y = "Quantis Observados") +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5))
+
+# Exibindo o gráfico
+print(grafico_qq)
+```
+
+## 23. Análise de resídus do Modelo Linear Stepwise
+
+```{r}
+library(lmtest)
+
+# 1. Teste de Normalidade de Shapiro-Wilk
+# Hipótese Nula (H0): Os resíduos possuem distribuição Normal
+shapiro.test(residuals(mod_step_vs))
+
+# 2. Teste de Homocedasticidade de Breusch-Pagan
+# Hipótese Nula (H0): A variância dos resíduos é constante (Homocedasticidade)
+bptest(mod_step_vs)
+
+# 3. Teste de Independência de Durbin-Watson
+# Hipótese Nula (H0): Não há autocorrelação (os resíduos são independentes)
+dwtest(mod_step_vs)
+```
+

@@ -197,3 +197,99 @@ grafico_biplot <- fviz_pca_biplot(pca_total,
 print(grafico_biplot)
 ```
 
+Análise de resíduos 
+
+```{r}
+par(mfrow=c(2,2))
+plot(modelo_pcr_refinado)
+```
+
+```{r}
+library(caret)
+library(dplyr)
+library(knitr) 
+
+set.seed(123)
+
+# 1. Configurando os métodos de Validação Cruzada
+controle_kfold <- trainControl(method = "cv", number = 10)
+controle_loocv <- trainControl(method = "LOOCV")
+
+# 2. Treinando o modelo com 10-Fold CV
+# Usando o modelo refinado: TSH em função dos componentes que sobreviveram
+modelo_kfold <- train(
+  TSH ~ PC1 + PC3 + PC4,
+  data = dados_regressao_pcr,
+  method = "lm",
+  trControl = controle_kfold
+)
+
+# 3. Treinando o modelo com Leave-One-Out (LOOCV)
+modelo_loocv <- train(
+  TSH ~ PC1 + PC3 + PC4,
+  data = dados_regressao_pcr,
+  method = "lm",
+  trControl = controle_loocv
+)
+
+# 4. Extraindo as métricas de cada modelo para comparar
+metricas_kfold <- modelo_kfold$results %>% select(RMSE, Rsquared, MAE)
+metricas_loocv <- modelo_loocv$results %>% select(RMSE, Rsquared, MAE)
+
+# 5. Criando um Dataframe de comparação
+tabela_comparacao <- rbind(
+  "10-Fold CV" = metricas_kfold,
+  "LOOCV (Deixa um de fora)" = metricas_loocv
+)
+
+# 6. Imprimindo a tabela formatada
+kable(tabela_comparacao, 
+      caption = "Comparação de Métricas de Validação Cruzada: 10-Fold vs LOOCV", 
+      digits = 3, 
+      align = "c")
+```
+
+```{r}
+# Carregando os pacotes necessários
+library(caret)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+
+# Garantindo a reprodutibilidade da separação dos dados no 10-Fold
+set.seed(123)
+controle_kfold <- trainControl(method = "cv", number = 10)
+
+# Criando um dataframe vazio para guardar os resultados
+resultados_poly <- data.frame(Grau = integer(), RMSE = numeric(), Rsquared = numeric())
+
+# Loop para testar polinômios do Grau 1 ao Grau 4
+for (grau in 1:4) {
+  
+  # Criando a fórmula dinamicamente para o grau atual
+  # Exemplo no grau 2: TSH ~ poly(PC1, 2) + poly(PC3, 2) + poly(PC4, 2)
+  formula_poly <- as.formula(paste0("TSH ~ poly(PC1, ", grau, ") + poly(PC3, ", grau, ") + poly(PC4, ", grau, ")"))
+  
+  # Treinando o modelo com 10-Fold CV
+  modelo_temp <- train(
+    formula_poly,
+    data = dados_regressao_pcr,
+    method = "lm",
+    trControl = controle_kfold
+  )
+  
+  # Guardando as métricas de validação deste grau
+  resultados_poly <- rbind(resultados_poly, data.frame(
+    Grau = grau,
+    RMSE = modelo_temp$results$RMSE,
+    Rsquared = modelo_temp$results$Rsquared
+  ))
+}
+
+# 1. Imprimindo a tabela de comparação no relatório
+kable(resultados_poly, 
+      caption = "Desempenho da Validação Cruzada (10-Fold) por Grau do Polinômio", 
+      digits = 3, align = "c")
+
+```
+
