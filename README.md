@@ -107,6 +107,21 @@
     </tr>
   </table>
 </details>
+
+<details>
+  <summary><b>🤖 Aprendizado de Máquina</b></summary>
+  <br>
+  <table>
+    <tr>
+      <td width="100%" valign="top"> 
+        <h3>Seleção de Famílias Pró-Produtivas de Cana-de-Açúcar</h3>
+        <p>Projeto final (EST792) focando na aplicação de algoritmos de Machine Learning para a seleção de famílias de cana-de-açúcar com alto potencial produtivo.</p>
+        <p><strong>Tecnologias:</strong> R, Machine Learning, R Markdown.</p>
+        <a href="https://Lucasbpofc.github.io/Machine_Learning/HW6_Blessing_Inacio_Lucas_Rodrigo.html"><strong>Ver Relatório Completo &rarr;</strong></a>
+      </td>
+    </tr>
+  </table>
+</details>
 <br>
 
 ## 🎓 Apresentações Acadêmicas
