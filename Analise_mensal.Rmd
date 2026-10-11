@@ -187,3 +187,153 @@ for(i in 1:12){
 
 # Conclusão Geral
 Este relatório automatizado permite a identificação rápida de padrões sazonais e tendências climáticas no município de Viçosa, fornecendo subsídios estatísticos para o planejamento hídrico e agrícola local.
+
+
+# O Ell Nino impacta as máximas mensais ? 
+
+Inicialmente realizou-se a importação das máximas mensais associadas ao El nino
+```{r}
+
+# URL oficial dos dados
+url_oni <- "https://psl.noaa.gov/data/correlation/oni.data"
+
+# Lendo as linhas brutas
+linhas_oni <- readLines(url_oni)
+
+# O arquivo tem 1 linha de cabeçalho e 8 de rodapé. Vamos filtrar apenas o miolo de dados.
+dados_limpos <- linhas_oni[2:(length(linhas_oni) - 8)]
+
+# Lendo como data.frame
+df_oni_bruto <- read.table(text = dados_limpos, header = FALSE)
+
+# Renomeando as colunas para bater EXATAMENTE com a sua 'lista_meses'
+meses_oni <- c("Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+               "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro")
+colnames(df_oni_bruto) <- c("ano", meses_oni)
+
+# Substituindo a anomalia nula da NOAA (-99.90) pelo NA do R
+df_oni_bruto[df_oni_bruto == -99.90] <- NA
+
+# Garantindo que a coluna 'ano' seja numérica para facilitar o cruzamento
+df_oni_bruto$ano <- as.numeric(df_oni_bruto$ano)
+
+head(df_oni_bruto)
+```
+```{r results='asis'}
+# ==============================================================================
+# FUNÇÃO AUTOMATIZADA DE ANÁLISE (COM TRV E SELEÇÃO DE MODELO)
+# ==============================================================================
+
+executar_analise_mes <- function(dados, nome_mes, df_oni) {
+  
+  # 1. PREPARAÇÃO E ALINHAMENTO DAS SÉRIES
+  oni_do_mes <- df_oni[, c("ano", nome_mes)]
+  colnames(oni_do_mes)[2] <- "ONI_Atual"
+  
+  # Cria o vetor de anos nos dados climáticos da estação local
+  dados$ano <- seq(1968, 1968 + nrow(dados) - 1, 1)
+  
+  # Faz o merge mantendo apenas os anos que existem em AMBAS as bases (all = FALSE)
+  dados_completos <- merge(dados, oni_do_mes, by = "ano", all = FALSE)
+  
+  # FILTRO CRÍTICO PARA O TRV: 
+  # Remove qualquer linha que tenha NA na Chuva OU no ONI para garantir o mesmo "n"
+  dados_limpos <- subset(dados_completos, !is.na(PRECIP) & !is.na(ONI_Atual))
+  
+  chuva <- dados_limpos$PRECIP
+  anos  <- dados_limpos$ano
+  
+  # ---------------------------------------------------------
+  # BLOCO 1: PRECIPITAÇÃO (Análise Exploratória)
+  # ---------------------------------------------------------
+  cat(paste0("\n### Precipitação - ", nome_mes, "\n"))
+  cat(paste0("> Tamanho da amostra analisada (sem NAs): ", nrow(dados_limpos), " anos.\n\n"))
+  
+  par(mfrow=c(1,2))
+  plot(chuva ~ anos, type="b", main=paste("Série: Precipitação (", nome_mes, ")"), 
+       ylab="mm", xlab="Ano", col="#2980b9", pch=19, lwd=1.5)
+  hist(chuva, main=paste("Hist: Precipitação (", nome_mes, ")"), 
+       xlab="mm", col="#3498db", border="white", prob=TRUE)
+  lines(density(chuva), col="red", lwd=2)
+  
+  cat("\n**Diagnóstico de Estacionariedade (ADF - Chuva):**\n")
+  try({
+    teste_urca <- ur.df(chuva, type = "trend", selectlags = "AIC")
+    print(summary(teste_urca))
+  }, silent = TRUE)
+  
+  # ---------------------------------------------------------
+  # BLOCO 2: AJUSTE GEV E TESTE DE RAZÃO DE VEROSSIMILHANÇA
+  # ---------------------------------------------------------
+  cat("\n**Seleção de Modelo GEV (TRV: Estacionário vs. ONI):**\n")
+  
+  # Ajuste do Modelo 0 (Restrito / Estacionário)
+  fit_estacionario <- try(fevd(PRECIP, data = dados_limpos, 
+                               type = "GEV", units = "mm"), silent = TRUE)
+  
+  # Ajuste do Modelo 1 (Completo / Não-Estacionário na locação)
+  fit_covariavel <- try(fevd(PRECIP, data = dados_limpos, 
+                             location.fun = ~ ONI_Atual, 
+                             type = "GEV", units = "mm"), silent = TRUE)
+  
+  # Verifica se os dois modelos convergiram antes de fazer o TRV
+  if(!inherits(fit_estacionario, "try-error") & !inherits(fit_covariavel, "try-error")){
+      
+      # Executa o Teste de Razão de Verossimilhança (pacote extRemes)
+      teste_lr <- lr.test(fit_estacionario, fit_covariavel)
+      
+      # O objeto gerado pelo lr.test armazena o p-valor
+      p_valor <- teste_lr$p.value
+      cat(paste0("\n> **Resultado do TRV:** P-valor = ", round(p_valor, 4), "\n"))
+      
+      # Tomada de decisão com base em alpha = 0.05
+      if(p_valor < 0.05){
+          cat("> **Decisão:** Rejeitamos a hipótese nula. A inclusão do ONI melhora o modelo significativamente. Mantendo o GEV NÃO-ESTACIONÁRIO.\n\n")
+          modelo_final <- fit_covariavel
+      } else {
+          cat("> **Decisão:** Falhamos em rejeitar a hipótese nula. A influência do ONI não justificou a perda de grau de liberdade. Mantendo o GEV ESTACIONÁRIO.\n\n")
+          modelo_final <- fit_estacionario
+      }
+      
+      # Imprime o resumo do modelo vencedor
+      print(summary(modelo_final))
+      
+      # Gráficos de Diagnóstico do modelo vencedor
+      par(mfrow=c(2,2))
+      plot(modelo_final, type = "primary")
+      
+  } else {
+      cat("\n> **Erro:** Houve falha na convergência de um dos modelos para este mês. Verifique os dados ou a estabilidade numérica.\n")
+  }
+  
+  cat("\n---\n") # Separador visual para o próximo bloco (Temperatura)
+}
+```
+
+```{r, results='asis'}
+# Lista de Meses para as abas
+lista_meses <- c("Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                 "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro")
+
+# Loop de 1 a 12
+for(i in 1:12){
+  
+  # Cria a Aba do Mês
+  cat(paste0("\n## ", lista_meses[i], " \n\n"))
+  
+  # Leitura da aba do Excel
+  check_data <- try({
+    read_excel("EXTREMOS.xlsx", sheet = i)
+  }, silent = TRUE)
+  
+  if(inherits(check_data, "try-error")) {
+    cat(paste0("\n> **Aviso:** Não foi possível ler os dados para ", lista_meses[i], ".\n"))
+  } else {
+    # Executa a análise passando os dados, o nome do mês e a base do ONI
+    executar_analise_mes(check_data, lista_meses[i], df_oni_bruto)
+  }
+  
+  cat("\n\n")
+}
+```
+

@@ -146,6 +146,10 @@
   <a href="MGEST_2.pdf" target="_blank">
     <img src="extremos_rs.jpeg" width="250" alt="Pôster Distribuição generalizada de valores extremos: um estudo aplicado à precipitação e temperatura máxima na cidade de Porto Alegre-RS">
   </a>
+      &nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="Poster_Brasileirao.pdf" target="_blank">
+    <img src="futebol.jfif" width="250" alt="Modelagem da diferença de gols por distribuições discretas: uma aplicação ao Campeonato Brasileiro">
+  </a>
 </p>
 
 ## 🔥 Minhas Estatísticas no GitHub
