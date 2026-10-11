@@ -8,14 +8,14 @@ output:
     toc: true
     toc_depth: 3
     number_sections: true
-    theme: darkly
+    theme: cosmo
     highlight: tango
     toc_float: true
 ---
 
 \newpage
 
-# Introducao
+# Introdução
 
 Este relatorio apresenta uma analise de sobrevivencia aplicada aos tempos de
 duracao dos veranicos. A variavel resposta e composta pelo tempo ate a quebra
@@ -44,7 +44,7 @@ library(ggplot2)
 library(knitr)
 ```
 
-# Importacao dos dados
+# Importação dos dados
 
 Nesta etapa, a base de dados e carregada e as primeiras linhas sao avaliadas.
 O arquivo deve estar no mesmo diretorio deste relatorio ou o caminho deve ser

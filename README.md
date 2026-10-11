@@ -94,7 +94,7 @@
         <h3>Análise de sobrevivência aplicada a veranicos</h3>
         <p>Uma abordagem utilizando modelo de fragilidade gama, com modelo semiparamétrico de cox.</p>
         <p><strong>Tecnologias:</strong> R, Survival, ggplot2.</p>
-        <a href="https://Lucasbpofc.github.io/analise_sobrevivencia_veranicos.html"><strong>Ver Análise Completa &rarr;</strong></a>
+        <a href="https://Lucasbpofc.github.io/analise_sobrevivencia_veranicos.htmll"><strong>Ver Análise Completa &rarr;</strong></a>
       </td>
   </table>
 </details>
