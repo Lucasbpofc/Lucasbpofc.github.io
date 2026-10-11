@@ -1,0 +1,530 @@
+---
+title: "Analise de Sobrevivencia Aplicada a Veranicos"
+author: "Lucas Pereira Belo e Matheus Custódio"
+institution: "Universidade Federal de Vicosa (UFV)"
+date: "`r format(Sys.Date(), '%d/%m/%Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    theme: darkly
+    highlight: tango
+    toc_float: true
+---
+
+\newpage
+
+# Introducao
+
+Este relatorio apresenta uma analise de sobrevivencia aplicada aos tempos de
+duracao dos veranicos. A variavel resposta e composta pelo tempo ate a quebra
+do veranico, representado por `gap_time`, e pelo indicador de evento,
+representado por `status`.
+
+O interesse principal e avaliar a associacao entre a duracao dos veranicos e
+variaveis climaticas, com destaque para as fases do ENSO e para a categoria da
+ZCAS. Como os registros estao agrupados por cidade, tambem sao considerados
+modelos de Cox com fragilidade gama compartilhada, permitindo representar a
+heterogeneidade entre cidades.
+
+# Pacotes
+
+```{r setup, warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.align = "center"
+)
+
+library(survival)
+library(dplyr)
+library(ggplot2)
+library(knitr)
+```
+
+# Importacao dos dados
+
+Nesta etapa, a base de dados e carregada e as primeiras linhas sao avaliadas.
+O arquivo deve estar no mesmo diretorio deste relatorio ou o caminho deve ser
+ajustado no objeto `arquivo`.
+
+```{r importacao}
+arquivo <- "base_veranicos_mg_gap_times2.csv"
+
+df_veranicos <- read.csv(arquivo)
+
+head(df_veranicos)
+str(df_veranicos)
+```
+
+# Tratamento das variaveis
+
+As variaveis categoricas sao convertidas para fator. Em seguida, sao definidas
+categorias de referencia para facilitar a interpretacao dos modelos.
+
+Neste relatorio, a categoria "Inativa" e usada como referencia para ZCAS e
+"La Nina" e usada como referencia para ENSO.
+
+```{r tratamento}
+df_veranicos <- df_veranicos %>%
+  mutate(
+    cidade = as.factor(cidade),
+    zcas_categoria = as.factor(zcas_categoria),
+    enso_categoria = as.factor(enso_categoria),
+    zcas_categoria = relevel(zcas_categoria, ref = "Inativa"),
+    enso_categoria = relevel(enso_categoria, ref = "La Niña")
+  )
+
+summary(df_veranicos[, c("gap_time", "status", "cidade",
+                         "zcas_categoria", "enso_categoria")])
+```
+
+# Analise descritiva
+
+Antes do ajuste dos modelos, e importante descrever a distribuicao dos tempos
+de duracao dos veranicos e a frequencia dos eventos observados.
+
+```{r descritiva}
+descritiva_gap <- df_veranicos %>%
+  summarise(
+    n = n(),
+    eventos = sum(status == 1, na.rm = TRUE),
+    censuras = sum(status == 0, na.rm = TRUE),
+    prop_eventos = mean(status == 1, na.rm = TRUE),
+    media_gap = mean(gap_time, na.rm = TRUE),
+    mediana_gap = median(gap_time, na.rm = TRUE),
+    dp_gap = sd(gap_time, na.rm = TRUE),
+    minimo_gap = min(gap_time, na.rm = TRUE),
+    maximo_gap = max(gap_time, na.rm = TRUE)
+  )
+
+kable(descritiva_gap, digits = 3)
+```
+
+```{r frequencias-categoricas}
+tab_enso <- df_veranicos %>%
+  count(enso_categoria, status) %>%
+  group_by(enso_categoria) %>%
+  mutate(prop = n / sum(n)) %>%
+  ungroup()
+
+tab_zcas <- df_veranicos %>%
+  count(zcas_categoria, status) %>%
+  group_by(zcas_categoria) %>%
+  mutate(prop = n / sum(n)) %>%
+  ungroup()
+
+kable(tab_enso, digits = 3)
+kable(tab_zcas, digits = 3)
+```
+
+# Curvas de Kaplan-Meier
+
+As curvas de Kaplan-Meier permitem avaliar, de forma nao parametrica, a
+probabilidade de permanencia do veranico ao longo do tempo.
+
+```{r km-enso}
+ajuste_km_enso <- survfit(
+  Surv(gap_time, status) ~ enso_categoria,
+  data = df_veranicos
+)
+
+plot(
+  ajuste_km_enso,
+  col = c("#d35400", "#7f8c8d", "#2980b9"),
+  lwd = 2,
+  xlab = "Dias sem chuva (gap time)",
+  ylab = "Probabilidade de sobrevivencia",
+  main = "Curvas de Kaplan-Meier por fase do ENSO"
+)
+legend(
+  "topright",
+  legend = levels(df_veranicos$enso_categoria),
+  col = c("#d35400", "#7f8c8d", "#2980b9"),
+  lwd = 2,
+  bty = "n"
+)
+```
+
+```{r km-enso-ggplot}
+df_km <- data.frame(
+  tempo = ajuste_km_enso$time,
+  sobrevivencia = ajuste_km_enso$surv,
+  fase = rep(names(ajuste_km_enso$strata), ajuste_km_enso$strata)
+)
+
+df_km$fase <- gsub("enso_categoria=", "", df_km$fase)
+
+df_inicio <- data.frame(
+  tempo = rep(0, length(unique(df_km$fase))),
+  sobrevivencia = rep(1, length(unique(df_km$fase))),
+  fase = unique(df_km$fase)
+)
+
+df_km <- rbind(df_inicio, df_km)
+
+ggplot(df_km, aes(x = tempo, y = sobrevivencia, color = fase)) +
+  geom_step(linewidth = 1.2) +
+  labs(
+    title = "Curvas de sobrevivencia por fase do ENSO",
+    x = "Dias sem chuva (gap time)",
+    y = "Probabilidade de sobrevivencia",
+    color = "Fase do ENSO"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title = element_text(face = "bold"),
+    legend.position = "bottom"
+  )
+```
+
+# Modelos de Cox com fragilidade gama
+
+Como os dados sao agrupados por cidade, sao ajustados modelos de Cox com
+fragilidade gama compartilhada. A fragilidade representa a heterogeneidade nao
+observada entre cidades.
+
+Foram considerados quatro modelos:
+
+* Modelo 1: efeito isolado do ENSO;
+* Modelo 2: efeito isolado da ZCAS;
+* Modelo 3: efeito aditivo de ENSO e ZCAS;
+* Modelo 4: interacao entre ENSO e ZCAS.
+
+```{r modelos-cox-frailty}
+mod_cox_1 <- coxph(
+  Surv(gap_time, status) ~
+    enso_categoria + frailty(cidade, distribution = "gamma"),
+  data = df_veranicos
+)
+
+mod_cox_2 <- coxph(
+  Surv(gap_time, status) ~
+    zcas_categoria + frailty(cidade, distribution = "gamma"),
+  data = df_veranicos
+)
+
+mod_cox_3 <- coxph(
+  Surv(gap_time, status) ~
+    enso_categoria + zcas_categoria +
+    frailty(cidade, distribution = "gamma"),
+  data = df_veranicos
+)
+
+mod_cox_4 <- coxph(
+  Surv(gap_time, status) ~
+    enso_categoria * zcas_categoria +
+    frailty(cidade, distribution = "gamma"),
+  data = df_veranicos
+)
+
+summary(mod_cox_1)
+summary(mod_cox_2)
+summary(mod_cox_3)
+summary(mod_cox_4)
+```
+
+# Comparacao dos modelos
+
+A comparacao entre os modelos foi realizada pelos criterios de informacao AIC e
+BIC. Menores valores indicam melhor equilibrio entre ajuste e complexidade.
+
+```{r comparacao-modelos}
+resultados_ic <- data.frame(
+  Modelo = c(
+    "1. ENSO",
+    "2. ZCAS",
+    "3. ENSO + ZCAS",
+    "4. ENSO * ZCAS"
+  ),
+  AIC = c(
+    AIC(mod_cox_1),
+    AIC(mod_cox_2),
+    AIC(mod_cox_3),
+    AIC(mod_cox_4)
+  ),
+  BIC = c(
+    BIC(mod_cox_1),
+    BIC(mod_cox_2),
+    BIC(mod_cox_3),
+    BIC(mod_cox_4)
+  )
+)
+
+resultados_ic <- resultados_ic %>%
+  arrange(AIC)
+
+kable(resultados_ic, digits = 3)
+```
+
+# Verificacao da suposicao de riscos proporcionais
+
+Para avaliar a suposicao de riscos proporcionais, foi ajustado um modelo
+marginal com agrupamento por cidade. Esse modelo funciona como um espelho diagnostico para aplicar o teste de Schoenfeld.
+
+```{r schoenfeld}
+mod_cox_espelho <- coxph(
+  Surv(gap_time, status) ~
+    enso_categoria + zcas_categoria + cluster(cidade),
+  data = df_veranicos
+)
+
+teste_ph <- cox.zph(mod_cox_espelho)
+teste_ph
+```
+
+```{r grafico-schoenfeld, fig.width=8, fig.height=6}
+par(mfrow = c(2, 2))
+plot(teste_ph, lwd = 2, col = "blue")
+par(mfrow = c(1, 1))
+```
+
+# Residuos de Cox-Snell
+
+Os residuos de Cox-Snell sao utilizados para avaliar o ajuste global do modelo.
+Quando o modelo se ajusta bem aos dados, a curva estimada do risco acumulado
+dos residuos deve se aproximar da reta de 45 graus.
+
+
+```{r cox-snell}
+res_martingale <- residuals(mod_cox_3, type = "martingale")
+res_cox_snell <- df_veranicos$status - res_martingale
+
+ajuste_cs <- survfit(
+  Surv(res_cox_snell, df_veranicos$status) ~ 1
+)
+
+risco_acumulado_cs <- -log(ajuste_cs$surv)
+
+plot(
+  ajuste_cs$time,
+  risco_acumulado_cs,
+  type = "s",
+  col = "blue",
+  lwd = 2,
+  xlab = "Residuos de Cox-Snell (r)",
+  ylab = "Risco acumulado estimado H(r)",
+  main = "Ajuste global: Cox com fragilidade gama"
+)
+
+abline(0, 1, col = "red", lty = 2, lwd = 2)
+
+legend(
+  "topleft",
+  legend = c("Curva empirica do modelo", "Ajuste perfeito"),
+  col = c("blue", "red"),
+  lty = c(1, 2),
+  lwd = 2,
+  bty = "n"
+)
+```
+
+# Fragilidade estimada por cidade
+
+A fragilidade estimada permite avaliar diferencas entre cidades. Valores acima
+de 1 indicam maior risco relativo de quebra do veranico em relacao a media
+global; valores abaixo de 1 indicam menor risco relativo.
+
+```{r fragilidade-cidades}
+modelo_fragilidade <- mod_cox_3
+
+log_fragilidade <- modelo_fragilidade$frail
+mult_risco <- exp(log_fragilidade)
+nomes_cidades <- levels(as.factor(df_veranicos$cidade))
+
+df_fragilidade <- data.frame(
+  Cidade = nomes_cidades,
+  Log_Fragilidade = as.numeric(log_fragilidade),
+  Multiplicador = as.numeric(mult_risco)
+)
+
+df_fragilidade <- df_fragilidade %>%
+  arrange(desc(Multiplicador))
+
+kable(df_fragilidade, digits = 3)
+```
+
+```{r grafico-fragilidade}
+ggplot(df_fragilidade,
+       aes(x = reorder(Cidade, Multiplicador), y = Multiplicador)) +
+  geom_col(fill = "#2c3e50", width = 0.7) +
+  geom_hline(
+    yintercept = 1,
+    linetype = "dashed",
+    color = "#e74c3c",
+    linewidth = 1
+  ) +
+  coord_flip() +
+  labs(
+    title = "Efeito microclimatico por cidade",
+    subtitle = "Linha vermelha = media global; > 1 maior risco; < 1 menor risco",
+    x = "Cidade",
+    y = "Multiplicador de risco"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.text = element_text(size = 11)
+  )
+```
+
+# Efeitos tempo-dependentes
+
+A inclusão dos termos dependentes do tempo foi motivada pelo diagnóstico dos resíduos de Cox-Snell, que indicou um ajuste levemente inadequado na cauda superior do modelo inicial. Esse comportamento sugeriu que o modelo poderia não capturar completamente a dinâmica dos maiores tempos de permanência dos veranicos. Assim, foram incorporadas interações entre o ENSO e uma função do tempo. O modelo resultante apresentou melhora considerável no ajuste dos resíduos, além de menores valores de AIC e BIC, indicando melhor equilíbrio entre qualidade de ajuste e complexidade.
+
+```{r dados-expandido}
+df_veranicos <- df_veranicos %>%
+  mutate(id_veranico = row_number())
+
+df_expandido <- survSplit(
+  Surv(gap_time, status) ~ .,
+  data = df_veranicos,
+  cut = 1:max(df_veranicos$gap_time),
+  episode = "t_atual"
+)
+
+df_expandido <- df_expandido %>%
+  mutate(
+    el_nino_log_t = ifelse(enso_categoria == "El Niño", 1, 0) *
+      log(t_atual),
+    zcas_log_t = ifelse(zcas_categoria == "Ativa", 1, 0) *
+      log(t_atual)
+  )
+
+head(df_expandido)
+```
+
+```{r modelo-tempo-dependente}
+mod_cox_frailty_time <- coxph(
+  Surv(tstart, gap_time, status) ~
+    zcas_categoria + enso_categoria + el_nino_log_t +
+    frailty(cidade, distribution = "gamma"),
+  data = df_expandido
+)
+
+mod_cox_frailty_time_full <- coxph(
+  Surv(tstart, gap_time, status) ~
+    zcas_categoria + zcas_log_t +
+    enso_categoria + el_nino_log_t +
+    frailty(cidade, distribution = "gamma"),
+  data = df_expandido
+)
+
+summary(mod_cox_frailty_time)
+summary(mod_cox_frailty_time_full)
+
+AIC(mod_cox_frailty_time, mod_cox_frailty_time_full)
+BIC(mod_cox_frailty_time, mod_cox_frailty_time_full)
+```
+
+# Cox-Snell para o modelo tempo-dependente
+
+Como o modelo tempo-dependente usa formato counting process, os residuos sao
+extraidos no banco expandido e agregados pelo identificador original do
+veranico.
+
+```{r cox-snell-tempo}
+df_expandido$res_mart <- residuals(
+  mod_cox_frailty_time,
+  type = "martingale"
+)
+
+df_agregado <- aggregate(
+  cbind(status, res_mart) ~ id_veranico,
+  data = df_expandido,
+  FUN = sum
+)
+
+res_cox_snell_time <- df_agregado$status - df_agregado$res_mart
+status_final <- df_agregado$status
+
+ajuste_cs_time <- survfit(
+  Surv(res_cox_snell_time, status_final) ~ 1
+)
+
+risco_acumulado_time <- -log(ajuste_cs_time$surv)
+
+plot(
+  ajuste_cs_time$time,
+  risco_acumulado_time,
+  type = "s",
+  col = "#8e44ad",
+  lwd = 2,
+  xlab = "Residuos de Cox-Snell (r)",
+  ylab = "Risco acumulado estimado H(r)",
+  main = "Ajuste global: efeito temporal + fragilidade"
+)
+
+abline(0, 1, col = "red", lty = 2, lwd = 2)
+
+legend(
+  "topleft",
+  legend = c("Modelo tempo-dependente", "Ajuste perfeito"),
+  col = c("#8e44ad", "red"),
+  lty = c(1, 2),
+  lwd = 2,
+  bty = "n"
+)
+```
+
+# Curva do efeito tempo-dependente do El Nino
+
+O modelo com interacao temporal permite representar como o efeito do El Nino
+muda ao longo do tempo. Se o coeficiente da fase El Nino for `beta_1` e o
+coeficiente da interacao com `log(t)` for `beta_2`, entao:
+
+\[
+HR(t) = \exp(\beta_1 + \beta_2 \log(t)).
+\]
+
+```{r efeito-dinamico-enso}
+coef_time <- coef(mod_cox_frailty_time)
+coef_time
+
+beta_el_nino <- coef_time[grep("enso_categoria.*El", names(coef_time))[1]]
+beta_el_nino_tempo <- coef_time["el_nino_log_t"]
+
+tempo_dias <- 1:100
+
+hr_el_nino <- exp(beta_el_nino + beta_el_nino_tempo * log(tempo_dias))
+
+df_plot_dinamico <- data.frame(
+  Dia = tempo_dias,
+  HR = hr_el_nino
+)
+
+ggplot(df_plot_dinamico, aes(x = Dia, y = HR)) +
+  geom_line(color = "#d35400", linewidth = 1.2) +
+  geom_hline(
+    yintercept = 1,
+    linetype = "dashed",
+    color = "darkgray",
+    linewidth = 1
+  ) +
+  labs(
+    title = "Efeito tempo-dependente do El Nino sobre os veranicos",
+    subtitle = "Razao de risco ao longo do periodo sem chuva",
+    x = "Dias desde o inicio do risco",
+    y = "Razao de risco"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title = element_text(face = "bold")
+  )
+```
+
+# Consideracoes finais
+
+Os modelos de Cox com fragilidade gama permitem considerar a heterogeneidade
+entre cidades na analise do tempo ate a quebra dos veranicos. A comparacao por
+AIC e BIC auxilia na escolha entre estruturas com ENSO, ZCAS e interacao.
+
+Os residuos de Cox-Snell sao utilizados para avaliar o ajuste global, enquanto o
+teste de Schoenfeld contribui para verificar a suposicao de riscos
+proporcionais. Quando essa suposicao nao e adequada, modelos com efeitos
+tempo-dependentes podem representar melhor a dinamica das covariaveis ao longo
+do tempo.
