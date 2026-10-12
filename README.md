@@ -23,6 +23,27 @@
 ## 🚀 Áreas de Atuação e Projetos Destaque
 
 <details>
+  <summary><b>⚽ Estatística Aplicada ao Futebol</b></summary>
+  <br>
+  <table>
+    <tr>
+      <td width="100%" valign="top">
+        <h3>Modelagem da Diferença de Gols no Campeonato Brasileiro</h3>
+        <p>
+          Análise da diferença de gols entre mandantes e visitantes por rodada,
+          com ajuste e comparação de distribuições discretas, incluindo Normal
+          discreta, skew-normal discreta, Skellam e diferença Weibull discreta.
+        </p>
+        <p><strong>Tecnologias:</strong> R, R Markdown, máxima verossimilhança, AIC, BIC.</p>
+        <a href="https://Lucasbpofc.github.io/analise_distribuicoes_brasileirao.html" target="_blank">
+          <strong>Ver Análise Completa &rarr;</strong>
+        </a>
+      </td>
+    </tr>
+  </table>
+</details>
+
+<details>
   <summary><b>📈 Séries Temporais</b></summary>
   <br>
   <table>
