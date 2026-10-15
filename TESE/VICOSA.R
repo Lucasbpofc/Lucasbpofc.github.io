@@ -255,4 +255,3 @@ par(mfrow=c(1,2))
 plot(TEMP_MAX~year,type="b")
 hist(TEMP_MAX)
 
-ad
