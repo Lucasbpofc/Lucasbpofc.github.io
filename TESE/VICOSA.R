@@ -26,6 +26,7 @@ folha2 <- read_excel("EXTREMOS.xlsx", sheet = 2)
 CHUVA2 <- folha2$PRECIP   
 year <- seq(1968, 2022, 1)
 
+
 # Plota
 par(mfrow=c(1,2))
 plot(CHUVA2 ~ year, type="b", main="Folha 2 (Fev)", ylab="PrecipitaC'C#o")
