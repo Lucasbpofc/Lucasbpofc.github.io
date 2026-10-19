@@ -1,20 +1,24 @@
-# EXTREMOS DE PRECIPITAÇÃO — versão 4 / Shiny / R
+# EXTREMOS DE PRECIPITAÇÃO — versão 8 / Shiny / R
 # Instale uma vez no console:
-# install.packages(c("shiny", "bslib", "readxl", "extRemes", "distillery", "ismev", "tseries", "Kendall", "trend", "ggplot2", "patchwork"))
+# install.packages(c("shiny", "bslib", "readxl", "extRemes", "distillery", "tseries", "Kendall", "ggplot2", "patchwork"))
 # Abra este arquivo no RStudio e clique em Run App.
 # Alternativa: shiny::runApp("caminho/para/extremos_shiny")
 # Cada linha deve ser UM máximo por ano, já extraído (ano inteiro ou mês específico).
 # O aplicativo nao calcula maximos a partir de observacoes diarias.
-# Versão 4: roteiro do pôster, explorador GEV, casos observados, Pettitt e KS bootstrap.
+# Versão 8: três testes de pressupostos e textos voltados ao público não especializado.
 # Fonte dos valores: EXTREMOS.xlsx, aba JAN, colunas ANO e PRECIP, fornecido pelo autor.
 # A planilha não documenta estação, instrumento ou cobertura dos registros diários.
 # A definição de máxima diária mensal e a unidade mm seguem a descrição do autor.
 # Não excluir 1986 (184,8 mm) sem verificação na fonte original.
 
-pacotes <- c("shiny", "bslib", "readxl", "extRemes", "distillery", "ismev", "tseries", "Kendall", "trend", "ggplot2", "patchwork")
+pacotes <- c("shiny", "bslib", "readxl", "extRemes", "distillery", "tseries", "Kendall", "ggplot2", "patchwork")
 faltam <- pacotes[!vapply(pacotes, requireNamespace, logical(1), quietly = TRUE)]
 if (length(faltam)) stop("Instale os pacotes: ", paste(faltam, collapse = ", "))
 library(shiny)
+
+# Atributos HTML dos controles precisam de ponto decimal, inclusive em pt_BR.
+# Vírgulas nos resultados são definidas explicitamente por rotulos_num/formatC.
+options(OutDec = ".")
 
 options(shiny.maxRequestSize = 20 * 1024^2)
 cor_a <- "#2889c7"
@@ -84,16 +88,16 @@ exigir <- function(x) {
   x
 }
 quantil <- function(a, p) extRemes::qevd(p, loc = a$mu, scale = a$sigma,
-                                        shape = a$xi, type = "GEV")
+                                         shape = a$xi, type = "GEV")
 acumulada <- function(a, x) extRemes::pevd(x, loc = a$mu, scale = a$sigma,
-                                          shape = a$xi, type = "GEV")
+                                           shape = a$xi, type = "GEV")
 niveis <- function(a, periodos, confianca, metodo = "normal", xrange = NULL) {
   periodos <- as.numeric(periodos)
   if (!length(periodos) || any(!is.finite(periodos)) || any(periodos <= 1))
     stop("Os periodos de retorno devem ser finitos e maiores que 1.")
   if (length(confianca) != 1L || !is.finite(confianca) ||
       confianca <= 0 || confianca >= 1) stop("Confianca invalida.")
-
+  
   # Uma chamada escalar por periodo: evita depender da montagem matricial
   # de varios intervalos dentro de ci.fevd e de atributos da classe ci.
   linhas <- lapply(periodos, function(T) {
@@ -152,20 +156,18 @@ diagnosticar_pressupostos <- function(d, alpha = 0.05, lag = 5L) {
   k_adf <- trunc((length(x) - 1)^(1/3))
   testes <- list(
     adf = executar(function() tseries::adf.test(x, k = k_adf), regular),
-    kpss = executar(function() tseries::kpss.test(x, null = "Level"), regular),
     mk = executar(function() {
       m <- Kendall::MannKendall(x)
       list(statistic = c(tau = as.numeric(m$tau)), p.value = as.numeric(m$sl))
     }),
     lb = executar(function() stats::Box.test(x, lag = lag, type = "Ljung-Box"), regular)
   )
-  nomes <- c(paste0("ADF (", k_adf, " defasagens)"), "KPSS em nível",
+  nomes <- c(paste0("Dickey–Fuller aumentado (", k_adf, " defasagens)"),
              "Mann-Kendall (usual)", paste0("Ljung-Box (", lag, " defasagens)"))
-  h0 <- c("A série possui raiz unitária.", "A série é estacionária em nível.",
+  h0 <- c("A série possui raiz unitária (uma forma de não estacionariedade).",
           "Não há tendência monotônica.", "Autocorrelações até a defasagem escolhida são nulas.")
   interpretar <- list(
     c("Rejeita raiz unitária; não garante estacionariedade em nível.", "Não rejeita raiz unitária; resultado insuficiente para concluir estacionariedade."),
-    c("Evidência contra estacionariedade em nível.", "Não detectou evidência contra estacionariedade em nível."),
     c("Detectou tendência monotônica.", "Não detectou tendência monotônica."),
     c("Detectou autocorrelação no conjunto de defasagens.", "Não detectou autocorrelação no conjunto de defasagens.")
   )
@@ -195,17 +197,20 @@ diagnosticar_pressupostos <- function(d, alpha = 0.05, lag = 5L) {
                Interpretacao = texto, check.names = FALSE)
   }))
   sinal <- function(id) decisao(testes[[id]])
-  revisar <- any(vapply(c("kpss", "mk", "lb"), function(i) isTRUE(sinal(i)), logical(1)))
+  revisar <- any(vapply(c("mk", "lb"), function(i) isTRUE(sinal(i)), logical(1)))
   if (any(vapply(testes, function(r) !is.null(r[["erro"]]), logical(1))) && regular) {
     sintese <- "Um ou mais testes não puderam ser calculados. A avaliação está incompleta; consulte as mensagens da tabela antes de interpretar o ajuste."
   } else if (!regular) {
-    sintese <- "Há lacunas anuais: a avaliação temporal está incompleta. ADF, KPSS e Ljung-Box foram omitidos. Revise a cobertura dos dados antes do ajuste."
+    sintese <- "Há lacunas anuais: a avaliação temporal está incompleta. ADF e Ljung-Box foram omitidos. Revise a cobertura dos dados antes do ajuste."
   } else if (revisar) {
     sintese <- "Há evidências que exigem revisar a abordagem estacionária e/ou a dependência. A inclusão de covariáveis pode tratar mudanças sistemáticas nos parâmetros, mas não resolve automaticamente dependência temporal."
   } else if (any(vapply(testes, function(r) is.na(decisao(r)), logical(1)))) {
     sintese <- "Os limites dos valores-p não permitem decidir todos os testes no nível escolhido. Consulte as hipóteses e os sinais < ou > na tabela; a avaliação é inconclusiva."
   } else {
-    sintese <- "KPSS, Mann-Kendall e Ljung-Box não sinalizaram violações ao nível escolhido. Isso permite explorar a abordagem estacionária com cautela; não confirma i.i.d. nem substitui o exame dos gráficos. Confira também o resultado específico do ADF."
+    sintese <- if (isTRUE(sinal("adf")))
+      "O ADF rejeitou a hipótese de raiz unitária. Mann–Kendall e Ljung–Box não detectaram tendência monotônica ou autocorrelação nas defasagens avaliadas. É possível explorar o ajuste estacionário com cautela, examinando também os gráficos; esses resultados não comprovam i.i.d."
+    else
+      "O ADF não rejeitou a hipótese de raiz unitária. Mesmo sem tendência ou autocorrelação detectadas pelos outros testes, a avaliação da estacionariedade permanece inconclusiva. Examine os gráficos e a qualidade dos registros antes de interpretar o ajuste."
   }
   list(tabela = tabela, testes = testes, sintese = sintese)
 }
@@ -220,16 +225,16 @@ tema_extremos <- function() {
                    legend.position = "bottom", legend.title = ggplot2::element_text(size = 10))
 }
 eixos_num <- function() list(ggplot2::scale_x_continuous(labels = rotulos_num),
-                              ggplot2::scale_y_continuous(labels = rotulos_num))
+                             ggplot2::scale_y_continuous(labels = rotulos_num))
 plot_mensagem <- function(titulo, texto) {
   ggplot2::ggplot() + ggplot2::annotate("text", x = 0, y = 0, label = texto,
-                                      size = 3.5) + ggplot2::labs(title = titulo) + ggplot2::theme_void()
+                                        size = 3.5) + ggplot2::labs(title = titulo) + ggplot2::theme_void()
 }
 histograma_extremos <- function(x, bins = 12L, a = NULL) {
   d <- data.frame(chuva = x)
   p <- ggplot2::ggplot(d, ggplot2::aes(x = chuva)) +
     ggplot2::geom_histogram(ggplot2::aes(y = ggplot2::after_stat(density),
-                                      fill = ggplot2::after_stat(count)),
+                                         fill = ggplot2::after_stat(count)),
                             bins = bins, color = "#26354a", linewidth = 0.35) +
     ggplot2::scale_fill_gradient(low = "lightblue", high = "#154b8a", name = "Frequência") +
     ggplot2::geom_point(ggplot2::aes(y = 0), shape = 16, size = 1.4, alpha = 0.65) +
@@ -242,7 +247,7 @@ histograma_extremos <- function(x, bins = 12L, a = NULL) {
     curva_d <- data.frame(x = xx, y = yy)
     curva_d <- curva_d[is.finite(curva_d$y), ]
     p <- p + ggplot2::geom_line(data = curva_d, ggplot2::aes(x, y), inherit.aes = FALSE,
-                                 color = "#c93636", linewidth = 1)
+                                color = "#c93636", linewidth = 1)
   }
   p
 }
@@ -305,19 +310,22 @@ painel_ajuste <- function(a, conf = 0.95, bins = 12L, ncol = 2L) {
   patchwork::wrap_plots(list(p1,p2,p3,p4), ncol = ncol, widths = rep(1, ncol))
 }
 
-# Painel compartilhado com o pôster. A ilustração é determinística, não é dado observado.
+# Os quatro painéis usam a série selecionada. A linha linear é apenas descritiva.
 painel_pressupostos <- function(d, ncol = 2L) {
   base <- ggplot2::ggplot(d, ggplot2::aes(ano, chuva)) +
     ggplot2::geom_line(color = "#19558e") + ggplot2::geom_point(color = "#19558e", size = 1.3) +
     ggplot2::labs(x = "Ano", y = "Precipitação (mm)") + eixos_num() + tema_extremos()
   p1 <- base + ggplot2::labs(title = "Série observada")
   p2 <- base + ggplot2::geom_hline(yintercept = mean(d$chuva), color = "#c93636", linewidth = 0.8) +
-    ggplot2::labs(title = "Média de referência", subtitle = "Linha horizontal: média da janela")
+    ggplot2::labs(title = "Média de referência", subtitle = "Linha horizontal: média")
   p3 <- if (all(diff(d$ano) == 1)) plot_correlacao(d$chuva) else plot_mensagem("ACF", "Há lacunas anuais.")
-  i <- seq_len(nrow(d)); f <- data.frame(ano = d$ano, valor = 50 + 0.6*i + 8*sin(i*1.7))
-  p4 <- ggplot2::ggplot(f, ggplot2::aes(ano, valor)) + ggplot2::geom_line(color = "#19558e") +
-    ggplot2::geom_abline(intercept = 50 - 0.6*(min(d$ano)-1), slope = 0.6, color = "#c93636", linewidth = 0.8) +
-    ggplot2::labs(title = "Tendência: ilustração fictícia", subtitle = "Não corresponde aos dados observados", x = "Ano", y = "Valor ilustrativo") + eixos_num() + tema_extremos()
+  linear <- stats::lm(chuva ~ ano, data = d)
+  linha <- data.frame(ano = sort(unique(d$ano)))
+  linha$chuva <- as.numeric(stats::predict(linear, newdata = linha))
+  inclinacao <- unname(stats::coef(linear)["ano"])
+  p4 <- base + ggplot2::geom_line(data = linha, color = "#c93636", linewidth = 0.9) +
+    ggplot2::labs(title = "Tendência na série observada",
+                  subtitle = paste0("Linha linear: ",formatC(inclinacao,format="f",digits=2,decimal.mark=",")," mm/ano"))
   patchwork::wrap_plots(list(p1,p2,p3,p4), ncol = ncol, widths = rep(1,ncol))
 }
 
@@ -369,159 +377,252 @@ ui <- fluidPage(
   theme = bslib::bs_theme(bootswatch = "flatly"),
   tags$head(tags$style(HTML(".table-scroll {overflow-x:auto;} pre {white-space:pre-wrap; overflow-wrap:anywhere;} .nav-tabs {display:flex;flex-wrap:wrap;}"))),
   titlePanel("Teoria dos Valores Extremos: da modelagem à aplicação"),
-  p("Versão 4 • Material complementar ao pôster • Explore a GEV, analise dados reais e interprete níveis de retorno."),
+  p("Versão 8 • Material complementar ao pôster • Explore a GEV, analise dados reais e interprete níveis de retorno."),
   sidebarLayout(
     sidebarPanel(width = 3,
-      radioButtons("fonte", "Origem dos dados", c("Viçosa: janeiro (1968–2022)" = "janeiro",
-                                                 "Teófilo Otoni: anuais (1961–2025)" = "teofilo",
-                                                 "Importar meus dados" = "excel"), selected = "teofilo"),
-      conditionalPanel("input.fonte == 'excel'",
-        fileInput("arquivo", "Carregar máximos por ano", accept = c(".xlsx", ".xls", ".csv")),
-        helpText("Excel ou CSV com uma coluna de ano e uma de precipitação (mm), já resumida em uma máxima por ano. Registros diários brutos precisam ser agregados antes."),
-        uiOutput("csv_opcoes"),
-        uiOutput("folhas_ui"), uiOutput("colunas_ui"),
-        conditionalPanel("input.ano_col == '__sequencia__'",
-          numericInput("ano_inicio", "Ano da primeira linha", 1968, step = 1),
-          checkboxInput("confirmar", "Confirmo uma linha por ano, sem anos ausentes e em ordem", FALSE)
-        )
-      ),
-      conditionalPanel("input.fonte == 'excel'",
-        selectInput("tipo_bloco", "Bloco dos máximos importados", c("Ano inteiro" = "anual", "Mês específico" = "mensal")),
-        textInput("rotulo", "Descrição da série importada", "Minha série")
-      ),
-      helpText("Uma linha = um máximo diário por bloco, com um bloco por ano. Unidade: mm."),
-      selectInput("colunas_graficos", "Painéis de gráficos", c("Duas colunas" = "2", "Uma coluna (telefone)" = "1"), "2"),
-      sliderInput("bins", "Classes do histograma", min = 5, max = 20, value = 12, step = 1),
-      uiOutput("janela_ui"),
-      selectInput("modelo", "Distribuicao", c("GEV", "Gumbel")),
-      selectInput("conf", "Confianca dos intervalos",
-                  choices = c("90%" = "90", "95%" = "95", "99%" = "99"),
-                  selected = "95"),
-      numericInput("retorno", "Periodo de retorno T (anos)", 10, min = 1.01, max = 1000),
-      hr(),
-      helpText("Ajustes estacionarios por maxima verossimilhanca. Os intervalos da curva usam o metodo delta."),
-      downloadButton("baixar", "Baixar niveis de retorno")
+                 radioButtons("fonte", "Origem dos dados", c("Viçosa: janeiro (1968–2022)" = "janeiro",
+                                                             "Teófilo Otoni: anuais (1961–2025)" = "teofilo",
+                                                             "Importar meus dados" = "excel"), selected = "teofilo"),
+                 conditionalPanel("input.fonte == 'excel'",
+                                  fileInput("arquivo", "Carregar máximos por ano", accept = c(".xlsx", ".xls", ".csv")),
+                                  helpText("Excel ou CSV com uma coluna de ano e uma de precipitação (mm), já resumida em uma máxima por ano. Registros diários brutos precisam ser agregados antes."),
+                                  uiOutput("csv_opcoes"),
+                                  uiOutput("folhas_ui"), uiOutput("colunas_ui"),
+                                  conditionalPanel("input.ano_col == '__sequencia__'",
+                                                   numericInput("ano_inicio", "Ano da primeira linha", 1968, step = 1),
+                                                   checkboxInput("confirmar", "Confirmo uma linha por ano, sem anos ausentes e em ordem", FALSE)
+                                  )
+                 ),
+                 conditionalPanel("input.fonte == 'excel'",
+                                  selectInput("tipo_bloco", "Bloco dos máximos importados", c("Ano inteiro" = "anual", "Mês específico" = "mensal")),
+                                  textInput("rotulo", "Descrição da série importada", "Minha série")
+                 ),
+                 helpText("Uma linha = um máximo diário por bloco, com um bloco por ano. Unidade: mm."),
+                 selectInput("colunas_graficos", "Painéis de gráficos", c("Duas colunas" = "2", "Uma coluna (telefone)" = "1"), "2"),
+                 sliderInput("bins", "Classes do histograma", min = 5, max = 20, value = 12, step = 1),
+                 uiOutput("janela_ui"),
+                 selectInput("modelo", "Distribuicao", c("GEV", "Gumbel")),
+                 selectInput("conf", "Confianca dos intervalos",
+                             choices = c("90%" = "90", "95%" = "95", "99%" = "99"),
+                             selected = "95"),
+                 hr(),
+                 helpText("Ajustes estacionarios por maxima verossimilhanca. Os intervalos da curva usam o metodo delta."),
+                 downloadButton("baixar", "Baixar niveis de retorno")
     ),
     mainPanel(width = 9,
-      uiOutput("origem_ui"),
-      tabsetPanel(id = "aba",
-        tabPanel("Roteiro e teoria", value = "roteiro",
-          h4("Do pôster à aplicação"),
-          p("Este aplicativo complementa o passo a passo do trabalho com dois exemplos observados de precipitação e com a exploração teórica da GEV."),
-          tags$ol(tags$li("Explore os parâmetros na aba Explorar GEV."),
-            tags$li("Consulte a origem, a unidade e o bloco em Dados."),
-            tags$li("Examine estacionariedade, tendência, dependência e mudança abrupta em Pressupostos."),
-            tags$li("Ajuste GEV ou Gumbel por máxima verossimilhança e examine os quatro diagnósticos."),
-            tags$li("Execute o KS com bootstrap; interprete níveis de retorno, risco e comparação entre janelas.")),
-          h4("Qual método para quais dados?"),
-          p("Máximos em blocos: a GEV descreve assintoticamente máximos normalizados, sob condições apropriadas. Aqui usamos um máximo diário por ano ou por janeiro."),
-          p("Picos acima de limiar (POT): excessos são modelados pela Pareto Generalizada (GPD). Essa abordagem integra a fundamentação do trabalho; os ajustes executados aqui são de máximos em blocos."),
-          h4("Estacionário ou com covariáveis?"),
-          p("Em um modelo estacionário, localização, escala e forma são constantes. Mudanças sistemáticas podem motivar modelos com covariáveis, por exemplo μ(t) = β₀ + β₁t e log σ(t) = γ₀ + γ₁t. O aplicativo executa os ajustes estacionários; essa extensão é apresentada como orientação metodológica."),
-          p("Os testes não certificam i.i.d. A ausência de autocorrelação não prova independência. O teste usual do sinal não é um teste geral de aleatoriedade; por isso não recebe esse rótulo aqui."),
-          p("A estimação usa extRemes::fevd(method = 'MLE'), com otimização numérica BFGS por padrão. Não se atribui o algoritmo de Newton–Raphson a essa rotina."),
-          p("Exemplo do pôster: Teófilo Otoni, 1961–2025; GEV; confiança 95%; T = 10 anos. Fonte: valores fornecidos pelo autor; estação e completude diária ainda precisam de documentação."),
-          actionButton("exemplo_poster", "Carregar o exemplo do pôster")
-        ),
-        tabPanel("Explorar GEV", value = "explorar",
-          p("Exploração teórica: altere os parâmetros para observar a cauda e os níveis de retorno. Esses controles não alteram o ajuste dos dados reais."),
-          fluidRow(column(4, numericInput("expl_mu", "Localização μ (mm)", 70, step = 5)),
-                   column(4, numericInput("expl_sigma", "Escala σ (mm)", 20, min = 0.1, step = 1)),
-                   column(4, sliderInput("expl_xi", "Forma ξ", min = -0.5, max = 0.5, value = 0.2, step = 0.05))),
-          verbatimTextOutput("expl_familia"), plotOutput("expl_curvas", height = "650px"),
-          tableOutput("expl_tabela"),
-          p("São curvas com parâmetros fixados pelo usuário, sem intervalos de confiança. A GEV com ξ < 0 é a Weibull reversa, com limite superior finito. A classificação da cauda a partir de dados depende também da incerteza de ξ.")
-        ),
-        tabPanel("Dados", value = "dados",
-          p("Selecione um exemplo ou importe seus máximos. Viçosa usa apenas janeiro; Teófilo Otoni usa o ano inteiro. Os períodos de retorno são anuais em ambos os casos, mas se referem a blocos diferentes."),
-          verbatimTextOutput("resumo"), plotOutput("serie"),
-          uiOutput("descritivo_ui"),
-          tags$details(tags$summary("Consultar os valores"), div(class = "table-scroll", tableOutput("dados_tabela"))),
-          actionButton("ir_pressupostos", "Prosseguir para os pressupostos")
-        ),
-        tabPanel("Pressupostos", value = "pressupostos",
-          h4("A série sustenta uma análise estacionária?"),
-          p("Avalie os gráficos, as hipóteses e a qualidade dos registros. Os testes são exploratórios e se referem à janela A. Não há correção por testes múltiplos."),
-          fluidRow(column(6,
-            selectInput("alpha_testes", "Significância dos testes (α)",
-                        c("1%" = "0.01", "5%" = "0.05", "10%" = "0.10"), "0.05")),
-            column(6, uiOutput("lag_ui"))),
-          div(class = "table-scroll", tableOutput("testes_tabela")),
-          uiOutput("sintese_testes"),
-          uiOutput("pressupostos_ui"),
-          p("No painel, os três primeiros gráficos usam a série observada. O quarto é uma ilustração fictícia de tendência, não é usado nos testes e não representa uma tendência detectada nos dados."),
-          p("Lacunas anuais impedem ADF, KPSS e Ljung-Box nesta versão: retirar anos e tratar os restantes como consecutivos alteraria o significado das defasagens. Mann-Kendall usa a ordem dos anos válidos."),
-          p("Mann-Kendall é apresentado na forma usual, que pressupõe independência sob a hipótese nula. Se houver dependência, seu valor-p precisa de reavaliação; não é aplicada correção automática."),
-          p("O ADF do tseries inclui constante e tendência linear; rejeitar raiz unitária não exclui uma tendência determinística."),
-          p("Referências dos procedimentos: tseries::adf.test(), tseries::kpss.test(null = 'Level'), Kendall::MannKendall() e stats::Box.test(type = 'Ljung-Box')."),
-          h4("Mudança abrupta: teste de Pettitt"),
-          p("Avalia uma mudança na tendência central em ponto desconhecido. Pressupõe independência sob a hipótese nula; tendência gradual e dependência podem afetar a interpretação. Não testa todas as mudanças possíveis na escala ou na cauda da GEV."),
-          div(class = "table-scroll", tableOutput("pettitt_tabela")),
-          plotOutput("pettitt_grafico", height = "320px"),
-          p("A linha marca o ponto candidato do teste, mesmo quando não significativo. Não há divisão automática da série. O valor-p de Pettitt é aproximado e a aproximação é mais adequada para p ≤ 0,5."),
-          actionButton("ir_ajuste", "Prosseguir para o ajuste exploratório")
-        ),
-        tabPanel("Ajuste", value = "ajuste",
-          uiOutput("lembrete_ajuste"), verbatimTextOutput("parametros"), plotOutput("densidade"),
-          p("O sinal da forma indica o comportamento da cauda estimada. Sua incerteza deve ser considerada; a estimativa isolada nao define conclusivamente a familia.")
-        ),
-        tabPanel("Diagnosticos", value = "diagnosticos",
-          p("P-P, Q-Q, histograma com densidade e níveis de retorno, todos baseados no mesmo ajuste extRemes mostrado na aba Ajuste. Os intervalos seguem o nível de confiança selecionado."),
-          uiOutput("diagnosticos_ui"),
-          p("Nenhum limite fixo corta valores extremos. Os gráficos usam a faixa dos dados e do modelo. No telefone, escolha Uma coluna na barra lateral."),
-          h4("Aderência por Kolmogorov–Smirnov"),
-          p("H₀: a distribuição marginal pertence à família selecionada, com parâmetros desconhecidos. O bootstrap paramétrico simula e reajusta a mesma família em cada réplica. Não é utilizado o valor-p usual de ks.test() para parâmetros conhecidos."),
-          fluidRow(column(4, selectInput("B_ks", "Réplicas bootstrap", c("199 (exploração)" = "199", "499" = "499", "999" = "999", "1999" = "1999"), "499")),
-                   column(4, numericInput("seed_ks", "Semente", 2026, min = 1, max = 2147483647, step = 1)),
-                   column(4, selectInput("passo_ks", "Resolução dos registros (mm)", c("Contínuo / não arredondar" = "0", "0,01 mm" = "0.01", "0,1 mm" = "0.1", "1 mm" = "1"), "0"))),
-          selectInput("alpha_ks", "Significância do KS", c("1%" = "0.01", "5%" = "0.05", "10%" = "0.10"), "0.05"),
-          p("Há valores repetidos nas séries. Se forem resultado de arredondamento, informe a resolução efetiva do instrumento. Com resolução positiva, as amostras simuladas são arredondadas antes do reajuste; os valores observados permanecem intactos."),
-          actionButton("executar_ks", "Avaliar aderência por bootstrap"),
-          helpText("O cálculo pode demorar. Ao alterar os dados, a distribuição ou as opções do bootstrap, execute novamente."),
-          verbatimTextOutput("resultado_ks"),
-          p("Não rejeitar H₀ não comprova um bom ajuste. O KS avalia a distribuição inteira e não substitui a inspeção da cauda e dos níveis de retorno. A calibração pressupõe blocos independentes e distribuição estacionária.")
-        ),
-        tabPanel("Niveis de retorno", value = "retorno",
-          plotOutput("curva_retorno"), tableOutput("retornos"),
-          verbatimTextOutput("interpretacao"),
-          numericInput("critico", "Valor critico de precipitacao (mm)", 100, min = 0),
-          numericInput("horizonte", "Horizonte de interesse (anos)", 30, min = 1, max = 1000),
-          verbatimTextOutput("risco"),
-          numericInput("perfil_low", "Limite inferior da busca do perfil (mm)", 60),
-          numericInput("perfil_up", "Limite superior da busca do perfil (mm)", 170),
-          helpText("Esses valores delimitam a grade de precipitacao em que o perfil e avaliado. Ajuste-os para abranger o pico e os dois cruzamentos com a linha critica."),
-          actionButton("perfil", "Calcular IC por perfil (extRemes)"),
-          helpText("O perfil pode demorar. Recalcule se alterar dados, modelo, T ou confianca."),
-          verbatimTextOutput("resultado_perfil")
-        ),
-        tabPanel("Conferencia ismev", value = "ismev",
-          p("Ajuste independente com ismev nos mesmos dados e na mesma família. Pequenas diferenças numéricas entre os pacotes são possíveis."),
-          tableOutput("parametros_ismev"),
-          tags$details(tags$summary("Ver os quatro gráficos originais do ismev (IC de 95%)"),
-                        plotOutput("diag_ismev", height = "650px")),
-          p("O perfil abaixo usa T e os limites de busca informados na aba Níveis de retorno."),
-          helpText("gev.prof() requer GEV. Para Gumbel, use o cálculo de perfil do extRemes."),
-          actionButton("perfil_ismev", "Desenhar perfil GEV (ismev)"),
-          plotOutput("grafico_perfil_ismev", height = "360px")
-        ),
-        tabPanel("Comparar janelas", value = "comparar",
-          p("A janela A e a selecionada na barra lateral. Escolha abaixo a janela B. Ambas usam a mesma distribuicao e confianca."),
-          uiOutput("janela_b_ui"),
-          plotOutput("comparacao"), tableOutput("comparacao_tabela"),
-          p("Janelas podem se sobrepor. Diferencas nas estimativas nao constituem um teste de mudanca climatica ou de tendencia.")
-        ),
-        tabPanel("Como interpretar", value = "ajuda",
-          h4("O que esta sendo modelado?"),
-          p("Uma observação por ano: o maior registro diário de janeiro (Viçosa) ou do ano inteiro (Teófilo Otoni). Confirme o bloco e a cobertura dos registros ao importar outra série."),
-          p("Um nível de retorno de 100 anos tem probabilidade de excedência de 1% por bloco, com um bloco por ano. Para Viçosa, a superação se refere a janeiro; para Teófilo Otoni, ao ano inteiro. Não implica ocorrências regulares a cada 100 anos."),
-          p("As probabilidades em varios anos pressupõem independencia entre os maximos anuais e parametros constantes."),
-          p("Amostras pequenas e periodos muito superiores ao tempo observado produzem extrapolacoes com elevada incerteza. Limites negativos da aproximacao normal nao tem interpretacao fisica para chuva."),
-          p("Os testes da aba Pressupostos não comprovam i.i.d. Ausência de autocorrelação não garante independência e estacionariedade em média/variância não garante distribuição marginal constante. Não detectar tendência não exclui mudanças na dispersão ou na cauda."),
-          p("Versão 4: roteiro alinhado ao pôster, explorador teórico da GEV, dados observados de Viçosa e Teófilo Otoni, Pettitt e KS com bootstrap. POT/GPD e covariáveis aparecem na fundamentação."),
-          p("A planilha fornecida não documenta a estação, o instrumento ou a completude das observações diárias usadas para extrair cada máximo. Esses metadados devem acompanhar a aplicação científica."),
-          p("Pacotes: shiny, bslib, readxl, extRemes, distillery, ismev, tseries, Kendall, trend, ggplot2 e patchwork. codigo de ajuste: extRemes::fevd(), method = 'MLE'.")
-        )
-      )
+              uiOutput("origem_ui"),
+              tabsetPanel(id = "aba",
+                          tabPanel("Roteiro e teoria", value = "roteiro",
+                                   h4("Do pôster à aplicação"),
+                                   p("Este aplicativo complementa o passo a passo do trabalho com dois exemplos observados de precipitação, a exploração teórica da GEV e a possibilidade de importar seus próprios dados."),
+                                   tags$ol(tags$li("Explore os parâmetros na aba Explorar GEV."),
+                                           tags$li("Consulte a origem, a unidade e o bloco em Dados."),
+                                           tags$li("Examine estacionariedade, tendência e autocorrelação em Pressupostos."),
+                                           tags$li("Ajuste GEV ou Gumbel por máxima verossimilhança e examine os quatro diagnósticos."),
+                                           tags$li("Execute o KS com bootstrap; interprete níveis de retorno e probabilidades de excedência.")),
+                                   h4("Qual método para quais dados?"),
+                                   p("Máximos em blocos: selecionamos o maior valor de cada bloco de observações. Em Teófilo Otoni, usamos a maior precipitação diária de cada ano (1961–2025); em Viçosa, a maior precipitação diária de janeiro de cada ano (1968–2022). Ambos os exemplos possuem uma observação por ano, em milímetros, mas representam blocos diferentes."),
+                                   p("Picos acima de limiar (POT): excessos são modelados pela Pareto Generalizada (GPD). Essa abordagem integra a fundamentação do trabalho; os ajustes executados aqui são de máximos em blocos."),
+                                   h4("Estacionário ou com covariáveis?"),
+                                   p("Em um modelo estacionário, localização, escala e forma são constantes. Mudanças sistemáticas podem motivar modelos com covariáveis, por exemplo μ(t) = β₀ + β₁t e log σ(t) = γ₀ + γ₁t. O aplicativo executa os ajustes estacionários; essa extensão é apresentada como orientação metodológica."),
+                                   p("Os testes ajudam a investigar diferentes aspectos do comportamento da série. Outros procedimentos, como os testes de Pettitt e KPSS, podem complementar essa avaliação. Para facilitar o entendimento do público, nesta versão utilizaremos apenas os três testes apresentados: Dickey–Fuller aumentado, Mann–Kendall e Ljung–Box. Seus resultados devem ser interpretados em conjunto com os gráficos e com o conhecimento do problema estudado."),
+                                   p("Os parâmetros são estimados pelo método da máxima verossimilhança, com a função extRemes::fevd(method = 'MLE'), no software R."),
+                                   p("Exemplo do pôster: Teófilo Otoni, 1961–2025; GEV; confiança 95%; T = 10 anos. Fonte: BDMEP/INMET, conforme informado pelo autor. A identificação da estação e a cobertura diária devem acompanhar a análise."),
+                                   h4("Três perguntas sobre a série"),
+                                   tags$ul(tags$li("Dickey–Fuller aumentado (ADF): há evidência contra raiz unitária, uma forma de não estacionariedade? H₀: existe raiz unitária. H₁: não existe raiz unitária; a série é estacionária em torno da constante e da tendência consideradas pelo teste."),
+                                           tags$li("Mann–Kendall: há uma direção de mudança ao longo do tempo? H₀: não há tendência monotônica. H₁: há tendência crescente ou decrescente."),
+                                           tags$li("Ljung–Box: há autocorrelação entre os anos? H₀: as autocorrelações até a defasagem selecionada são nulas. H₁: pelo menos uma é diferente de zero.")),
+                                   h4("Origem e importação dos dados"),
+                                   p("Os dados dos exemplos foram obtidos no BDMEP, do INMET, conforme informado pelo autor. Para analisar outra localidade, importe Excel (.xlsx ou .xls) ou CSV com uma coluna de ano e uma de precipitação máxima em mm. Exemplo de nomes: ANO e PRECIP."),
+                                   p("Cada linha deve conter um único máximo por ano: do ano inteiro ou de um mesmo mês, como janeiro, em todos os anos. Selecione as colunas e informe o bloco na importação. O aplicativo recebe máximos já extraídos; os registros diários brutos precisam ser agregados antes. Preserve anos ausentes e não substitua dados faltantes por zero."),
+                                   actionButton("exemplo_poster", "Carregar o exemplo do pôster")
+                          ),
+                          tabPanel("Explorar GEV", value = "explorar",
+                                   p("Exploração teórica: altere os parâmetros para observar a cauda e os níveis de retorno. Esses controles não alteram o ajuste dos dados reais."),
+                                   fluidRow(column(4, numericInput("expl_mu", "Localização μ (mm)", 70, step = 5)),
+                                            column(4, numericInput("expl_sigma", "Escala σ (mm)", 20, min = 0.1, step = 1)),
+                                            column(4, sliderInput("expl_xi", "Forma ξ", min = -0.5, max = 0.5, value = 0.2, step = 0.05))),
+                                   verbatimTextOutput("expl_familia"),
+                                   plotOutput("expl_densidade", height = "330px"),
+                                   plotOutput("expl_retorno", height = "330px"),
+                                   tableOutput("expl_tabela"),
+                                   p("São curvas com parâmetros fixados pelo usuário, sem intervalos de confiança. A GEV com ξ < 0 é a Weibull reversa, com limite superior finito. A classificação da cauda a partir de dados depende também da incerteza de ξ.")
+                          ),
+                          tabPanel("Dados", value = "dados",
+                                   p("Selecione um exemplo ou importe seus máximos. Viçosa usa apenas janeiro; Teófilo Otoni usa o ano inteiro. Os períodos de retorno são anuais em ambos os casos, mas se referem a blocos diferentes."),
+                                   verbatimTextOutput("resumo"), plotOutput("serie"),
+                                   uiOutput("descritivo_ui"),
+                                   tags$details(tags$summary("Consultar os valores"), div(class = "table-scroll", tableOutput("dados_tabela"))),
+                                   actionButton("ir_pressupostos", "Prosseguir para os pressupostos")
+                          ),
+                          tabPanel("Pressupostos", value = "pressupostos",
+                                   h4("A série sustenta uma análise estacionária?"),
+                                   p("Avalie os gráficos, as hipóteses e a qualidade dos registros. Os testes são exploratórios e se referem à janela selecionada. Não há correção por testes múltiplos."),
+                                   p("Use três perguntas como guia: há sinais de não estacionariedade (ADF), de tendência ao longo do tempo (Mann–Kendall) ou de autocorrelação entre anos (Ljung–Box)?"),
+                                   fluidRow(column(6,
+                                                   selectInput("alpha_testes", "Significância dos testes (α)",
+                                                               c("1%" = "0.01", "5%" = "0.05", "10%" = "0.10"), "0.05")),
+                                            column(6, uiOutput("lag_ui"))),
+                                   div(class = "table-scroll", tableOutput("testes_tabela")),
+                                   uiOutput("sintese_testes"),
+                                   uiOutput("pressupostos_ui"),
+                                   p("Os quatro gráficos usam os dados reais da janela selecionada, inclusive na importação. No quarto painel, a linha vermelha descreve a tendência linear estimada em mm por ano; uma linha inclinada, isoladamente, não comprova tendência estatisticamente significativa. Consulte o teste de Mann–Kendall na tabela."),
+                                   p("Lacunas anuais impedem ADF e Ljung-Box nesta versão: retirar anos e tratar os restantes como consecutivos alteraria o significado das defasagens. Mann-Kendall usa a ordem dos anos válidos."),
+                                   p("Mann-Kendall é apresentado na forma usual, que pressupõe independência sob a hipótese nula. Se houver dependência, seu valor-p precisa de reavaliação; não é aplicada correção automática."),
+                                   p("O ADF do tseries inclui constante e tendência linear; rejeitar raiz unitária não exclui uma tendência determinística."),
+                                   p("Referências dos procedimentos: tseries::adf.test(), Kendall::MannKendall() e stats::Box.test(type = 'Ljung-Box')."),
+                                   actionButton("ir_ajuste", "Prosseguir para o ajuste exploratório")
+                          ),
+                          tabPanel("Ajuste", value = "ajuste",
+                                   uiOutput("lembrete_ajuste"), verbatimTextOutput("parametros"), plotOutput("densidade"),
+                                   p("O sinal da forma indica o comportamento da cauda estimada. Sua incerteza deve ser considerada; a estimativa isolada nao define conclusivamente a familia.")
+                          ),
+                          tabPanel("Diagnosticos", value = "diagnosticos",
+                                   p("P-P, Q-Q, histograma com densidade e níveis de retorno, todos baseados no mesmo ajuste extRemes mostrado na aba Ajuste. Os intervalos seguem o nível de confiança selecionado."),
+                                   uiOutput("diagnosticos_ui"),
+                                   p("Nenhum limite fixo corta valores extremos. Os gráficos usam a faixa dos dados e do modelo. No telefone, escolha Uma coluna na barra lateral."),
+                                   h4("Aderência por Kolmogorov–Smirnov"),
+                                   p("H₀: a distribuição marginal pertence à família selecionada, com parâmetros desconhecidos. O bootstrap paramétrico simula e reajusta a mesma família em cada réplica. Não é utilizado o valor-p usual de ks.test() para parâmetros conhecidos."),
+                                   fluidRow(column(4, selectInput("B_ks", "Réplicas bootstrap", c("199 (exploração)" = "199", "499" = "499", "999" = "999", "1999" = "1999"), "499")),
+                                            column(4, numericInput("seed_ks", "Semente", 2026, min = 1, max = 2147483647, step = 1)),
+                                            column(4, selectInput("passo_ks", "Resolução dos registros (mm)", c("Contínuo / não arredondar" = "0", "0,01 mm" = "0.01", "0,1 mm" = "0.1", "1 mm" = "1"), "0"))),
+                                   selectInput("alpha_ks", "Significância do KS", c("1%" = "0.01", "5%" = "0.05", "10%" = "0.10"), "0.05"),
+                                   p("Há valores repetidos nas séries. Se forem resultado de arredondamento, informe a resolução efetiva do instrumento. Com resolução positiva, as amostras simuladas são arredondadas antes do reajuste; os valores observados permanecem intactos."),
+                                   actionButton("executar_ks", "Avaliar aderência por bootstrap"),
+                                   helpText("O cálculo pode demorar. Ao alterar os dados, a distribuição ou as opções do bootstrap, execute novamente."),
+                                   verbatimTextOutput("resultado_ks"),
+                                   p("Não rejeitar H₀ não comprova um bom ajuste. O KS avalia a distribuição inteira e não substitui a inspeção da cauda e dos níveis de retorno. A calibração pressupõe blocos independentes e distribuição estacionária.")
+                          ),
+                          tabPanel("Niveis de retorno", value = "retorno",
+                                   h4("Explore o período de retorno"),
+                                   p("Mova o controle para destacar na curva o nível associado a T. O período de retorno não é o tamanho da série: o ajuste permanece o mesmo enquanto você move o controle."),
+                                   selectInput("retorno_max", "Explorar períodos de retorno até", c("50 anos" = "50", "100 anos" = "100", "200 anos" = "200", "500 anos" = "500", "1000 anos" = "1000"), "100"),
+                                   sliderInput("retorno", "Período de retorno T (anos)", min = 2, max = 100, value = 10, step = 1, sep = "",
+                                               animate = animationOptions(interval = 1200, loop = FALSE)),
+                                   helpText("Use o botão de reprodução do controle para percorrer os períodos automaticamente. O eixo horizontal da curva é logarítmico."),
+                                   uiOutput("resumo_retorno"),
+                                   plotOutput("curva_retorno", height = "430px"),
+                                   p("A faixa representa intervalos pontuais pelo método delta; não é uma banda simultânea. Ao mover o controle, muda o quantil consultado, não os parâmetros ajustados."),
+                                   h4("Tabela de níveis de retorno"),
+                                   div(class = "table-scroll", tableOutput("retornos")),
+                                   helpText("A tabela mantém os períodos de referência e inclui o período selecionado no controle."),
+                                   verbatimTextOutput("interpretacao"),
+                                   numericInput("critico", "Valor critico de precipitacao (mm)", 100, min = 0),
+                                   numericInput("horizonte", "Horizonte de interesse (anos)", 30, min = 1, max = 1000),
+                                   verbatimTextOutput("risco"),
+                                   numericInput("perfil_low", "Limite inferior da busca do perfil (mm)", 60),
+                                   numericInput("perfil_up", "Limite superior da busca do perfil (mm)", 170),
+                                   helpText("Esses valores delimitam a grade de precipitacao em que o perfil e avaliado. Ajuste-os para abranger o pico e os dois cruzamentos com a linha critica."),
+                                   actionButton("perfil", "Calcular IC por perfil (extRemes)"),
+                                   helpText("O perfil pode demorar. Recalcule se alterar dados, modelo, T ou confianca."),
+                                   verbatimTextOutput("resultado_perfil")
+                          ),
+                          tabPanel("Como interpretar", value = "ajuda",
+                                   
+                                   h4("Quais chuvas estamos analisando?"),
+                                   p("Usamos um valor por ano: a maior quantidade de chuva registrada em um único dia. Em Viçosa, consideramos somente janeiro. Em Teófilo Otoni, consideramos o ano inteiro."),
+                                   h4("O que significa um nível de retorno?"),
+                                   p("Imagine que o aplicativo estime 140 mm para um período de retorno de 30 anos. No longo prazo, isso corresponde, em média, a um ano com chuva com máxima diária acima desse valor a cada 30 anos."),
+                                   p("Isso não é uma previsão de quando essa chuva acontecerá. O valor pode ser superado em anos seguidos ou passar mais de 30 anos sem ser superado. Os 140 mm são apenas um exemplo: consulte na tabela os valores estimados para os dados escolhidos."),
+                                   p("Em Viçosa, essa interpretação vale para as chuvas de janeiro. Em Teófilo Otoni, vale para as chuvas do ano inteiro."),
+                                   h4("Como usar o controle deslizante?"),
+                                   p("Mova o controle para escolher o período de retorno. O gráfico destaca o nível de chuva correspondente, e a tabela apresenta os valores estimados. Mudar esse período não altera os dados nem refaz o ajuste: apenas consulta outro ponto da curva."),
+                                   h4("Qual é a incerteza dessas estimativas?"),
+                                   p("Os valores calculados são estimativas. Os intervalos apresentados ajudam a mostrar sua incerteza: quanto mais amplo o intervalo, menor a precisão do resultado."),
+                                   
+                                   p("Poucos anos de dados e períodos de retorno muito longos podem
+    tornar as estimativas mais incertas. Por exemplo, estimar um
+    nível de 100 anos com apenas 30 anos de registros exige projetar
+    o comportamento da chuva além do período observado."),
+                                   
+                                   p("Recomenda-se pelo menos 50 observações de máximos, para se ter uma estimativa mais segura."),
+                                   
+                                   h4("O que os testes nos dizem?"),
+                                   p("Os testes da aba Pressupostos ajudam a identificar tendência
+    ao longo do tempo e relações entre as observações de diferentes
+    anos. Eles também investigam se há sinais de que o comportamento
+    da série muda ao longo do tempo."),
+                                   
+                                   p("Não encontrar um sinal de problema não garante que tudo esteja
+    adequado. Por isso, observe também os gráficos e a qualidade
+    dos registros antes de interpretar os resultados."),
+                                   
+                                   h4("Em quais condições os resultados fazem sentido?"),
+                                   p("Esta versão considera que o comportamento das chuvas permanece
+    estável ao longo do período analisado. Para calcular a chance de
+    uma superação ao longo de vários anos, também considera que a
+    ocorrência em um ano não altera a chance nos demais."),
+                                   
+                                   p("Se houver mudanças importantes ao longo do tempo, pode ser
+    necessário utilizar um modelo que represente essas mudanças."),
+                                   
+                                   h4("Posso analisar meus próprios dados?"),
+                                   p("Sim. Importe um arquivo Excel ou CSV com uma coluna de ano e
+    outra com a maior chuva diária do período escolhido, em
+    milímetros. Use uma linha por ano e mantenha o mesmo critério
+    em toda a série: o ano inteiro ou um mesmo mês em todos os anos."),
+                                   
+                                   p("Os máximos precisam estar calculados antes da importação.
+    Confira a estação de origem, a unidade de medida e se existem
+    falhas nos registros. Não substitua dados ausentes por zero:
+    um ano com registros incompletos pode esconder sua maior chuva."),
+                                   
+                                   tags$details(
+                                     tags$summary("Informações "),
+                                     p("O aplicativo permite explorar a GEV, ajustar GEV
+      ou Gumbel aos dados, avaliar o ajuste e consultar níveis
+      de retorno. Os ajustes realizados são estacionários."),
+                                     p("Pacotes utilizados: shiny, bslib, readxl, extRemes, distillery,
+      tseries, Kendall, ggplot2 e patchwork. Os parâmetros são
+      estimados por máxima verossimilhança com extRemes::fevd(),
+      usando method = 'MLE'.")
+                                   ),
+                                   hr(),
+                                   
+                                   h4("Conheça o autor"),
+                                   p("Acompanhe meus projetos e entre em contato pelas redes:"),
+                                   
+                                   div(
+                                     style = "display: flex; flex-wrap: wrap; gap: 10px;",
+                                     
+                                     tags$a(
+                                       icon("instagram"), " Instagram",
+                                       href = "https://www.instagram.com/lucasbello_01/",
+                                       target = "_blank",
+                                       rel = "noopener noreferrer",
+                                       class = "btn",
+                                       style = paste(
+                                         "background-color: #C13584; color: white;",
+                                         "border-radius: 8px; padding: 10px 16px;"
+                                       )
+                                     ),
+                                     
+                                     tags$a(
+                                       icon("linkedin"), " LinkedIn",
+                                       href = "https://www.linkedin.com/in/lucas-pereira-belo-3aa8a51a9/",
+                                       target = "_blank",
+                                       rel = "noopener noreferrer",
+                                       class = "btn",
+                                       style = paste(
+                                         "background-color: #0A66C2; color: white;",
+                                         "border-radius: 8px; padding: 10px 16px;"
+                                       )
+                                     ),
+                                     
+                                     tags$a(
+                                       icon("github"), " GitHub",
+                                       href = "https://github.com/Lucasbpofc",
+                                       target = "_blank",
+                                       rel = "noopener noreferrer",
+                                       class = "btn",
+                                       style = paste(
+                                         "background-color: #24292F; color: white;",
+                                         "border-radius: 8px; padding: 10px 16px;"
+                                       )
+                                     )
+                                   )
+                          )
+              )
     )
   )
 )
@@ -531,7 +632,7 @@ server <- function(input, output, session) {
     updateRadioButtons(session, "fonte", selected = "teofilo")
     updateSelectInput(session, "modelo", selected = "GEV")
     updateSelectInput(session, "conf", selected = "95")
-    updateNumericInput(session, "retorno", value = 10)
+    updateSliderInput(session, "retorno", value = 10)
     updateSelectInput(session, "B_ks", selected = "999")
     updateSelectInput(session, "passo_ks", selected = "0.1")
     updateNumericInput(session, "seed_ks", value = 2026)
@@ -542,9 +643,10 @@ server <- function(input, output, session) {
     updateTabsetPanel(session, "aba", selected = "dados")
   })
   explorado <- reactive({
-    req(input$expl_mu, input$expl_sigma, !is.null(input$expl_xi))
-    validate(need(all(is.finite(c(input$expl_mu,input$expl_sigma,input$expl_xi))) && input$expl_sigma > 0,
-                  "Informe parâmetros finitos e escala positiva."))
+    req(!is.null(input$expl_mu), !is.null(input$expl_sigma), !is.null(input$expl_xi))
+    valores <- c(input$expl_mu,input$expl_sigma,input$expl_xi)
+    validate(need(length(valores)==3L && all(is.finite(valores)) && input$expl_sigma > 0,
+                  "Informe localização e forma finitas e escala maior que zero."))
     list(mu = input$expl_mu, sigma = input$expl_sigma, xi = input$expl_xi)
   })
   output$expl_familia <- renderPrint({
@@ -556,20 +658,34 @@ server <- function(input, output, session) {
     a <- explorado(); T <- c(2,5,10,20,50,100)
     data.frame(T_anos = T, Prob_excedencia_anual = 1/T, Nivel_mm = quantil(a,1-1/T))
   }, digits = 3)
-  output$expl_curvas <- renderPlot({
-    a <- explorado(); xx <- seq(quantil(a,0.001),quantil(a,0.995),length.out=500)
-    d <- data.frame(x = xx, densidade = extRemes::devd(xx,loc=a$mu,scale=a$sigma,shape=a$xi,type="GEV"), F=acumulada(a,xx))
-    p1 <- ggplot2::ggplot(d,ggplot2::aes(x,densidade)) + ggplot2::geom_line(color="#c93636",linewidth=1) +
+  # Saídas independentes: o explorador não depende da composição com patchwork.
+  output$expl_densidade <- renderPlot({
+    a <- explorado()
+    faixa <- as.numeric(quantil(a,c(.001,.995)))
+    validate(need(length(faixa)==2L && all(is.finite(faixa)) && diff(faixa)>0,
+                  "Não foi possível calcular a faixa da densidade para esses parâmetros."))
+    xx <- seq(faixa[1],faixa[2],length.out=500)
+    d <- data.frame(x=xx,densidade=as.numeric(extRemes::devd(xx,loc=a$mu,scale=a$sigma,shape=a$xi,type="GEV")))
+    validate(need(all(is.finite(d$densidade)),"A densidade não é finita para esses parâmetros."))
+    p <- ggplot2::ggplot(d,ggplot2::aes(x,densidade)) +
+      ggplot2::geom_line(color="#c93636",linewidth=1) +
       ggplot2::labs(title="Densidade GEV",x="Valor (mm)",y="Densidade") + eixos_num() + tema_extremos()
-    T <- exp(seq(log(1.01),log(1000),length.out=300)); dr <- data.frame(T=T,z=quantil(a,1-1/T))
-    p2 <- ggplot2::ggplot(dr,ggplot2::aes(T,z)) + ggplot2::geom_line(color="#19558e",linewidth=1) +
+    print(p)
+  },res=100)
+  output$expl_retorno <- renderPlot({
+    a <- explorado()
+    T <- exp(seq(log(1.01),log(1000),length.out=300))
+    d <- data.frame(T=T,z=as.numeric(quantil(a,1-1/T)))
+    validate(need(all(is.finite(d$z)),"Não foi possível calcular os níveis para esses parâmetros."))
+    p <- ggplot2::ggplot(d,ggplot2::aes(T,z)) +
+      ggplot2::geom_line(color="#19558e",linewidth=1) +
       ggplot2::scale_x_log10(labels=rotulos_num) + ggplot2::scale_y_continuous(labels=rotulos_num) +
       ggplot2::labs(title="Níveis de retorno teóricos",x="T (anos; um bloco por ano)",y="Nível (mm)") + tema_extremos()
-    print(patchwork::wrap_plots(list(p1,p2),ncol=1))
+    print(p)
   },res=100)
   output$pressupostos_ui <- renderUI({ plotOutput("painel_pressupostos",height=if (colunas_painel()==1L) "1150px" else "650px") })
   output$painel_pressupostos <- renderPlot({print(painel_pressupostos(selecionados(),colunas_painel()))},res=100)
-
+  
   rotulo_atual <- reactive({
     req(input$fonte)
     if (input$fonte == "janeiro") return("Janeiro em Viçosa")
@@ -624,9 +740,9 @@ server <- function(input, output, session) {
     if (tolower(tools::file_ext(input$arquivo$name)) == "csv") {
       req(input$sep_csv, input$dec_csv)
       b <- utils::read.table(input$arquivo$datapath, header = TRUE,
-                              sep = input$sep_csv, dec = input$dec_csv,
-                              stringsAsFactors = FALSE, check.names = FALSE,
-                              na.strings = c("", "NA"), comment.char = "")
+                             sep = input$sep_csv, dec = input$dec_csv,
+                             stringsAsFactors = FALSE, check.names = FALSE,
+                             na.strings = c("", "NA"), comment.char = "")
       validate(need(ncol(b) >= 2, "O CSV precisa de ao menos duas colunas. Confira o separador."))
       b
     } else {
@@ -670,8 +786,7 @@ server <- function(input, output, session) {
     validate(need(nrow(d) >= 2 && diff(range(d$ano)) > 0, "Sao necessarios pelo menos dois anos distintos."))
     sliderInput(id, titulo, min(d$ano), max(d$ano), range(d$ano), step = 1, sep = "")
   }
-  output$janela_ui <- renderUI(seletor_janela("janela", "Janela A (anos)"))
-  output$janela_b_ui <- renderUI(seletor_janela("janela_b", "Janela B (anos)"))
+  output$janela_ui <- renderUI(seletor_janela("janela", "Janela dos dados (anos)"))
   filtrar <- function(janela) {
     req(janela)
     d <- dados()
@@ -703,7 +818,7 @@ server <- function(input, output, session) {
     diagnosticar_pressupostos(d, alpha, lag)
   })
   output$testes_tabela <- renderTable(avaliacao()$tabela, striped = TRUE,
-                                     bordered = TRUE, spacing = "s")
+                                      bordered = TRUE, spacing = "s")
   output$sintese_testes <- renderUI({
     a <- avaliacao()
     div(class = "alert alert-info", tags$strong("Síntese dos diagnósticos"),
@@ -723,39 +838,6 @@ server <- function(input, output, session) {
     legend("topright", c("Máximos observados", "Suavização exploratória"),
            col = c(cor_a, cor_b), lty = 1, bty = "n", cex = 0.8)
   })
-  pettitt <- reactive({
-    d <- selecionados()
-    validate(need(nrow(d) >= 15 && length(unique(d$chuva)) > 1,
-                  "Selecione ao menos 15 máximos não constantes."))
-    r <- exigir(seguro(trend::pettitt.test(d$chuva)))
-    candidatos <- unique(as.integer(r$estimate))
-    candidatos <- candidatos[is.finite(candidatos) & candidatos >= 1 & candidatos < nrow(d)]
-    validate(need(length(candidatos) > 0, "Ponto candidato não definido."))
-    k <- candidatos[1]
-    list(teste = r, dados = d, k = k, candidatos = candidatos,
-         antes = d$ano[k], depois = d$ano[k+1],
-         pontos = paste(paste(d$ano[candidatos], d$ano[candidatos+1], sep = "/"), collapse = "; "))
-  })
-  output$pettitt_tabela <- renderTable({
-    r <- pettitt(); req(input$alpha_testes)
-    alpha <- as.numeric(input$alpha_testes)
-    data.frame(Teste = "Pettitt", H0 = "Sem mudança abrupta na tendência central",
-               Estatistica = as.numeric(r$teste$statistic),
-               Valor_p_aproximado = as.numeric(r$teste$p.value),
-               Ponto_candidato = r$pontos,
-               Interpretacao = if (r$teste$p.value < alpha) "Evidência de mudança; investigar contexto e dependência." else
-                 "Não detectou mudança abrupta no nível escolhido.")
-  }, digits = 4)
-  output$pettitt_grafico <- renderPlot({
-    r <- pettitt(); d <- r$dados
-    p <- ggplot2::ggplot(d, ggplot2::aes(ano, chuva)) +
-      ggplot2::geom_line(color = "#1e5b91") + ggplot2::geom_point(color = "#1e5b91", size = 1.8) +
-      ggplot2::geom_vline(xintercept = (d$ano[r$candidatos] + d$ano[r$candidatos+1]) / 2, color = "#c93636", linetype = 2) +
-      ggplot2::labs(title = "Ponto candidato do teste de Pettitt",
-                    subtitle = paste("Entre anos:", r$pontos, "— examine o valor-p"),
-                    x = "Ano", y = "Precipitação (mm)") + eixos_num() + tema_extremos()
-    print(p)
-  }, res = 100)
   chave_ks <- reactive({
     req(input$B_ks, input$seed_ks, input$passo_ks)
     list(dados = selecionados(), modelo = input$modelo, fonte = input$fonte,
@@ -766,10 +848,10 @@ server <- function(input, output, session) {
     resultado <- withProgress(message = "KS: simulando e reajustando o modelo...", value = 0, {
       anterior <- 0L
       seguro(ks_bootstrap(a, B = k$B, seed = k$seed, passo = k$passo,
-        progresso = function(i, total) {
-          incProgress((i - anterior)/total, detail = paste(i, "de", total))
-          anterior <<- i
-        }))
+                          progresso = function(i, total) {
+                            incProgress((i - anterior)/total, detail = paste(i, "de", total))
+                            anterior <<- i
+                          }))
     })
     list(chave = k, resultado = resultado)
   }, ignoreInit = TRUE)
@@ -796,22 +878,39 @@ server <- function(input, output, session) {
     if (length(r$mensagens)) cat("Mensagens das falhas:", paste(r$mensagens, collapse = " | "), "\n")
   })
   ajuste <- reactive(exigir(seguro(ajustar(selecionados(), input$modelo))))
-  ajuste_b <- reactive(exigir(seguro(ajustar(filtrar(input$janela_b), input$modelo))))
+  limite_retorno <- reactive({
+    req(input$retorno_max)
+    v <- as.numeric(input$retorno_max)
+    validate(need(length(v) == 1L && is.finite(v) && v %in% c(50,100,200,500,1000), "Selecione a extensão da curva."))
+    v
+  })
+  observeEvent(input$retorno_max, {
+    atual <- isolate(input$retorno)
+    if (is.null(atual) || !is.finite(atual)) atual <- 10
+    updateSliderInput(session, "retorno", min = 2, max = limite_retorno(), value = max(2,min(atual,limite_retorno())))
+  })
   t_atual <- reactive({
     req(input$retorno)
-    validate(need(is.finite(input$retorno) && input$retorno > 1 && input$retorno <= 1000,
-                  "T deve estar entre 1 (exclusivo) e 1000 anos."))
+    validate(need(length(input$retorno) == 1L && is.finite(input$retorno) && input$retorno >= 2 && input$retorno <= 1000,
+                  "T deve estar entre 2 e 1000 anos."))
     input$retorno
   })
-  periodos <- reactive(sort(unique(c(2, 5, 10, 20, 50, 100, t_atual()))))
-  tabela <- reactive(exigir(seguro(niveis(ajuste(), periodos(), confianca_atual()))))
-  grade <- reactive(exp(seq(log(1.1), log(max(100, t_atual())), length.out = 100)))
+  # A curva e seus ICs são reutilizados enquanto apenas o controle é movido.
+  grade <- reactive(exp(seq(log(2),log(limite_retorno()),length.out=100)))
+  curva_tabela <- reactive(exigir(seguro(niveis(ajuste(),grade(),confianca_atual()))))
+  nivel_selecionado <- reactive(exigir(seguro(niveis(ajuste(),t_atual(),confianca_atual()))))
+  tabela_base <- reactive(exigir(seguro(niveis(ajuste(),c(2,5,10,20,50,100),confianca_atual()))))
+  tabela <- reactive({
+    tb <- tabela_base(); sel <- nivel_selecionado()
+    if (!(t_atual() %in% tb$T_anos)) tb <- rbind(tb,sel)
+    tb[order(tb$T_anos), , drop=FALSE]
+  })
   output$origem_ui <- renderUI({
     req(input$fonte)
     texto <- if (input$fonte == "janeiro") {
-      "Viçosa: 55 máximas diárias de janeiro, de 1968 a 2022 (mm). Fonte: EXTREMOS.xlsx, aba JAN, fornecida pelo autor."
+      "Viçosa: 55 máximas diárias de janeiro, de 1968 a 2022 (mm). Fonte: BDMEP/INMET; valores fornecidos pelo autor em EXTREMOS.xlsx, aba JAN."
     } else if (input$fonte == "teofilo") {
-      "Teófilo Otoni: 65 máximas diárias anuais, de 1961 a 2025 (mm). Vetor e período fornecidos pelo autor."
+      "Teófilo Otoni: 65 máximas diárias anuais, de 1961 a 2025 (mm). Fonte: BDMEP/INMET; vetor e período fornecidos pelo autor."
     } else {
       req(input$arquivo)
       paste("Arquivo:", input$arquivo$name, "| Série:", rotulo_atual(), "| Bloco:", bloco_atual())
@@ -852,20 +951,36 @@ server <- function(input, output, session) {
   output$diagnosticos <- renderPlot({
     print(painel_ajuste(ajuste(), conf = confianca_atual(), bins = bins_atual(), ncol = colunas_painel()))
   }, res = 100)
-  output$diag_ismev <- renderPlot({
-    b <- ajuste_ismev()
-    op <- par(no.readonly = TRUE); on.exit(par(op))
-    if (input$modelo == "GEV") ismev::gev.diag(b) else ismev::gum.diag(b)
-  }, res = 100)
   output$dependencia <- renderPlot({
     d <- selecionados()
     validate(need(all(diff(d$ano) == 1), "ACF omitida: existem lacunas anuais na janela."))
     acf(d$chuva, main = "ACF dos maximos (defasagens em anos)")
   })
-  output$curva_retorno <- renderPlot({
-    tb <- exigir(seguro(niveis(ajuste(), grade(), confianca_atual())))
-    curva(tb, cor_a); abline(v = t_atual(), lty = 3)
+  output$resumo_retorno <- renderUI({
+    sel <- nivel_selecionado(); T <- t_atual()
+    fmt <- function(x) formatC(x,format="f",digits=2,decimal.mark=",")
+    card <- function(titulo, valor) div(style="padding:12px;border:1px solid #d5e2ef;border-radius:8px;background:#f5f9fd;",
+                                        tags$small(titulo),tags$br(),tags$strong(valor))
+    div(style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:12px 0;",
+        card("Período de retorno",paste(format(T,trim=TRUE),"anos")),
+        card("Nível estimado",paste(fmt(sel$nivel_mm),"mm")),
+        card(paste0("IC pontual de ",100*confianca_atual(),"%"),paste0("[",fmt(sel$inferior_mm),"; ",fmt(sel$superior_mm),"] mm")),
+        card("Excedência por bloco anual",paste0(fmt(100/T),"%")))
   })
+  output$curva_retorno <- renderPlot({
+    tb <- curva_tabela(); sel <- nivel_selecionado(); T <- t_atual()
+    p <- ggplot2::ggplot(tb,ggplot2::aes(T_anos,nivel_mm)) +
+      ggplot2::geom_ribbon(ggplot2::aes(ymin=inferior_mm,ymax=superior_mm),fill="lightblue",alpha=.5) +
+      ggplot2::geom_line(color=cor_a,linewidth=1) +
+      ggplot2::geom_vline(xintercept=T,linetype=3,color="#c93636") +
+      ggplot2::geom_hline(yintercept=sel$nivel_mm,linetype=3,color="#c93636") +
+      ggplot2::geom_errorbar(data=sel,ggplot2::aes(ymin=inferior_mm,ymax=superior_mm),width=0,color="#c93636",linewidth=.8) +
+      ggplot2::geom_point(data=sel,color="#c93636",size=3) +
+      ggplot2::scale_x_log10(labels=rotulos_num) + ggplot2::scale_y_continuous(labels=rotulos_num) +
+      ggplot2::labs(title="Nível de retorno por período",subtitle=paste("Destaque: T =",T,"anos •",input$modelo),
+                    x="Período de retorno T (anos; escala logarítmica)",y="Precipitação máxima diária (mm)") + tema_extremos()
+    print(p)
+  },res=100)
   output$retornos <- renderTable(tabela(), digits = 2)
   output$interpretacao <- renderPrint({
     a <- ajuste(); T <- t_atual(); z <- quantil(a, 1 - 1 / T)
@@ -909,59 +1024,6 @@ server <- function(input, output, session) {
     r <- perfil()$resultado
     if (!is.null(r[["erro"]])) cat("Perfil indisponivel:", r[["erro"]]) else print(r, row.names = FALSE)
   })
-  ajuste_ismev <- reactive({
-    d <- selecionados()
-    validate(need(nrow(d) >= 15, "Selecione pelo menos 15 maximos."),
-             need(length(unique(d$chuva)) >= 5, "Poucos valores distintos para ajustar o modelo."))
-    exigir(seguro({
-      b <- if (input$modelo == "GEV") ismev::gev.fit(d$chuva, show = FALSE)
-           else ismev::gum.fit(d$chuva, show = FALSE)
-      if (b$conv != 0 || any(!is.finite(b$mle)))
-        stop("O ajuste ismev nao convergiu ou retornou parametros invalidos.")
-      b
-    }))
-  })
-  output$parametros_ismev <- renderTable({
-    b <- ajuste_ismev()
-    data.frame(parametro = if (input$modelo == "GEV") c("Localização", "Escala", "Forma") else c("Localização", "Escala"),
-               estimativa = as.numeric(b$mle), erro_padrao = as.numeric(b$se))
-  }, digits = 4)
-  pedido_ismev <- eventReactive(input$perfil_ismev, {
-    validate(need(input$modelo == "GEV", "Selecione GEV para usar gev.prof(). Para Gumbel, use o perfil do extRemes."))
-    list(chave = chave(), ajuste = ajuste_ismev())
-  }, ignoreInit = TRUE)
-  output$grafico_perfil_ismev <- renderPlot({
-    req(pedido_ismev())
-    pedido <- pedido_ismev()
-    validate(need(identical(pedido$chave, chave()),
-                  "Configuracao alterada. Clique novamente para atualizar o perfil ismev."))
-    k <- pedido$chave
-    op <- par(no.readonly = TRUE); on.exit(par(op))
-    resultado <- seguro({
-      ismev::gev.prof(pedido$ajuste, m = k$T,
-                      xlow = k$xrange[1], xup = k$xrange[2],
-                      conf = k$conf, nint = 100)
-      list(ok = TRUE)
-    })
-    exigir(resultado)
-  })
-  output$comparacao <- renderPlot({
-    aa <- exigir(seguro(niveis(ajuste(), grade(), confianca_atual())))
-    bb <- exigir(seguro(niveis(ajuste_b(), grade(), confianca_atual())))
-    plot(aa$T_anos, aa$nivel_mm, type = "n", log = "x",
-         ylim = range(c(aa$inferior_mm, aa$superior_mm, bb$inferior_mm, bb$superior_mm)),
-         xlab = "Periodo de retorno (anos)", ylab = "Precipitação máxima diária (mm)")
-    curva(aa, cor_a, TRUE); curva(bb, cor_b, TRUE)
-    legend("topleft", c("Janela A", "Janela B"), col = c(cor_a, cor_b), lwd = 2, bty = "n")
-  })
-  output$comparacao_tabela <- renderTable({
-    linha <- function(a, nome) {
-      tb <- niveis(a, t_atual(), confianca_atual())
-      cbind(janela = nome, inicio = min(a$dados$ano), fim = max(a$dados$ano),
-            n = nrow(a$dados), tb)
-    }
-    exigir(seguro(rbind(linha(ajuste(), "A"), linha(ajuste_b(), "B"))))
-  }, digits = 2)
   output$baixar <- downloadHandler(
     filename = function() "niveis_retorno.csv",
     content = function(file) {
