@@ -611,7 +611,7 @@ ui <- fluidPage(
                                      
                                      tags$a(
                                        icon("github"), " GitHub",
-                                       href = "https://github.com/Lucasbpofc",
+                                       href = "https://lucasbpofc.github.io/",
                                        target = "_blank",
                                        rel = "noopener noreferrer",
                                        class = "btn",
