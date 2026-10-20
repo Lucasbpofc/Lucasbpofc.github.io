@@ -208,7 +208,7 @@ diagnosticar_pressupostos <- function(d, alpha = 0.05, lag = 5L) {
     sintese <- "Os limites dos valores-p não permitem decidir todos os testes no nível escolhido. Consulte as hipóteses e os sinais < ou > na tabela; a avaliação é inconclusiva."
   } else {
     sintese <- if (isTRUE(sinal("adf")))
-      "O ADF rejeitou a hipótese de raiz unitária. Mann–Kendall e Ljung–Box não detectaram tendência monotônica ou autocorrelação nas defasagens avaliadas. É possível explorar o ajuste estacionário com cautela, examinando também os gráficos; esses resultados não comprovam i.i.d."
+      "O ADF rejeitou a hipótese de raiz unitária. Mann–Kendall e Ljung–Box não detectaram tendência monotônica ou autocorrelação nas defasagens avaliadas. É possível explorar o ajuste estacionário com cautela, examinando também os gráficos; esses resultados não comprovam i.i.d, mas servem de suporte para continuidade da análise."
     else
       "O ADF não rejeitou a hipótese de raiz unitária. Mesmo sem tendência ou autocorrelação detectadas pelos outros testes, a avaliação da estacionariedade permanece inconclusiva. Examine os gráficos e a qualidade dos registros antes de interpretar o ajuste."
   }
@@ -429,7 +429,7 @@ ui <- fluidPage(
                                    p("Os parâmetros são estimados pelo método da máxima verossimilhança, com a função extRemes::fevd(method = 'MLE'), no software R."),
                                    p("Exemplo do pôster: Teófilo Otoni, 1961–2025; GEV; confiança 95%; T = 10 anos. Fonte: BDMEP/INMET, conforme informado pelo autor. A identificação da estação e a cobertura diária devem acompanhar a análise."),
                                    h4("Três perguntas sobre a série"),
-                                   tags$ul(tags$li("Dickey–Fuller aumentado (ADF): há evidência contra raiz unitária, uma forma de não estacionariedade? H₀: existe raiz unitária. H₁: não existe raiz unitária; a série é estacionária em torno da constante e da tendência consideradas pelo teste."),
+                                   tags$ul(tags$li("Dickey–Fuller aumentado (ADF): há evidência contra raiz unitária, uma forma de não estacionariedade? H₀: existe raiz unitária. H₁: não existe raiz unitária; a série é estacionária."),
                                            tags$li("Mann–Kendall: há uma direção de mudança ao longo do tempo? H₀: não há tendência monotônica. H₁: há tendência crescente ou decrescente."),
                                            tags$li("Ljung–Box: há autocorrelação entre os anos? H₀: as autocorrelações até a defasagem selecionada são nulas. H₁: pelo menos uma é diferente de zero.")),
                                    h4("Origem e importação dos dados"),
@@ -457,8 +457,8 @@ ui <- fluidPage(
                           ),
                           tabPanel("Pressupostos", value = "pressupostos",
                                    h4("A série sustenta uma análise estacionária?"),
-                                   p("Avalie os gráficos, as hipóteses e a qualidade dos registros. Os testes são exploratórios e se referem à janela selecionada. Não há correção por testes múltiplos."),
-                                   p("Use três perguntas como guia: há sinais de não estacionariedade (ADF), de tendência ao longo do tempo (Mann–Kendall) ou de autocorrelação entre anos (Ljung–Box)?"),
+                                   p("Avalie os gráficos, as hipóteses e a qualidade dos registros. Os testes são exploratórios e se referem à janela selecionada."),
+                                   p("Use três perguntas como orientação: há sinais de não estacionariedade (ADF), de tendência ao longo do tempo (Mann–Kendall) ou de autocorrelação entre anos (Ljung–Box)?"),
                                    fluidRow(column(6,
                                                    selectInput("alpha_testes", "Significância dos testes (α)",
                                                                c("1%" = "0.01", "5%" = "0.05", "10%" = "0.10"), "0.05")),
@@ -468,7 +468,7 @@ ui <- fluidPage(
                                    uiOutput("pressupostos_ui"),
                                    p("Os quatro gráficos usam os dados reais da janela selecionada, inclusive na importação. No quarto painel, a linha vermelha descreve a tendência linear estimada em mm por ano; uma linha inclinada, isoladamente, não comprova tendência estatisticamente significativa. Consulte o teste de Mann–Kendall na tabela."),
                                    p("Lacunas anuais impedem ADF e Ljung-Box nesta versão: retirar anos e tratar os restantes como consecutivos alteraria o significado das defasagens. Mann-Kendall usa a ordem dos anos válidos."),
-                                   p("Mann-Kendall é apresentado na forma usual, que pressupõe independência sob a hipótese nula. Se houver dependência, seu valor-p precisa de reavaliação; não é aplicada correção automática."),
+                                   p("Mann-Kendall é apresentado na forma usual, que pressupõe independência sob a hipótese nula."),
                                    p("O ADF do tseries inclui constante e tendência linear; rejeitar raiz unitária não exclui uma tendência determinística."),
                                    p("Referências dos procedimentos: tseries::adf.test(), Kendall::MannKendall() e stats::Box.test(type = 'Ljung-Box')."),
                                    actionButton("ir_ajuste", "Prosseguir para o ajuste exploratório")
@@ -478,11 +478,11 @@ ui <- fluidPage(
                                    p("O sinal da forma indica o comportamento da cauda estimada. Sua incerteza deve ser considerada; a estimativa isolada nao define conclusivamente a familia.")
                           ),
                           tabPanel("Diagnosticos", value = "diagnosticos",
-                                   p("P-P, Q-Q, histograma com densidade e níveis de retorno, todos baseados no mesmo ajuste extRemes mostrado na aba Ajuste. Os intervalos seguem o nível de confiança selecionado."),
+                                   p("P-P plot, Q-Q plot, histograma com densidade e níveis de retorno, todos baseados no mesmo ajuste extRemes mostrado na aba Ajuste. Os intervalos seguem o nível de confiança selecionado."),
                                    uiOutput("diagnosticos_ui"),
                                    p("Nenhum limite fixo corta valores extremos. Os gráficos usam a faixa dos dados e do modelo. No telefone, escolha Uma coluna na barra lateral."),
                                    h4("Aderência por Kolmogorov–Smirnov"),
-                                   p("H₀: a distribuição marginal pertence à família selecionada, com parâmetros desconhecidos. O bootstrap paramétrico simula e reajusta a mesma família em cada réplica. Não é utilizado o valor-p usual de ks.test() para parâmetros conhecidos."),
+                                   p("H₀: a distribuição marginal pertence à família selecionada. O bootstrap paramétrico simula e reajusta a mesma família em cada réplica. Não é utilizado o valor-p usual de ks.test() para parâmetros conhecidos."),
                                    fluidRow(column(4, selectInput("B_ks", "Réplicas bootstrap", c("199 (exploração)" = "199", "499" = "499", "999" = "999", "1999" = "1999"), "499")),
                                             column(4, numericInput("seed_ks", "Semente", 2026, min = 1, max = 2147483647, step = 1)),
                                             column(4, selectInput("passo_ks", "Resolução dos registros (mm)", c("Contínuo / não arredondar" = "0", "0,01 mm" = "0.01", "0,1 mm" = "0.1", "1 mm" = "1"), "0"))),
@@ -491,7 +491,7 @@ ui <- fluidPage(
                                    actionButton("executar_ks", "Avaliar aderência por bootstrap"),
                                    helpText("O cálculo pode demorar. Ao alterar os dados, a distribuição ou as opções do bootstrap, execute novamente."),
                                    verbatimTextOutput("resultado_ks"),
-                                   p("Não rejeitar H₀ não comprova um bom ajuste. O KS avalia a distribuição inteira e não substitui a inspeção da cauda e dos níveis de retorno. A calibração pressupõe blocos independentes e distribuição estacionária.")
+                                   p("Não rejeitar H₀ não comprova um bom ajuste por sí só, a análise deve ser realizada em conjunto com a inspeção gráfica.")
                           ),
                           tabPanel("Niveis de retorno", value = "retorno",
                                    h4("Explore o período de retorno"),
