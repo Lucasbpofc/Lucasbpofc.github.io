@@ -16,7 +16,7 @@ output:
     highlight: tango
     code_folding: hide
     self_contained: true
-    mathjax: null
+    mathjax: default
     fig_caption: true
 params:
   diretorio_dados: "dados"
