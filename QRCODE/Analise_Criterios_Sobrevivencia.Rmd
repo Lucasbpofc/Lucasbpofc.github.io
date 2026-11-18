@@ -1,7 +1,7 @@
 ---
 title: "Critérios de informação em modelos paramétricos de sobrevivência"
 subtitle: "Resultados complementares ao pôster da 70ª RBras"
-author: "Lucas Pereira Belo — completar coautoria e afiliações"
+author: "Lucas Pereira Belo — Paulo César Emiliano"
 date: "`r format(Sys.Date(), '%d/%m/%Y')`"
 lang: pt-BR
 output:
