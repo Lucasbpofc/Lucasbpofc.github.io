@@ -305,7 +305,7 @@ for (nn in tamanhos) {
                           Censura == params$censura_matriz)
   if (!nrow(m)) { cat("Este recorte não está disponível nos arquivos de matrizes.\n"); next }
   candidatos <- union(distribuicoes, unique(m$Dist_Escolhida))
-  m <- m %>% select(Dist_Verdadeira, Dist_Escolhida, Frequencia) %>%
+  m <- m %>% dplyr::select(Dist_Verdadeira, Dist_Escolhida, Frequencia) %>%
     complete(Dist_Verdadeira = distribuicoes, Dist_Escolhida = candidatos,
              fill = list(Frequencia = 0)) %>%
     group_by(Dist_Verdadeira) %>%
