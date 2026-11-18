@@ -1,0 +1,401 @@
+---
+title: "Critérios de informação em modelos paramétricos de sobrevivência"
+subtitle: "Resultados complementares ao pôster da 70ª RBras"
+author: "Lucas Pereira Belo — completar coautoria e afiliações"
+date: "`r format(Sys.Date(), '%d/%m/%Y')`"
+lang: pt-BR
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 2
+    number_sections: true
+    theme: flatly
+    highlight: tango
+    code_folding: hide
+    self_contained: true
+    mathjax: null
+    fig_caption: true
+params:
+  diretorio_dados: "dados"
+  censura_comparacao: 30
+  distribuicao_foco: "Generalized gamma"
+  criterio_matriz: "AIC"
+  censura_matriz: 30
+  exigir_matrizes: false
+---
+
+```{r setup, include=FALSE}
+# Instale as dependências UMA VEZ no console antes de usar Knit:
+# install.packages(c("rmarkdown", "knitr", "ggplot2", "dplyr",
+#                    "tidyr", "readr", "DT"))
+necessarios <- c("rmarkdown", "knitr", "ggplot2", "dplyr", "tidyr", "readr", "DT")
+faltantes <- necessarios[!vapply(necessarios, requireNamespace, logical(1), quietly = TRUE)]
+if (length(faltantes)) stop("Instale os pacotes: ", paste(faltantes, collapse = ", "))
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                     fig.width = 12, fig.height = 9, dpi = 150,
+                     out.width = "100%", fig.align = "center")
+options(dplyr.summarise.inform = FALSE)
+fmt <- function(x, casas = 2) formatC(x, digits = casas, format = "f",
+                                   decimal.mark = ",", big.mark = ".")
+rot_dist <- c("Exponential" = "Exponencial", "Lognormal" = "Lognormal",
+              "Loglogistic" = "Log-logística", "Gompertz" = "Gompertz",
+              "Weibull" = "Weibull", "Generalized gamma" = "Gama generalizada")
+nomes_dist <- function(x) {
+  y <- unname(rot_dist[as.character(x)])
+  ifelse(is.na(y), as.character(x), y)
+}
+rot_crit <- c("AIC" = "AIC", "AICc" = "AICc",
+              "BIC Tradicional" = "BIC", "BIC Volinsky" = "BIC_SURV (Volinsky)",
+              "KIC" = "KIC", "KICc" = "KICc")
+nomes_crit <- function(x) {
+  y <- unname(rot_crit[normalizar_criterio(x)])
+  ifelse(is.na(y), as.character(x), y)
+}
+normalizar_criterio <- function(x) {
+  x <- trimws(x)
+  dplyr::recode(x, "BIC_Trad" = "BIC Tradicional", "BIC_Vol" = "BIC Volinsky",
+               "AIC SURV" = "AICc", "AIC_SURV" = "AICc",
+               "AICSURV" = "AICc", "AICsurv" = "AICc",
+               "AICc" = "AICc", "AICC" = "AICc", "AIC_C" = "AICc",
+               .default = x)
+}
+ler_csv <- function(arquivo, colunas) {
+  cab <- readLines(arquivo, n = 1, warn = FALSE, encoding = "UTF-8")
+  sep <- if (grepl(";", cab, fixed = TRUE)) ";" else ","
+  d <- readr::read_delim(arquivo, delim = sep,
+                        locale = readr::locale(decimal_mark = ".", encoding = "UTF-8"),
+                        col_types = readr::cols(.default = readr::col_character()),
+                        show_col_types = FALSE, trim_ws = TRUE)
+  if (!all(colunas %in% names(d))) stop("Colunas ausentes em ", basename(arquivo))
+  if (anyNA(d[, colunas])) stop("Dados ausentes em ", basename(arquivo))
+  for (v in intersect(c("Censura", "Probabilidade", "Frequencia"), names(d))) {
+    d[[v]] <- suppressWarnings(as.numeric(d[[v]]))
+    if (any(!is.finite(d[[v]]))) stop("Valor numérico inválido em ", arquivo, ": ", v)
+  }
+  d$Criterio <- normalizar_criterio(d$Criterio)
+  d$n <- as.integer(sub("^.*_n([0-9]+)\\.csv$", "\\1", basename(arquivo)))
+  if (any(d$Probabilidade < 0 | d$Probabilidade > 100)) stop("Percentual fora de 0–100: ", arquivo)
+  if (any(d$Censura < 0 | d$Censura > 100)) stop("Censura fora de 0–100: ", arquivo)
+  if (is.na(d$n[1]) || d$n[1] <= 0) stop("Tamanho amostral inválido: ", arquivo)
+  d
+}
+arquivos <- list.files(params$diretorio_dados,
+                      pattern = "^Resultados_Simulacao_n[0-9]+\\.csv$", full.names = TRUE)
+if (!length(arquivos)) stop("Nenhum arquivo Resultados_Simulacao_n*.csv na pasta ", params$diretorio_dados)
+resultados <- bind_rows(lapply(arquivos, ler_csv,
+                              colunas = c("Distribuicao", "Censura", "Criterio", "Probabilidade")))
+chaves <- c("n", "Distribuicao", "Censura", "Criterio")
+if (anyDuplicated(as.data.frame(resultados[chaves]))) stop("Cenários duplicados nos resultados.")
+tamanhos <- sort(unique(resultados$n))
+distribuicoes <- union(intersect(names(rot_dist), unique(resultados$Distribuicao)),
+                      setdiff(unique(resultados$Distribuicao), names(rot_dist)))
+criterios <- union(intersect(names(rot_crit), unique(resultados$Criterio)),
+                  setdiff(unique(resultados$Criterio), names(rot_crit)))
+if (length(criterios) > 6) stop("Mais de seis critérios: amplie as paletas em setup.")
+paleta <- setNames(c("#073A70", "#00876C", "#B25800", "#B3263C", "#75549B", "#626F7C")[seq_along(criterios)], criterios)
+tipos_linha <- setNames(c("solid", "dashed", "dotdash", "longdash", "twodash", "dotted")[seq_along(criterios)], criterios)
+matrizes <- tibble()
+sem_matriz <- integer()
+for (nn in tamanhos) {
+  caminho <- file.path(params$diretorio_dados, paste0("Matriz_Confusao_n", nn, ".csv"))
+  if (!file.exists(caminho)) { sem_matriz <- c(sem_matriz, nn); next }
+  mm <- ler_csv(caminho, c("Dist_Verdadeira", "Censura", "Criterio", "Dist_Escolhida", "Frequencia", "Probabilidade"))
+  if (any(mm$Frequencia < 0 | mm$Frequencia != round(mm$Frequencia))) stop("Frequências inválidas em ", caminho)
+  if (anyDuplicated(as.data.frame(mm[c("n", "Dist_Verdadeira", "Censura", "Criterio", "Dist_Escolhida")]))) stop("Células duplicadas em ", caminho)
+  matrizes <- bind_rows(matrizes, mm)
+}
+if (length(sem_matriz) && isTRUE(params$exigir_matrizes)) stop("Matrizes ausentes para n: ", paste(sem_matriz, collapse = ", "))
+checagens <- tibble()
+repeticoes <- tibble(n = integer(), Distribuicao = character(), Censura = double(), Criterio = character(), R = double())
+if (nrow(matrizes)) {
+  totais <- matrizes %>% group_by(n, Dist_Verdadeira, Censura, Criterio) %>%
+    summarise(R = sum(Frequencia), .groups = "drop")
+  if (any(totais$R <= 0)) stop("Há grupos sem seleções registradas.")
+  audit <- matrizes %>% left_join(totais, by = c("n", "Dist_Verdadeira", "Censura", "Criterio"))
+  if (any(abs(audit$Probabilidade - 100 * audit$Frequencia / audit$R) > 0.0051)) stop("Percentuais incompatíveis com as frequências nas matrizes.")
+  repeticoes <- totais %>% rename(Distribuicao = Dist_Verdadeira)
+  diagonal <- matrizes %>% filter(Dist_Verdadeira == Dist_Escolhida) %>%
+    transmute(n, Distribuicao = Dist_Verdadeira, Censura, Criterio, Acerto_matriz = Probabilidade)
+  checagens <- resultados %>% inner_join(repeticoes, by = chaves) %>%
+    left_join(diagonal, by = chaves) %>%
+    mutate(Acerto_matriz = replace_na(Acerto_matriz, 0),
+           Diferenca_pp = Probabilidade - Acerto_matriz)
+  if (any(abs(checagens$Diferenca_pp) > 0.0051)) stop("Resumo e diagonal da matriz discordam. Confira os arquivos.")
+}
+resultados <- resultados %>% left_join(repeticoes, by = chaves) %>%
+  mutate(EP_MC_pp = 100 * sqrt((Probabilidade / 100) * (1 - Probabilidade / 100) / R),
+         Distribuicao = factor(Distribuicao, levels = distribuicoes),
+         Criterio = factor(Criterio, levels = criterios)) %>% arrange(n, Distribuicao, Censura, Criterio)
+melhores <- resultados %>% group_by(n, Distribuicao, Censura) %>%
+  filter(abs(Probabilidade - max(Probabilidade)) < 1e-8) %>%
+  summarise(Acerto = first(Probabilidade),
+            Criterios = paste(nomes_crit(Criterio), collapse = "; "), .groups = "drop")
+tema <- theme_minimal(base_size = 13) +
+  theme(panel.grid.minor = element_blank(), panel.grid.major.x = element_blank(),
+        strip.text = element_text(face = "bold", colour = "#073A70"),
+        legend.position = "bottom", legend.title = element_blank(),
+        plot.title = element_text(face = "bold", colour = "#073A70"))
+estilo_series <- function() list(
+  scale_colour_manual(values = paleta, labels = nomes_crit, drop = FALSE),
+  scale_linetype_manual(values = tipos_linha, labels = nomes_crit, drop = FALSE),
+  guides(colour = guide_legend(nrow = 2, byrow = TRUE), linetype = guide_legend(nrow = 2, byrow = TRUE)))
+tabela_html <- function(d) {
+  cat('<div class="tabela-rolagem">\n')
+  print(knitr::kable(d, format = "html", row.names = FALSE, escape = TRUE))
+  cat('</div>\n\n')
+}
+taxa <- function(nn, dist, cens, crit) {
+  x <- resultados %>% filter(n == nn, as.character(Distribuicao) == dist,
+                            Censura == cens, as.character(Criterio) == normalizar_criterio(crit)) %>% pull(Probabilidade)
+  if (length(x) == 1) x else NA_real_
+}
+idioma_dt <- list(search = "Buscar:", lengthMenu = "Mostrar _MENU_ linhas",
+                  info = "Linhas _START_ a _END_ de _TOTAL_", infoEmpty = "Sem registros",
+                  infoFiltered = "(de _MAX_ registros)", zeroRecords = "Nenhum resultado",
+                  paginate = list(first = "Primeira", previous = "Anterior", "next" = "Próxima", last = "Última"))
+```
+
+<style>
+body {color:#1f2933; line-height:1.65;}
+h1,h2,h3 {color:#073a70;}
+.main-container {max-width:1240px;}
+.tabela-rolagem {overflow:auto; max-height:480px; margin:1.2em 0 2em;}
+table {width:100%; font-size:0.94em;}
+th {background:#eaf0f7; color:#073a70;}
+th,td {padding:8px 12px; border-bottom:1px solid #e9eaeb;}
+.nota {border-left:4px solid #073a70; background:#eaf0f7; padding:16px 20px; margin:20px 0;}
+.tab-content {padding-top:20px;}
+@media(max-width:767px) {body {font-size:15px;} h1 {font-size:27px;} .nav-tabs {display:flex; overflow-x:auto; white-space:nowrap;}}
+</style>
+
+# Apresentação
+
+Este documento é um complemento  ao trabalho **“Critérios de Informação: Como eles se comportam em modelos paramétricos de análise de sobrevivência”**. O objetivo é avaliar a identificação da distribuição geradora através dos critérios de informação sob diferentes tamanhos amostrais e proporções de censura.
+
+Os resultados abaixo são **seleções de modelos em dados simulados**. Cada distribuição aparece como geradora em seus próprios cenários.
+
+<div class="nota">
+Use as abas para consultar cada tamanho amostral. As tabelas ao final permitem buscar combinações específicas. O código pode ser aberto nos botões de cada bloco.
+</div>
+
+# Desenho do estudo
+
+```{r desenho, echo=FALSE}
+configuracoes <- data.frame(
+  Fator = c("Tamanhos amostrais", "Censura nominal (%)", "Distribuições", "Critérios", "Cenários de geração", "Seleções registradas por cenário e critério"),
+  Configuracao = c(paste(tamanhos, collapse = ", "),
+                  paste(sort(unique(resultados$Censura)), collapse = ", "),
+                  paste(nomes_dist(distribuicoes), collapse = ", "),
+                  paste(nomes_crit(criterios), collapse = ", "),
+                  as.character(nrow(distinct(resultados, n, Distribuicao, Censura))),
+                  if (nrow(repeticoes)) paste(format(sort(unique(repeticoes$R)), big.mark = ".", trim = TRUE), collapse = ", ") else "Sem matrizes para determinar o denominador"))
+knitr::kable(configuracoes, col.names = c("Fator", "Configuração"))
+```
+
+A taxa de seleção correta corresponde à frequência de escolha da distribuição geradora dividida pelo total de seleções registradas, multiplicada por 100. Para comparar distribuições e amostras, os gráficos de acerto usam uma escala vertical comum de **0% a 100%**.
+
+## Estrutura dos critérios de informação
+
+Os critérios são calculados pela expressão geral:
+
+$$
+\mathrm{CI}=-2\ell(\widehat{\boldsymbol{\theta}})+P,
+$$
+
+em que $\ell(\widehat{\boldsymbol{\theta}})$ é a log-verossimilhança maximizada e $P$ é a penalização pela complexidade do modelo.
+
+$$
+\begin{aligned}
+\mathrm{AIC}:\quad &P=2k, \\[8pt]
+\mathrm{AICc}_{d}:\quad &P=2k+\frac{2k(k+1)}{d-k-1}, \\[8pt]
+\mathrm{BIC}:\quad &P=k\log n, \\[8pt]
+\mathrm{BIC}_{\mathrm{SURV}}:\quad &P=k\log d, \\[8pt]
+\mathrm{KIC}:\quad &P=3k, \\[8pt]
+\mathrm{KICc}_{d}:\quad &P=3k+\frac{2k(k+1)}{d-k-1}.
+\end{aligned}
+$$
+
+Os símbolos representam:
+
+- $k$: número total de parâmetros estimados do modelo;
+- $n$: número de indivíduos da amostra;
+- $d$: número de eventos observados, isto é, observações não censuradas;
+- $\log$: logaritmo natural.
+
+As correções de $\mathrm{AICc}_{d}$ e $\mathrm{KICc}_{d}$ exigem
+$d>k+1$. O $\mathrm{BIC}_{\mathrm{SURV}}$ exige $d>0$.
+
+Nos gráficos e tabelas, **AICc** corresponde a $\mathrm{AICc}_{d}$
+e **KICc** corresponde a $\mathrm{KICc}_{d}$.
+
+# Resultados por tamanho amostral {.tabset}
+
+```{r resultados-por-n, results='asis', echo=FALSE, fig.height=9}
+for (nn in tamanhos) {
+  cat("\n\n## n = ", nn, "\n\n", sep = "")
+  d <- filter(resultados, n == nn)
+  p <- ggplot(d, aes(Censura, Probabilidade, colour = Criterio,
+                     linetype = Criterio, group = Criterio)) +
+    geom_line(linewidth = 0.9) + geom_point(size = 1.7) +
+    facet_wrap(~Distribuicao, ncol = 2, labeller = as_labeller(nomes_dist)) +
+    scale_x_continuous(breaks = sort(unique(d$Censura)), labels = function(x) paste0(x, "%")) +
+    scale_y_continuous(limits = c(0,100), breaks = seq(0,100,20), labels = function(x) paste0(x, "%")) +
+    estilo_series() + tema + labs(x = "Censura nominal", y = "Seleção correta", title = paste("Desempenho dos critérios: n =", nn))
+  print(p)
+  cat("\n\n**Maior taxa observada em cada cenário.\n\n")
+  tab <- filter(melhores, n == nn) %>%
+    transmute(Distribuicao = nomes_dist(Distribuicao), `Censura (%)` = Censura,
+              `Maior acerto (%)` = fmt(Acerto), `Critério(s)` = Criterios)
+  tabela_html(tab)
+}
+```
+
+# Comparação entre tamanhos amostrais
+
+## Mesma censura, diferentes amostras
+
+O gráfico seguinte fixa a censura em **`r params$censura_comparacao`%**. Assim, as mudanças entre amostras podem ser observadas sem variar simultaneamente esse fator. O parâmetro `censura_comparacao` pode ser alterado no cabeçalho do arquivo.
+
+```{r comparacao-n, fig.height=9}
+d_comp <- filter(resultados, Censura == params$censura_comparacao)
+if (nrow(d_comp)) {
+  ggplot(d_comp, aes(factor(n, levels = tamanhos), Probabilidade,
+                    colour = Criterio, linetype = Criterio, group = Criterio)) +
+    geom_line(linewidth = 0.9) + geom_point(size = 1.9) +
+    facet_wrap(~Distribuicao, ncol = 2, labeller = as_labeller(nomes_dist)) +
+    scale_y_continuous(limits = c(0,100), breaks = seq(0,100,20), labels = function(x) paste0(x, "%")) +
+    estilo_series() + tema + labs(x = "Tamanho amostral", y = "Seleção correta")
+} else cat("O nível de censura selecionado não existe nos dados.")
+```
+
+## Distribuição em foco
+
+Aqui a distribuição geradora é **`r nomes_dist(params$distribuicao_foco)`**. Cada painel representa um critério, enquanto as linhas representam níveis de censura. Altere `distribuicao_foco` para um dos nomes originais dos arquivos, como `Weibull` ou `Gompertz`.
+
+```{r distribuicao-em-foco, fig.height=8}
+d_foco <- filter(resultados, as.character(Distribuicao) == params$distribuicao_foco)
+if (nrow(d_foco)) {
+  ggplot(d_foco, aes(factor(n, levels = tamanhos), Probabilidade,
+                    colour = factor(Censura), group = Censura)) +
+    geom_line(linewidth = 0.9) + geom_point(size = 2) +
+    facet_wrap(~Criterio, ncol = 2, labeller = as_labeller(nomes_crit)) +
+    scale_colour_viridis_d(name = "Censura (%)", end = 0.85) +
+    scale_y_continuous(limits = c(0,100), labels = function(x) paste0(x, "%")) +
+    tema + labs(x = "Tamanho amostral", y = "Seleção correta")
+} else cat("A distribuição selecionada não existe nos dados.")
+```
+
+# Matrizes de seleção {.tabset}
+
+As linhas indicam a **distribuição geradora** e as colunas, a **distribuição escolhida**. Os percentuais usam o total registrado de cada linha. A diagonal representa seleção correta. Fora dela, identificamos quais modelos receberam as seleções incorretas. Isso não mede, isoladamente, a qualidade preditiva dos modelos.
+
+Este recorte usa **`r nomes_crit(normalizar_criterio(params$criterio_matriz))`** e **`r params$censura_matriz`% de censura**. Altere esses parâmetros para explorar outros recortes. Células omitidas em grupos presentes nos arquivos são completadas com frequência zero.
+
+```{r matrizes-por-n, results='asis', echo=FALSE, fig.height=7}
+for (nn in tamanhos) {
+  cat("\n\n## n = ", nn, "\n\n", sep = "")
+  if (!nrow(matrizes)) { cat("Matriz não disponível.\n"); next }
+  m <- matrizes %>% filter(n == nn, Criterio == normalizar_criterio(params$criterio_matriz),
+                          Censura == params$censura_matriz)
+  if (!nrow(m)) { cat("Este recorte não está disponível nos arquivos de matrizes.\n"); next }
+  candidatos <- union(distribuicoes, unique(m$Dist_Escolhida))
+  m <- m %>% select(Dist_Verdadeira, Dist_Escolhida, Frequencia) %>%
+    complete(Dist_Verdadeira = distribuicoes, Dist_Escolhida = candidatos,
+             fill = list(Frequencia = 0)) %>%
+    group_by(Dist_Verdadeira) %>%
+    mutate(Total = sum(Frequencia), Percentual = ifelse(Total > 0, 100 * Frequencia / Total, NA_real_)) %>%
+    ungroup() %>% mutate(Dist_Verdadeira = factor(Dist_Verdadeira, levels = rev(distribuicoes)),
+                        Dist_Escolhida = factor(Dist_Escolhida, levels = candidatos))
+  p <- ggplot(m, aes(Dist_Escolhida, Dist_Verdadeira, fill = Percentual)) +
+    geom_tile(colour = "white", linewidth = 0.7) +
+    geom_text(aes(label = ifelse(is.na(Percentual), "NA", fmt(Percentual, 1)),
+                  colour = ifelse(!is.na(Percentual) & Percentual > 55, "white", "#1F2933")), size = 3.8) +
+    scale_colour_identity() +
+    scale_fill_gradient(low = "#EAF0F7", high = "#073A70", limits = c(0,100), na.value = "#EEEEEE", name = "% da linha") +
+    scale_x_discrete(labels = nomes_dist, drop = FALSE) +
+    scale_y_discrete(labels = nomes_dist, drop = FALSE) +
+    tema + theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+    labs(x = "Distribuição escolhida", y = "Distribuição geradora")
+  print(p)
+  erros <- m %>% filter(as.character(Dist_Verdadeira) != as.character(Dist_Escolhida),
+                       !is.na(Percentual), Frequencia > 0) %>%
+    arrange(desc(Percentual)) %>% slice_head(n = 10) %>%
+    transmute(Geradora = nomes_dist(Dist_Verdadeira), Escolhida = nomes_dist(Dist_Escolhida),
+              Frequencia, `Percentual da linha (%)` = fmt(Percentual))
+  cat("\n\n**Dez maiores percentuais fora da diagonal neste recorte:**\n\n")
+  tabela_html(erros)
+}
+```
+
+# Precisão de Monte Carlo e conferência dos arquivos
+
+O erro padrão de Monte Carlo da taxa de acerto é calculado por **100 × sqrt[p × (1 − p) / R]**, em pontos percentuais. Aqui, `p` é a taxa em proporção e `R` é o total de seleções registrado na matriz do cenário. Essa interpretação pressupõe repetições independentes.
+
+```{r precisao, echo=FALSE}
+auditoria <- resultados %>% group_by(n) %>%
+  summarise(`Taxas no resumo` = n(),
+            `Taxas com denominador` = sum(!is.na(R)),
+            `Maior EP de MC (p.p.)` = if (all(is.na(EP_MC_pp))) NA_real_ else max(EP_MC_pp, na.rm = TRUE),
+            .groups = "drop")
+knitr::kable(auditoria, digits = 3, decimal.mark = ",")
+```
+
+Foram conferidas **`r nrow(checagens)` taxas** contra as diagonais das matrizes. A compilação é interrompida se houver duplicatas, percentuais inválidos ou discrepâncias superiores ao arredondamento de duas casas decimais.
+
+Com 10.000 seleções independentes por cenário, o maior erro padrão possível é **0,50 ponto percentual**. O denominador observado não permite concluir se houve falhas anteriores de ajuste, exclusões ou novas tentativas. Essas informações precisam ser obtidas do código de simulação.
+
+Os critérios podem avaliar as mesmas amostras simuladas. Por isso, o erro da **diferença entre critérios** depende de sua associação por repetição e não pode ser obtido apenas somando os erros individuais. Os arquivos agregados não permitem calcular essa associação. Os maiores percentuais são descritivos, sem testes de significância.
+
+```{r cobertura-matrizes, results='asis', echo=FALSE}
+if (length(sem_matriz)) cat("**Matrizes ausentes para n:** ", paste(sem_matriz, collapse = ", "),
+                           ". Os gráficos de acerto permanecem disponíveis, mas o denominador e o erro de Monte Carlo desses casos não são estimados.\n", sep = "")
+```
+
+# Síntese dos resultados fornecidos
+
+- Na exponencial, com n = 500 e 30% de censura, o BIC apresenta **`r fmt(taxa(500, 'Exponential', 30, 'BIC Tradicional'))`%** de seleção correta.
+- Na gama generalizada, nesse mesmo cenário, AIC e BIC apresentam **`r fmt(taxa(500, 'Generalized gamma', 30, 'AIC'))`%** e **`r fmt(taxa(500, 'Generalized gamma', 30, 'BIC Tradicional'))`%**, respectivamente. A diferença observada é de **`r fmt(taxa(500, 'Generalized gamma', 30, 'AIC') - taxa(500, 'Generalized gamma', 30, 'BIC Tradicional'))` pontos percentuais**.
+- Na gama generalizada, com n = 500 e 70% de censura, o acerto do AIC cai para **`r fmt(taxa(500, 'Generalized gamma', 70, 'AIC'))`%**. A vantagem relativa em alguns cenários não assegura alta taxa absoluta de acerto sob censura elevada.
+- A interpretação deve considerar a distribuição geradora, a censura e o tamanho amostral. As conclusões se restringem às parametrizações simuladas. Não classificamos os modelos por número de parâmetros, pois essa informação não foi documentada nos arquivos recebidos.
+
+# Dados completos
+
+## Taxas de seleção correta
+
+Use a busca e os filtros para localizar qualquer combinação. O erro padrão aparece em pontos percentuais; `R` é o total registrado na matriz.
+
+```{r tabela-interativa, echo=FALSE}
+consulta <- resultados %>% transmute(n, Distribuicao = nomes_dist(Distribuicao), Censura,
+                                    Criterio = nomes_crit(Criterio),
+                                    Acerto_percentual = Probabilidade, R,
+                                    EP_MC_pp)
+DT::datatable(consulta, rownames = FALSE, filter = "top",
+              options = list(pageLength = 15, lengthMenu = c(10,15,30,60),
+                             scrollX = TRUE, language = idioma_dt)) %>%
+  DT::formatRound("Acerto_percentual", digits = 2, dec.mark = ",", mark = ".") %>%
+  DT::formatRound("EP_MC_pp", digits = 3, dec.mark = ",", mark = ".")
+```
+
+## Frequências das matrizes
+
+Esta tabela preserva as células presentes nos arquivos originais. As células não registradas não aparecem aqui; nos gráficos de matrizes, elas são completadas como descrito acima.
+
+```{r tabela-matrizes, echo=FALSE}
+if (nrow(matrizes)) {
+  consulta_m <- matrizes %>% transmute(n, Censura, Criterio = nomes_crit(Criterio),
+                                     Geradora = nomes_dist(Dist_Verdadeira),
+                                     Escolhida = nomes_dist(Dist_Escolhida), Frequencia, Percentual = Probabilidade)
+  DT::datatable(consulta_m, rownames = FALSE, filter = "top",
+                options = list(pageLength = 10, scrollX = TRUE, language = idioma_dt)) %>%
+    DT::formatRound("Percentual", digits = 2, dec.mark = ",", mark = ".")
+} else cat("Matrizes não fornecidas.")
+```
+
+
+

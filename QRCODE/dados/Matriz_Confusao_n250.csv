@@ -1,0 +1,899 @@
+Dist_Verdadeira;Censura;Criterio;Dist_Escolhida;Frequencia;Probabilidade
+Lognormal;30;AIC;Generalized gamma;1407;14.07
+Lognormal;30;AIC;Loglogistic;1422;14.22
+Lognormal;30;AIC;Lognormal;7168;71.68
+Lognormal;30;AIC;Weibull;3;0.03
+Lognormal;30;BIC_Trad;Generalized gamma;106;1.06
+Lognormal;30;BIC_Trad;Loglogistic;1544;15.44
+Lognormal;30;BIC_Trad;Lognormal;8311;83.11
+Lognormal;30;BIC_Trad;Weibull;39;0.39
+Lognormal;30;BIC_Vol;Generalized gamma;131;1.31
+Lognormal;30;BIC_Vol;Loglogistic;1544;15.44
+Lognormal;30;BIC_Vol;Lognormal;8288;82.88
+Lognormal;30;BIC_Vol;Weibull;37;0.37
+Lognormal;30;AIC_SURV;Generalized gamma;1337;13.37
+Lognormal;30;AIC_SURV;Loglogistic;1432;14.32
+Lognormal;30;AIC_SURV;Lognormal;7228;72.28
+Lognormal;30;AIC_SURV;Weibull;3;0.03
+Lognormal;30;KIC;Generalized gamma;713;7.13
+Lognormal;30;KIC;Loglogistic;1499;14.99
+Lognormal;30;KIC;Lognormal;7782;77.82
+Lognormal;30;KIC;Weibull;6;0.06
+Lognormal;30;KICc;Generalized gamma;686;6.86
+Lognormal;30;KICc;Loglogistic;1501;15.01
+Lognormal;30;KICc;Lognormal;7807;78.07
+Lognormal;30;KICc;Weibull;6;0.06
+Lognormal;40;AIC;Generalized gamma;1228;12.28
+Lognormal;40;AIC;Loglogistic;1372;13.72
+Lognormal;40;AIC;Lognormal;7375;73.75
+Lognormal;40;AIC;Weibull;25;0.25
+Lognormal;40;BIC_Trad;Generalized gamma;105;1.05
+Lognormal;40;BIC_Trad;Loglogistic;1479;14.79
+Lognormal;40;BIC_Trad;Lognormal;8328;83.28
+Lognormal;40;BIC_Trad;Weibull;88;0.88
+Lognormal;40;BIC_Vol;Generalized gamma;153;1.53
+Lognormal;40;BIC_Vol;Loglogistic;1479;14.79
+Lognormal;40;BIC_Vol;Lognormal;8280;82.8
+Lognormal;40;BIC_Vol;Weibull;88;0.88
+Lognormal;40;AIC_SURV;Generalized gamma;1151;11.51
+Lognormal;40;AIC_SURV;Loglogistic;1381;13.81
+Lognormal;40;AIC_SURV;Lognormal;7440;74.4
+Lognormal;40;AIC_SURV;Weibull;28;0.28
+Lognormal;40;KIC;Generalized gamma;566;5.66
+Lognormal;40;KIC;Loglogistic;1448;14.48
+Lognormal;40;KIC;Lognormal;7920;79.2
+Lognormal;40;KIC;Weibull;66;0.66
+Lognormal;40;KICc;Generalized gamma;533;5.33
+Lognormal;40;KICc;Loglogistic;1454;14.54
+Lognormal;40;KICc;Lognormal;7943;79.43
+Lognormal;40;KICc;Weibull;70;0.7
+Lognormal;50;AIC;Generalized gamma;1151;11.51
+Lognormal;50;AIC;Loglogistic;1347;13.47
+Lognormal;50;AIC;Lognormal;7418;74.18
+Lognormal;50;AIC;Weibull;84;0.84
+Lognormal;50;BIC_Trad;Generalized gamma;157;1.57
+Lognormal;50;BIC_Trad;Loglogistic;1386;13.86
+Lognormal;50;BIC_Trad;Lognormal;8334;83.34
+Lognormal;50;BIC_Trad;Weibull;123;1.23
+Lognormal;50;BIC_Vol;Generalized gamma;228;2.28
+Lognormal;50;BIC_Vol;Loglogistic;1386;13.86
+Lognormal;50;BIC_Vol;Lognormal;8263;82.63
+Lognormal;50;BIC_Vol;Weibull;123;1.23
+Lognormal;50;AIC_SURV;Generalized gamma;1057;10.57
+Lognormal;50;AIC_SURV;Loglogistic;1355;13.55
+Lognormal;50;AIC_SURV;Lognormal;7495;74.95
+Lognormal;50;AIC_SURV;Weibull;93;0.93
+Lognormal;50;KIC;Generalized gamma;571;5.71
+Lognormal;50;KIC;Loglogistic;1386;13.86
+Lognormal;50;KIC;Lognormal;7923;79.23
+Lognormal;50;KIC;Weibull;120;1.2
+Lognormal;50;KICc;Generalized gamma;543;5.43
+Lognormal;50;KICc;Loglogistic;1386;13.86
+Lognormal;50;KICc;Lognormal;7950;79.5
+Lognormal;50;KICc;Weibull;121;1.21
+Lognormal;60;AIC;Generalized gamma;991;9.91
+Lognormal;60;AIC;Loglogistic;1445;14.45
+Lognormal;60;AIC;Lognormal;7353;73.53
+Lognormal;60;AIC;Weibull;211;2.11
+Lognormal;60;BIC_Trad;Generalized gamma;133;1.33
+Lognormal;60;BIC_Trad;Loglogistic;1447;14.47
+Lognormal;60;BIC_Trad;Lognormal;8207;82.07
+Lognormal;60;BIC_Trad;Weibull;213;2.13
+Lognormal;60;BIC_Vol;Generalized gamma;216;2.16
+Lognormal;60;BIC_Vol;Loglogistic;1447;14.47
+Lognormal;60;BIC_Vol;Lognormal;8124;81.24
+Lognormal;60;BIC_Vol;Weibull;213;2.13
+Lognormal;60;AIC_SURV;Generalized gamma;918;9.18
+Lognormal;60;AIC_SURV;Loglogistic;1446;14.46
+Lognormal;60;AIC_SURV;Lognormal;7424;74.24
+Lognormal;60;AIC_SURV;Weibull;212;2.12
+Lognormal;60;KIC;Generalized gamma;569;5.69
+Lognormal;60;KIC;Loglogistic;1447;14.47
+Lognormal;60;KIC;Lognormal;7771;77.71
+Lognormal;60;KIC;Weibull;213;2.13
+Lognormal;60;KICc;Generalized gamma;520;5.2
+Lognormal;60;KICc;Loglogistic;1447;14.47
+Lognormal;60;KICc;Lognormal;7820;78.2
+Lognormal;60;KICc;Weibull;213;2.13
+Lognormal;70;AIC;Generalized gamma;1117;11.17
+Lognormal;70;AIC;Loglogistic;1401;14.01
+Lognormal;70;AIC;Lognormal;7103;71.03
+Lognormal;70;AIC;Weibull;379;3.79
+Lognormal;70;BIC_Trad;Generalized gamma;150;1.5
+Lognormal;70;BIC_Trad;Loglogistic;1401;14.01
+Lognormal;70;BIC_Trad;Lognormal;8068;80.68
+Lognormal;70;BIC_Trad;Weibull;381;3.81
+Lognormal;70;BIC_Vol;Generalized gamma;300;3
+Lognormal;70;BIC_Vol;Loglogistic;1401;14.01
+Lognormal;70;BIC_Vol;Lognormal;7919;79.19
+Lognormal;70;BIC_Vol;Weibull;380;3.8
+Lognormal;70;AIC_SURV;Generalized gamma;1001;10.01
+Lognormal;70;AIC_SURV;Loglogistic;1401;14.01
+Lognormal;70;AIC_SURV;Lognormal;7219;72.19
+Lognormal;70;AIC_SURV;Weibull;379;3.79
+Lognormal;70;KIC;Generalized gamma;629;6.29
+Lognormal;70;KIC;Loglogistic;1401;14.01
+Lognormal;70;KIC;Lognormal;7590;75.9
+Lognormal;70;KIC;Weibull;380;3.8
+Lognormal;70;KICc;Generalized gamma;568;5.68
+Lognormal;70;KICc;Loglogistic;1401;14.01
+Lognormal;70;KICc;Lognormal;7651;76.51
+Lognormal;70;KICc;Weibull;380;3.8
+Loglogistic;30;AIC;Generalized gamma;860;8.6
+Loglogistic;30;AIC;Loglogistic;6850;68.5
+Loglogistic;30;AIC;Lognormal;2200;22
+Loglogistic;30;AIC;Weibull;90;0.9
+Loglogistic;30;BIC_Trad;Generalized gamma;17;0.17
+Loglogistic;30;BIC_Trad;Loglogistic;7272;72.72
+Loglogistic;30;BIC_Trad;Lognormal;2448;24.48
+Loglogistic;30;BIC_Trad;Weibull;263;2.63
+Loglogistic;30;BIC_Vol;Generalized gamma;25;0.25
+Loglogistic;30;BIC_Vol;Loglogistic;7272;72.72
+Loglogistic;30;BIC_Vol;Lognormal;2441;24.41
+Loglogistic;30;BIC_Vol;Weibull;262;2.62
+Loglogistic;30;AIC_SURV;Generalized gamma;810;8.1
+Loglogistic;30;AIC_SURV;Loglogistic;6878;68.78
+Loglogistic;30;AIC_SURV;Lognormal;2216;22.16
+Loglogistic;30;AIC_SURV;Weibull;96;0.96
+Loglogistic;30;KIC;Generalized gamma;369;3.69
+Loglogistic;30;KIC;Loglogistic;7119;71.19
+Loglogistic;30;KIC;Lognormal;2352;23.52
+Loglogistic;30;KIC;Weibull;160;1.6
+Loglogistic;30;KICc;Generalized gamma;343;3.43
+Loglogistic;30;KICc;Loglogistic;7127;71.27
+Loglogistic;30;KICc;Lognormal;2360;23.6
+Loglogistic;30;KICc;Weibull;170;1.7
+Loglogistic;40;AIC;Generalized gamma;595;5.95
+Loglogistic;40;AIC;Loglogistic;6601;66.01
+Loglogistic;40;AIC;Lognormal;2368;23.68
+Loglogistic;40;AIC;Weibull;436;4.36
+Loglogistic;40;BIC_Trad;Generalized gamma;6;0.06
+Loglogistic;40;BIC_Trad;Loglogistic;6853;68.53
+Loglogistic;40;BIC_Trad;Lognormal;2543;25.43
+Loglogistic;40;BIC_Trad;Weibull;598;5.98
+Loglogistic;40;BIC_Vol;Generalized gamma;8;0.08
+Loglogistic;40;BIC_Vol;Loglogistic;6853;68.53
+Loglogistic;40;BIC_Vol;Lognormal;2541;25.41
+Loglogistic;40;BIC_Vol;Weibull;598;5.98
+Loglogistic;40;AIC_SURV;Generalized gamma;534;5.34
+Loglogistic;40;AIC_SURV;Loglogistic;6630;66.3
+Loglogistic;40;AIC_SURV;Lognormal;2385;23.85
+Loglogistic;40;AIC_SURV;Weibull;451;4.51
+Loglogistic;40;KIC;Generalized gamma;121;1.21
+Loglogistic;40;KIC;Loglogistic;6819;68.19
+Loglogistic;40;KIC;Lognormal;2499;24.99
+Loglogistic;40;KIC;Weibull;561;5.61
+Loglogistic;40;KICc;Generalized gamma;106;1.06
+Loglogistic;40;KICc;Loglogistic;6825;68.25
+Loglogistic;40;KICc;Lognormal;2501;25.01
+Loglogistic;40;KICc;Weibull;568;5.68
+Loglogistic;50;AIC;Generalized gamma;167;1.67
+Loglogistic;50;AIC;Loglogistic;6161;61.61
+Loglogistic;50;AIC;Lognormal;2551;25.51
+Loglogistic;50;AIC;Weibull;1121;11.21
+Loglogistic;50;BIC_Trad;Generalized gamma;4;0.04
+Loglogistic;50;BIC_Trad;Loglogistic;6203;62.03
+Loglogistic;50;BIC_Trad;Lognormal;2636;26.36
+Loglogistic;50;BIC_Trad;Weibull;1157;11.57
+Loglogistic;50;BIC_Vol;Generalized gamma;7;0.07
+Loglogistic;50;BIC_Vol;Loglogistic;6203;62.03
+Loglogistic;50;BIC_Vol;Lognormal;2633;26.33
+Loglogistic;50;BIC_Vol;Weibull;1157;11.57
+Loglogistic;50;AIC_SURV;Generalized gamma;131;1.31
+Loglogistic;50;AIC_SURV;Loglogistic;6174;61.74
+Loglogistic;50;AIC_SURV;Lognormal;2566;25.66
+Loglogistic;50;AIC_SURV;Weibull;1129;11.29
+Loglogistic;50;KIC;Generalized gamma;30;0.3
+Loglogistic;50;KIC;Loglogistic;6202;62.02
+Loglogistic;50;KIC;Lognormal;2611;26.11
+Loglogistic;50;KIC;Weibull;1157;11.57
+Loglogistic;50;KICc;Generalized gamma;28;0.28
+Loglogistic;50;KICc;Loglogistic;6203;62.03
+Loglogistic;50;KICc;Lognormal;2612;26.12
+Loglogistic;50;KICc;Weibull;1157;11.57
+Loglogistic;60;AIC;Generalized gamma;79;0.79
+Loglogistic;60;AIC;Gompertz;10;0.1
+Loglogistic;60;AIC;Loglogistic;5320;53.2
+Loglogistic;60;AIC;Lognormal;2700;27
+Loglogistic;60;AIC;Weibull;1891;18.91
+Loglogistic;60;BIC_Trad;Generalized gamma;7;0.07
+Loglogistic;60;BIC_Trad;Gompertz;12;0.12
+Loglogistic;60;BIC_Trad;Loglogistic;5322;53.22
+Loglogistic;60;BIC_Trad;Lognormal;2760;27.6
+Loglogistic;60;BIC_Trad;Weibull;1899;18.99
+Loglogistic;60;BIC_Vol;Generalized gamma;14;0.14
+Loglogistic;60;BIC_Vol;Gompertz;12;0.12
+Loglogistic;60;BIC_Vol;Loglogistic;5322;53.22
+Loglogistic;60;BIC_Vol;Lognormal;2753;27.53
+Loglogistic;60;BIC_Vol;Weibull;1899;18.99
+Loglogistic;60;AIC_SURV;Generalized gamma;68;0.68
+Loglogistic;60;AIC_SURV;Gompertz;11;0.11
+Loglogistic;60;AIC_SURV;Loglogistic;5321;53.21
+Loglogistic;60;AIC_SURV;Lognormal;2707;27.07
+Loglogistic;60;AIC_SURV;Weibull;1893;18.93
+Loglogistic;60;KIC;Generalized gamma;27;0.27
+Loglogistic;60;KIC;Gompertz;12;0.12
+Loglogistic;60;KIC;Loglogistic;5322;53.22
+Loglogistic;60;KIC;Lognormal;2741;27.41
+Loglogistic;60;KIC;Weibull;1898;18.98
+Loglogistic;60;KICc;Generalized gamma;27;0.27
+Loglogistic;60;KICc;Gompertz;12;0.12
+Loglogistic;60;KICc;Loglogistic;5322;53.22
+Loglogistic;60;KICc;Lognormal;2741;27.41
+Loglogistic;60;KICc;Weibull;1898;18.98
+Loglogistic;70;AIC;Generalized gamma;124;1.24
+Loglogistic;70;AIC;Gompertz;86;0.86
+Loglogistic;70;AIC;Loglogistic;4313;43.13
+Loglogistic;70;AIC;Lognormal;2922;29.22
+Loglogistic;70;AIC;Weibull;2555;25.55
+Loglogistic;70;BIC_Trad;Exponential;1;0.01
+Loglogistic;70;BIC_Trad;Generalized gamma;6;0.06
+Loglogistic;70;BIC_Trad;Gompertz;91;0.91
+Loglogistic;70;BIC_Trad;Loglogistic;4312;43.12
+Loglogistic;70;BIC_Trad;Lognormal;3021;30.21
+Loglogistic;70;BIC_Trad;Weibull;2569;25.69
+Loglogistic;70;BIC_Vol;Generalized gamma;15;0.15
+Loglogistic;70;BIC_Vol;Gompertz;91;0.91
+Loglogistic;70;BIC_Vol;Loglogistic;4313;43.13
+Loglogistic;70;BIC_Vol;Lognormal;3012;30.12
+Loglogistic;70;BIC_Vol;Weibull;2569;25.69
+Loglogistic;70;AIC_SURV;Generalized gamma;101;1.01
+Loglogistic;70;AIC_SURV;Gompertz;90;0.9
+Loglogistic;70;AIC_SURV;Loglogistic;4313;43.13
+Loglogistic;70;AIC_SURV;Lognormal;2936;29.36
+Loglogistic;70;AIC_SURV;Weibull;2560;25.6
+Loglogistic;70;KIC;Generalized gamma;45;0.45
+Loglogistic;70;KIC;Gompertz;91;0.91
+Loglogistic;70;KIC;Loglogistic;4313;43.13
+Loglogistic;70;KIC;Lognormal;2984;29.84
+Loglogistic;70;KIC;Weibull;2567;25.67
+Loglogistic;70;KICc;Generalized gamma;37;0.37
+Loglogistic;70;KICc;Gompertz;91;0.91
+Loglogistic;70;KICc;Loglogistic;4313;43.13
+Loglogistic;70;KICc;Lognormal;2992;29.92
+Loglogistic;70;KICc;Weibull;2567;25.67
+Gompertz;30;AIC;Exponential;566;5.66
+Gompertz;30;AIC;Generalized gamma;842;8.42
+Gompertz;30;AIC;Gompertz;6628;66.28
+Gompertz;30;AIC;Loglogistic;2;0.02
+Gompertz;30;AIC;Weibull;1962;19.62
+Gompertz;30;BIC_Trad;Exponential;2830;28.3
+Gompertz;30;BIC_Trad;Generalized gamma;95;0.95
+Gompertz;30;BIC_Trad;Gompertz;5589;55.89
+Gompertz;30;BIC_Trad;Loglogistic;4;0.04
+Gompertz;30;BIC_Trad;Lognormal;1;0.01
+Gompertz;30;BIC_Trad;Weibull;1481;14.81
+Gompertz;30;BIC_Vol;Exponential;2554;25.54
+Gompertz;30;BIC_Vol;Generalized gamma;121;1.21
+Gompertz;30;BIC_Vol;Gompertz;5785;57.85
+Gompertz;30;BIC_Vol;Loglogistic;4;0.04
+Gompertz;30;BIC_Vol;Lognormal;1;0.01
+Gompertz;30;BIC_Vol;Weibull;1535;15.35
+Gompertz;30;AIC_SURV;Exponential;588;5.88
+Gompertz;30;AIC_SURV;Generalized gamma;807;8.07
+Gompertz;30;AIC_SURV;Gompertz;6643;66.43
+Gompertz;30;AIC_SURV;Loglogistic;2;0.02
+Gompertz;30;AIC_SURV;Weibull;1960;19.6
+Gompertz;30;KIC;Exponential;1071;10.71
+Gompertz;30;KIC;Generalized gamma;441;4.41
+Gompertz;30;KIC;Gompertz;6610;66.1
+Gompertz;30;KIC;Loglogistic;3;0.03
+Gompertz;30;KIC;Lognormal;1;0.01
+Gompertz;30;KIC;Weibull;1874;18.74
+Gompertz;30;KICc;Exponential;1098;10.98
+Gompertz;30;KICc;Generalized gamma;424;4.24
+Gompertz;30;KICc;Gompertz;6607;66.07
+Gompertz;30;KICc;Loglogistic;3;0.03
+Gompertz;30;KICc;Lognormal;1;0.01
+Gompertz;30;KICc;Weibull;1867;18.67
+Gompertz;40;AIC;Exponential;1868;18.68
+Gompertz;40;AIC;Generalized gamma;798;7.98
+Gompertz;40;AIC;Gompertz;5106;51.06
+Gompertz;40;AIC;Loglogistic;55;0.55
+Gompertz;40;AIC;Lognormal;7;0.07
+Gompertz;40;AIC;Weibull;2166;21.66
+Gompertz;40;BIC_Trad;Exponential;5385;53.85
+Gompertz;40;BIC_Trad;Generalized gamma;101;1.01
+Gompertz;40;BIC_Trad;Gompertz;3275;32.75
+Gompertz;40;BIC_Trad;Loglogistic;33;0.33
+Gompertz;40;BIC_Trad;Lognormal;8;0.08
+Gompertz;40;BIC_Trad;Weibull;1198;11.98
+Gompertz;40;BIC_Vol;Exponential;4908;49.08
+Gompertz;40;BIC_Vol;Generalized gamma;143;1.43
+Gompertz;40;BIC_Vol;Gompertz;3565;35.65
+Gompertz;40;BIC_Vol;Loglogistic;36;0.36
+Gompertz;40;BIC_Vol;Lognormal;9;0.09
+Gompertz;40;BIC_Vol;Weibull;1339;13.39
+Gompertz;40;AIC_SURV;Exponential;1922;19.22
+Gompertz;40;AIC_SURV;Generalized gamma;752;7.52
+Gompertz;40;AIC_SURV;Gompertz;5110;51.1
+Gompertz;40;AIC_SURV;Loglogistic;56;0.56
+Gompertz;40;AIC_SURV;Lognormal;8;0.08
+Gompertz;40;AIC_SURV;Weibull;2152;21.52
+Gompertz;40;KIC;Exponential;2915;29.15
+Gompertz;40;KIC;Generalized gamma;393;3.93
+Gompertz;40;KIC;Gompertz;4739;47.39
+Gompertz;40;KIC;Loglogistic;50;0.5
+Gompertz;40;KIC;Lognormal;12;0.12
+Gompertz;40;KIC;Weibull;1891;18.91
+Gompertz;40;KICc;Exponential;2981;29.81
+Gompertz;40;KICc;Generalized gamma;371;3.71
+Gompertz;40;KICc;Gompertz;4707;47.07
+Gompertz;40;KICc;Loglogistic;49;0.49
+Gompertz;40;KICc;Lognormal;12;0.12
+Gompertz;40;KICc;Weibull;1880;18.8
+Gompertz;50;AIC;Exponential;3471;34.71
+Gompertz;50;AIC;Generalized gamma;658;6.58
+Gompertz;50;AIC;Gompertz;3647;36.47
+Gompertz;50;AIC;Loglogistic;283;2.83
+Gompertz;50;AIC;Lognormal;52;0.52
+Gompertz;50;AIC;Weibull;1889;18.89
+Gompertz;50;BIC_Trad;Exponential;7335;73.35
+Gompertz;50;BIC_Trad;Generalized gamma;40;0.4
+Gompertz;50;BIC_Trad;Gompertz;1684;16.84
+Gompertz;50;BIC_Trad;Loglogistic;118;1.18
+Gompertz;50;BIC_Trad;Lognormal;27;0.27
+Gompertz;50;BIC_Trad;Weibull;796;7.96
+Gompertz;50;BIC_Vol;Exponential;6796;67.96
+Gompertz;50;BIC_Vol;Generalized gamma;67;0.67
+Gompertz;50;BIC_Vol;Gompertz;2006;20.06
+Gompertz;50;BIC_Vol;Loglogistic;139;1.39
+Gompertz;50;BIC_Vol;Lognormal;32;0.32
+Gompertz;50;BIC_Vol;Weibull;960;9.6
+Gompertz;50;AIC_SURV;Exponential;3578;35.78
+Gompertz;50;AIC_SURV;Generalized gamma;605;6.05
+Gompertz;50;AIC_SURV;Gompertz;3624;36.24
+Gompertz;50;AIC_SURV;Loglogistic;277;2.77
+Gompertz;50;AIC_SURV;Lognormal;52;0.52
+Gompertz;50;AIC_SURV;Weibull;1864;18.64
+Gompertz;50;KIC;Exponential;4858;48.58
+Gompertz;50;KIC;Generalized gamma;284;2.84
+Gompertz;50;KIC;Gompertz;3078;30.78
+Gompertz;50;KIC;Loglogistic;226;2.26
+Gompertz;50;KIC;Lognormal;48;0.48
+Gompertz;50;KIC;Weibull;1506;15.06
+Gompertz;50;KICc;Exponential;4941;49.41
+Gompertz;50;KICc;Generalized gamma;264;2.64
+Gompertz;50;KICc;Gompertz;3039;30.39
+Gompertz;50;KICc;Loglogistic;221;2.21
+Gompertz;50;KICc;Lognormal;47;0.47
+Gompertz;50;KICc;Weibull;1488;14.88
+Gompertz;60;AIC;Exponential;5052;50.52
+Gompertz;60;AIC;Generalized gamma;341;3.41
+Gompertz;60;AIC;Gompertz;2361;23.61
+Gompertz;60;AIC;Loglogistic;581;5.81
+Gompertz;60;AIC;Lognormal;225;2.25
+Gompertz;60;AIC;Weibull;1440;14.4
+Gompertz;60;BIC_Trad;Exponential;8493;84.93
+Gompertz;60;BIC_Trad;Generalized gamma;1;0.01
+Gompertz;60;BIC_Trad;Gompertz;824;8.24
+Gompertz;60;BIC_Trad;Loglogistic;153;1.53
+Gompertz;60;BIC_Trad;Lognormal;107;1.07
+Gompertz;60;BIC_Trad;Weibull;422;4.22
+Gompertz;60;BIC_Vol;Exponential;7928;79.28
+Gompertz;60;BIC_Vol;Generalized gamma;6;0.06
+Gompertz;60;BIC_Vol;Gompertz;1128;11.28
+Gompertz;60;BIC_Vol;Loglogistic;204;2.04
+Gompertz;60;BIC_Vol;Lognormal;131;1.31
+Gompertz;60;BIC_Vol;Weibull;603;6.03
+Gompertz;60;AIC_SURV;Exponential;5211;52.11
+Gompertz;60;AIC_SURV;Generalized gamma;290;2.9
+Gompertz;60;AIC_SURV;Gompertz;2322;23.22
+Gompertz;60;AIC_SURV;Loglogistic;558;5.58
+Gompertz;60;AIC_SURV;Lognormal;222;2.22
+Gompertz;60;AIC_SURV;Weibull;1397;13.97
+Gompertz;60;KIC;Exponential;6496;64.96
+Gompertz;60;KIC;Generalized gamma;94;0.94
+Gompertz;60;KIC;Gompertz;1828;18.28
+Gompertz;60;KIC;Loglogistic;379;3.79
+Gompertz;60;KIC;Lognormal;188;1.88
+Gompertz;60;KIC;Weibull;1015;10.15
+Gompertz;60;KICc;Exponential;6593;65.93
+Gompertz;60;KICc;Generalized gamma;80;0.8
+Gompertz;60;KICc;Gompertz;1787;17.87
+Gompertz;60;KICc;Loglogistic;367;3.67
+Gompertz;60;KICc;Lognormal;187;1.87
+Gompertz;60;KICc;Weibull;986;9.86
+Gompertz;70;AIC;Exponential;6127;61.27
+Gompertz;70;AIC;Generalized gamma;64;0.64
+Gompertz;70;AIC;Gompertz;1605;16.05
+Gompertz;70;AIC;Loglogistic;621;6.21
+Gompertz;70;AIC;Lognormal;696;6.96
+Gompertz;70;AIC;Weibull;887;8.87
+Gompertz;70;BIC_Trad;Exponential;9112;91.12
+Gompertz;70;BIC_Trad;Gompertz;374;3.74
+Gompertz;70;BIC_Trad;Loglogistic;123;1.23
+Gompertz;70;BIC_Trad;Lognormal;198;1.98
+Gompertz;70;BIC_Trad;Weibull;193;1.93
+Gompertz;70;BIC_Vol;Exponential;8507;85.07
+Gompertz;70;BIC_Vol;Gompertz;617;6.17
+Gompertz;70;BIC_Vol;Loglogistic;214;2.14
+Gompertz;70;BIC_Vol;Lognormal;336;3.36
+Gompertz;70;BIC_Vol;Weibull;326;3.26
+Gompertz;70;AIC_SURV;Exponential;6301;63.01
+Gompertz;70;AIC_SURV;Generalized gamma;38;0.38
+Gompertz;70;AIC_SURV;Gompertz;1540;15.4
+Gompertz;70;AIC_SURV;Loglogistic;584;5.84
+Gompertz;70;AIC_SURV;Lognormal;681;6.81
+Gompertz;70;AIC_SURV;Weibull;856;8.56
+Gompertz;70;KIC;Exponential;7467;74.67
+Gompertz;70;KIC;Generalized gamma;6;0.06
+Gompertz;70;KIC;Gompertz;1057;10.57
+Gompertz;70;KIC;Loglogistic;375;3.75
+Gompertz;70;KIC;Lognormal;530;5.3
+Gompertz;70;KIC;Weibull;565;5.65
+Gompertz;70;KICc;Exponential;7572;75.72
+Gompertz;70;KICc;Generalized gamma;5;0.05
+Gompertz;70;KICc;Gompertz;1006;10.06
+Gompertz;70;KICc;Loglogistic;358;3.58
+Gompertz;70;KICc;Lognormal;517;5.17
+Gompertz;70;KICc;Weibull;542;5.42
+Generalized gamma;30;AIC;Generalized gamma;6106;61.06
+Generalized gamma;30;AIC;Loglogistic;1339;13.39
+Generalized gamma;30;AIC;Lognormal;1269;12.69
+Generalized gamma;30;AIC;Weibull;1286;12.86
+Generalized gamma;30;BIC_Trad;Generalized gamma;411;4.11
+Generalized gamma;30;BIC_Trad;Loglogistic;3028;30.28
+Generalized gamma;30;BIC_Trad;Lognormal;2808;28.08
+Generalized gamma;30;BIC_Trad;Weibull;3753;37.53
+Generalized gamma;30;BIC_Vol;Generalized gamma;738;7.38
+Generalized gamma;30;BIC_Vol;Loglogistic;2924;29.24
+Generalized gamma;30;BIC_Vol;Lognormal;2722;27.22
+Generalized gamma;30;BIC_Vol;Weibull;3616;36.16
+Generalized gamma;30;AIC_SURV;Generalized gamma;5996;59.96
+Generalized gamma;30;AIC_SURV;Loglogistic;1370;13.7
+Generalized gamma;30;AIC_SURV;Lognormal;1302;13.02
+Generalized gamma;30;AIC_SURV;Weibull;1332;13.32
+Generalized gamma;30;KIC;Generalized gamma;4324;43.24
+Generalized gamma;30;KIC;Loglogistic;1819;18.19
+Generalized gamma;30;KIC;Lognormal;1825;18.25
+Generalized gamma;30;KIC;Weibull;2032;20.32
+Generalized gamma;30;KICc;Generalized gamma;4194;41.94
+Generalized gamma;30;KICc;Loglogistic;1862;18.62
+Generalized gamma;30;KICc;Lognormal;1852;18.52
+Generalized gamma;30;KICc;Weibull;2092;20.92
+Generalized gamma;40;AIC;Generalized gamma;4063;40.63
+Generalized gamma;40;AIC;Loglogistic;2466;24.66
+Generalized gamma;40;AIC;Lognormal;1694;16.94
+Generalized gamma;40;AIC;Weibull;1777;17.77
+Generalized gamma;40;BIC_Trad;Generalized gamma;5;0.05
+Generalized gamma;40;BIC_Trad;Loglogistic;3847;38.47
+Generalized gamma;40;BIC_Trad;Lognormal;2618;26.18
+Generalized gamma;40;BIC_Trad;Weibull;3530;35.3
+Generalized gamma;40;BIC_Vol;Generalized gamma;17;0.17
+Generalized gamma;40;BIC_Vol;Loglogistic;3847;38.47
+Generalized gamma;40;BIC_Vol;Lognormal;2613;26.13
+Generalized gamma;40;BIC_Vol;Weibull;3523;35.23
+Generalized gamma;40;AIC_SURV;Generalized gamma;3867;38.67
+Generalized gamma;40;AIC_SURV;Loglogistic;2521;25.21
+Generalized gamma;40;AIC_SURV;Lognormal;1750;17.5
+Generalized gamma;40;AIC_SURV;Weibull;1862;18.62
+Generalized gamma;40;KIC;Generalized gamma;1970;19.7
+Generalized gamma;40;KIC;Loglogistic;3207;32.07
+Generalized gamma;40;KIC;Lognormal;2170;21.7
+Generalized gamma;40;KIC;Weibull;2653;26.53
+Generalized gamma;40;KICc;Generalized gamma;1805;18.05
+Generalized gamma;40;KICc;Loglogistic;3269;32.69
+Generalized gamma;40;KICc;Lognormal;2209;22.09
+Generalized gamma;40;KICc;Weibull;2717;27.17
+Generalized gamma;50;AIC;Generalized gamma;1530;15.3
+Generalized gamma;50;AIC;Loglogistic;3688;36.88
+Generalized gamma;50;AIC;Lognormal;2311;23.11
+Generalized gamma;50;AIC;Weibull;2471;24.71
+Generalized gamma;50;BIC_Trad;Generalized gamma;2;0.02
+Generalized gamma;50;BIC_Trad;Loglogistic;4247;42.47
+Generalized gamma;50;BIC_Trad;Lognormal;2656;26.56
+Generalized gamma;50;BIC_Trad;Weibull;3095;30.95
+Generalized gamma;50;BIC_Vol;Generalized gamma;2;0.02
+Generalized gamma;50;BIC_Vol;Loglogistic;4247;42.47
+Generalized gamma;50;BIC_Vol;Lognormal;2656;26.56
+Generalized gamma;50;BIC_Vol;Weibull;3095;30.95
+Generalized gamma;50;AIC_SURV;Generalized gamma;1327;13.27
+Generalized gamma;50;AIC_SURV;Loglogistic;3767;37.67
+Generalized gamma;50;AIC_SURV;Lognormal;2354;23.54
+Generalized gamma;50;AIC_SURV;Weibull;2552;25.52
+Generalized gamma;50;KIC;Generalized gamma;188;1.88
+Generalized gamma;50;KIC;Loglogistic;4179;41.79
+Generalized gamma;50;KIC;Lognormal;2622;26.22
+Generalized gamma;50;KIC;Weibull;3011;30.11
+Generalized gamma;50;KICc;Generalized gamma;148;1.48
+Generalized gamma;50;KICc;Loglogistic;4187;41.87
+Generalized gamma;50;KICc;Lognormal;2632;26.32
+Generalized gamma;50;KICc;Weibull;3033;30.33
+Generalized gamma;60;AIC;Generalized gamma;165;1.65
+Generalized gamma;60;AIC;Loglogistic;4180;41.8
+Generalized gamma;60;AIC;Lognormal;3010;30.1
+Generalized gamma;60;AIC;Weibull;2645;26.45
+Generalized gamma;60;BIC_Trad;Generalized gamma;1;0.01
+Generalized gamma;60;BIC_Trad;Loglogistic;4226;42.26
+Generalized gamma;60;BIC_Trad;Lognormal;3064;30.64
+Generalized gamma;60;BIC_Trad;Weibull;2709;27.09
+Generalized gamma;60;BIC_Vol;Generalized gamma;5;0.05
+Generalized gamma;60;BIC_Vol;Loglogistic;4226;42.26
+Generalized gamma;60;BIC_Vol;Lognormal;3063;30.63
+Generalized gamma;60;BIC_Vol;Weibull;2706;27.06
+Generalized gamma;60;AIC_SURV;Generalized gamma;113;1.13
+Generalized gamma;60;AIC_SURV;Loglogistic;4201;42.01
+Generalized gamma;60;AIC_SURV;Lognormal;3018;30.18
+Generalized gamma;60;AIC_SURV;Weibull;2668;26.68
+Generalized gamma;60;KIC;Generalized gamma;15;0.15
+Generalized gamma;60;KIC;Loglogistic;4226;42.26
+Generalized gamma;60;KIC;Lognormal;3056;30.56
+Generalized gamma;60;KIC;Weibull;2703;27.03
+Generalized gamma;60;KICc;Generalized gamma;14;0.14
+Generalized gamma;60;KICc;Loglogistic;4226;42.26
+Generalized gamma;60;KICc;Lognormal;3057;30.57
+Generalized gamma;60;KICc;Weibull;2703;27.03
+Generalized gamma;70;AIC;Generalized gamma;137;1.37
+Generalized gamma;70;AIC;Gompertz;8;0.08
+Generalized gamma;70;AIC;Loglogistic;3851;38.51
+Generalized gamma;70;AIC;Lognormal;3564;35.64
+Generalized gamma;70;AIC;Weibull;2440;24.4
+Generalized gamma;70;BIC_Trad;Generalized gamma;9;0.09
+Generalized gamma;70;BIC_Trad;Gompertz;16;0.16
+Generalized gamma;70;BIC_Trad;Loglogistic;3851;38.51
+Generalized gamma;70;BIC_Trad;Lognormal;3647;36.47
+Generalized gamma;70;BIC_Trad;Weibull;2477;24.77
+Generalized gamma;70;BIC_Vol;Generalized gamma;28;0.28
+Generalized gamma;70;BIC_Vol;Gompertz;16;0.16
+Generalized gamma;70;BIC_Vol;Loglogistic;3851;38.51
+Generalized gamma;70;BIC_Vol;Lognormal;3633;36.33
+Generalized gamma;70;BIC_Vol;Weibull;2472;24.72
+Generalized gamma;70;AIC_SURV;Generalized gamma;115;1.15
+Generalized gamma;70;AIC_SURV;Gompertz;11;0.11
+Generalized gamma;70;AIC_SURV;Loglogistic;3851;38.51
+Generalized gamma;70;AIC_SURV;Lognormal;3576;35.76
+Generalized gamma;70;AIC_SURV;Weibull;2447;24.47
+Generalized gamma;70;KIC;Generalized gamma;70;0.7
+Generalized gamma;70;KIC;Gompertz;13;0.13
+Generalized gamma;70;KIC;Loglogistic;3851;38.51
+Generalized gamma;70;KIC;Lognormal;3603;36.03
+Generalized gamma;70;KIC;Weibull;2463;24.63
+Generalized gamma;70;KICc;Generalized gamma;61;0.61
+Generalized gamma;70;KICc;Gompertz;14;0.14
+Generalized gamma;70;KICc;Loglogistic;3851;38.51
+Generalized gamma;70;KICc;Lognormal;3610;36.1
+Generalized gamma;70;KICc;Weibull;2464;24.64
+Exponential;30;AIC;Exponential;7335;73.35
+Exponential;30;AIC;Generalized gamma;443;4.43
+Exponential;30;AIC;Gompertz;966;9.66
+Exponential;30;AIC;Loglogistic;236;2.36
+Exponential;30;AIC;Lognormal;33;0.33
+Exponential;30;AIC;Weibull;987;9.87
+Exponential;30;BIC_Trad;Exponential;9588;95.88
+Exponential;30;BIC_Trad;Generalized gamma;6;0.06
+Exponential;30;BIC_Trad;Gompertz;128;1.28
+Exponential;30;BIC_Trad;Loglogistic;99;0.99
+Exponential;30;BIC_Trad;Lognormal;33;0.33
+Exponential;30;BIC_Trad;Weibull;146;1.46
+Exponential;30;BIC_Vol;Exponential;9488;94.88
+Exponential;30;BIC_Vol;Generalized gamma;11;0.11
+Exponential;30;BIC_Vol;Gompertz;166;1.66
+Exponential;30;BIC_Vol;Loglogistic;110;1.1
+Exponential;30;BIC_Vol;Lognormal;40;0.4
+Exponential;30;BIC_Vol;Weibull;185;1.85
+Exponential;30;AIC_SURV;Exponential;7417;74.17
+Exponential;30;AIC_SURV;Generalized gamma;410;4.1
+Exponential;30;AIC_SURV;Gompertz;936;9.36
+Exponential;30;AIC_SURV;Loglogistic;241;2.41
+Exponential;30;AIC_SURV;Lognormal;35;0.35
+Exponential;30;AIC_SURV;Weibull;961;9.61
+Exponential;30;KIC;Exponential;8467;84.67
+Exponential;30;KIC;Generalized gamma;96;0.96
+Exponential;30;KIC;Gompertz;558;5.58
+Exponential;30;KIC;Loglogistic;224;2.24
+Exponential;30;KIC;Lognormal;55;0.55
+Exponential;30;KIC;Weibull;600;6
+Exponential;30;KICc;Exponential;8519;85.19
+Exponential;30;KICc;Generalized gamma;87;0.87
+Exponential;30;KICc;Gompertz;538;5.38
+Exponential;30;KICc;Loglogistic;221;2.21
+Exponential;30;KICc;Lognormal;54;0.54
+Exponential;30;KICc;Weibull;581;5.81
+Exponential;40;AIC;Exponential;7176;71.76
+Exponential;40;AIC;Generalized gamma;307;3.07
+Exponential;40;AIC;Gompertz;834;8.34
+Exponential;40;AIC;Loglogistic;538;5.38
+Exponential;40;AIC;Lognormal;132;1.32
+Exponential;40;AIC;Weibull;1013;10.13
+Exponential;40;BIC_Trad;Exponential;9508;95.08
+Exponential;40;BIC_Trad;Generalized gamma;11;0.11
+Exponential;40;BIC_Trad;Gompertz;113;1.13
+Exponential;40;BIC_Trad;Loglogistic;151;1.51
+Exponential;40;BIC_Trad;Lognormal;75;0.75
+Exponential;40;BIC_Trad;Weibull;142;1.42
+Exponential;40;BIC_Vol;Exponential;9365;93.65
+Exponential;40;BIC_Vol;Generalized gamma;19;0.19
+Exponential;40;BIC_Vol;Gompertz;136;1.36
+Exponential;40;BIC_Vol;Loglogistic;199;1.99
+Exponential;40;BIC_Vol;Lognormal;82;0.82
+Exponential;40;BIC_Vol;Weibull;199;1.99
+Exponential;40;AIC_SURV;Exponential;7270;72.7
+Exponential;40;AIC_SURV;Generalized gamma;271;2.71
+Exponential;40;AIC_SURV;Gompertz;807;8.07
+Exponential;40;AIC_SURV;Loglogistic;531;5.31
+Exponential;40;AIC_SURV;Lognormal;136;1.36
+Exponential;40;AIC_SURV;Weibull;985;9.85
+Exponential;40;KIC;Exponential;8327;83.27
+Exponential;40;KIC;Generalized gamma;90;0.9
+Exponential;40;KIC;Gompertz;468;4.68
+Exponential;40;KIC;Loglogistic;408;4.08
+Exponential;40;KIC;Lognormal;125;1.25
+Exponential;40;KIC;Weibull;582;5.82
+Exponential;40;KICc;Exponential;8370;83.7
+Exponential;40;KICc;Generalized gamma;84;0.84
+Exponential;40;KICc;Gompertz;460;4.6
+Exponential;40;KICc;Loglogistic;400;4
+Exponential;40;KICc;Lognormal;122;1.22
+Exponential;40;KICc;Weibull;564;5.64
+Exponential;50;AIC;Exponential;6940;69.4
+Exponential;50;AIC;Generalized gamma;267;2.67
+Exponential;50;AIC;Gompertz;717;7.17
+Exponential;50;AIC;Loglogistic;884;8.84
+Exponential;50;AIC;Lognormal;292;2.92
+Exponential;50;AIC;Weibull;900;9
+Exponential;50;BIC_Trad;Exponential;9440;94.4
+Exponential;50;BIC_Trad;Generalized gamma;5;0.05
+Exponential;50;BIC_Trad;Gompertz;101;1.01
+Exponential;50;BIC_Trad;Loglogistic;170;1.7
+Exponential;50;BIC_Trad;Lognormal;143;1.43
+Exponential;50;BIC_Trad;Weibull;141;1.41
+Exponential;50;BIC_Vol;Exponential;9195;91.95
+Exponential;50;BIC_Vol;Generalized gamma;11;0.11
+Exponential;50;BIC_Vol;Gompertz;146;1.46
+Exponential;50;BIC_Vol;Loglogistic;268;2.68
+Exponential;50;BIC_Vol;Lognormal;169;1.69
+Exponential;50;BIC_Vol;Weibull;211;2.11
+Exponential;50;AIC_SURV;Exponential;7040;70.4
+Exponential;50;AIC_SURV;Generalized gamma;235;2.35
+Exponential;50;AIC_SURV;Gompertz;698;6.98
+Exponential;50;AIC_SURV;Loglogistic;866;8.66
+Exponential;50;AIC_SURV;Lognormal;290;2.9
+Exponential;50;AIC_SURV;Weibull;871;8.71
+Exponential;50;KIC;Exponential;8118;81.18
+Exponential;50;KIC;Generalized gamma;89;0.89
+Exponential;50;KIC;Gompertz;405;4.05
+Exponential;50;KIC;Loglogistic;598;5.98
+Exponential;50;KIC;Lognormal;253;2.53
+Exponential;50;KIC;Weibull;537;5.37
+Exponential;50;KICc;Exponential;8184;81.84
+Exponential;50;KICc;Generalized gamma;73;0.73
+Exponential;50;KICc;Gompertz;392;3.92
+Exponential;50;KICc;Loglogistic;577;5.77
+Exponential;50;KICc;Lognormal;250;2.5
+Exponential;50;KICc;Weibull;524;5.24
+Exponential;60;AIC;Exponential;6799;67.99
+Exponential;60;AIC;Generalized gamma;201;2.01
+Exponential;60;AIC;Gompertz;674;6.74
+Exponential;60;AIC;Loglogistic;903;9.03
+Exponential;60;AIC;Lognormal;614;6.14
+Exponential;60;AIC;Weibull;809;8.09
+Exponential;60;BIC_Trad;Exponential;9439;94.39
+Exponential;60;BIC_Trad;Generalized gamma;3;0.03
+Exponential;60;BIC_Trad;Gompertz;126;1.26
+Exponential;60;BIC_Trad;Loglogistic;85;0.85
+Exponential;60;BIC_Trad;Lognormal;231;2.31
+Exponential;60;BIC_Trad;Weibull;116;1.16
+Exponential;60;BIC_Vol;Exponential;9126;91.26
+Exponential;60;BIC_Vol;Generalized gamma;6;0.06
+Exponential;60;BIC_Vol;Gompertz;183;1.83
+Exponential;60;BIC_Vol;Loglogistic;156;1.56
+Exponential;60;BIC_Vol;Lognormal;337;3.37
+Exponential;60;BIC_Vol;Weibull;192;1.92
+Exponential;60;AIC_SURV;Exponential;6918;69.18
+Exponential;60;AIC_SURV;Generalized gamma;183;1.83
+Exponential;60;AIC_SURV;Gompertz;645;6.45
+Exponential;60;AIC_SURV;Loglogistic;864;8.64
+Exponential;60;AIC_SURV;Lognormal;607;6.07
+Exponential;60;AIC_SURV;Weibull;783;7.83
+Exponential;60;KIC;Exponential;8062;80.62
+Exponential;60;KIC;Generalized gamma;64;0.64
+Exponential;60;KIC;Gompertz;406;4.06
+Exponential;60;KIC;Loglogistic;495;4.95
+Exponential;60;KIC;Lognormal;510;5.1
+Exponential;60;KIC;Weibull;463;4.63
+Exponential;60;KICc;Exponential;8133;81.33
+Exponential;60;KICc;Generalized gamma;55;0.55
+Exponential;60;KICc;Gompertz;391;3.91
+Exponential;60;KICc;Loglogistic;470;4.7
+Exponential;60;KICc;Lognormal;503;5.03
+Exponential;60;KICc;Weibull;448;4.48
+Exponential;70;AIC;Exponential;6778;67.78
+Exponential;70;AIC;Generalized gamma;87;0.87
+Exponential;70;AIC;Gompertz;747;7.47
+Exponential;70;AIC;Loglogistic;613;6.13
+Exponential;70;AIC;Lognormal;1104;11.04
+Exponential;70;AIC;Weibull;671;6.71
+Exponential;70;BIC_Trad;Exponential;9469;94.69
+Exponential;70;BIC_Trad;Generalized gamma;1;0.01
+Exponential;70;BIC_Trad;Gompertz;98;0.98
+Exponential;70;BIC_Trad;Loglogistic;61;0.61
+Exponential;70;BIC_Trad;Lognormal;278;2.78
+Exponential;70;BIC_Trad;Weibull;93;0.93
+Exponential;70;BIC_Vol;Exponential;8965;89.65
+Exponential;70;BIC_Vol;Generalized gamma;1;0.01
+Exponential;70;BIC_Vol;Gompertz;198;1.98
+Exponential;70;BIC_Vol;Loglogistic;133;1.33
+Exponential;70;BIC_Vol;Lognormal;515;5.15
+Exponential;70;BIC_Vol;Weibull;188;1.88
+Exponential;70;AIC_SURV;Exponential;6974;69.74
+Exponential;70;AIC_SURV;Generalized gamma;61;0.61
+Exponential;70;AIC_SURV;Gompertz;689;6.89
+Exponential;70;AIC_SURV;Loglogistic;573;5.73
+Exponential;70;AIC_SURV;Lognormal;1073;10.73
+Exponential;70;AIC_SURV;Weibull;630;6.3
+Exponential;70;KIC;Exponential;8026;80.26
+Exponential;70;KIC;Generalized gamma;10;0.1
+Exponential;70;KIC;Gompertz;424;4.24
+Exponential;70;KIC;Loglogistic;319;3.19
+Exponential;70;KIC;Lognormal;828;8.28
+Exponential;70;KIC;Weibull;393;3.93
+Exponential;70;KICc;Exponential;8135;81.35
+Exponential;70;KICc;Generalized gamma;6;0.06
+Exponential;70;KICc;Gompertz;394;3.94
+Exponential;70;KICc;Loglogistic;297;2.97
+Exponential;70;KICc;Lognormal;795;7.95
+Exponential;70;KICc;Weibull;373;3.73
+Weibull;30;AIC;Generalized gamma;1276;12.76
+Weibull;30;AIC;Gompertz;337;3.37
+Weibull;30;AIC;Loglogistic;88;0.88
+Weibull;30;AIC;Lognormal;11;0.11
+Weibull;30;AIC;Weibull;8288;82.88
+Weibull;30;BIC_Trad;Generalized gamma;1;0.01
+Weibull;30;BIC_Trad;Gompertz;546;5.46
+Weibull;30;BIC_Trad;Loglogistic;229;2.29
+Weibull;30;BIC_Trad;Lognormal;52;0.52
+Weibull;30;BIC_Trad;Weibull;9172;91.72
+Weibull;30;BIC_Vol;Generalized gamma;4;0.04
+Weibull;30;BIC_Vol;Gompertz;546;5.46
+Weibull;30;BIC_Vol;Loglogistic;227;2.27
+Weibull;30;BIC_Vol;Lognormal;52;0.52
+Weibull;30;BIC_Vol;Weibull;9171;91.71
+Weibull;30;AIC_SURV;Generalized gamma;1183;11.83
+Weibull;30;AIC_SURV;Gompertz;357;3.57
+Weibull;30;AIC_SURV;Loglogistic;96;0.96
+Weibull;30;AIC_SURV;Lognormal;13;0.13
+Weibull;30;AIC_SURV;Weibull;8351;83.51
+Weibull;30;KIC;Generalized gamma;400;4
+Weibull;30;KIC;Gompertz;500;5
+Weibull;30;KIC;Loglogistic;163;1.63
+Weibull;30;KIC;Lognormal;26;0.26
+Weibull;30;KIC;Weibull;8911;89.11
+Weibull;30;KICc;Generalized gamma;354;3.54
+Weibull;30;KICc;Gompertz;509;5.09
+Weibull;30;KICc;Loglogistic;170;1.7
+Weibull;30;KICc;Lognormal;26;0.26
+Weibull;30;KICc;Weibull;8941;89.41
+Weibull;40;AIC;Generalized gamma;767;7.67
+Weibull;40;AIC;Gompertz;533;5.33
+Weibull;40;AIC;Loglogistic;493;4.93
+Weibull;40;AIC;Lognormal;55;0.55
+Weibull;40;AIC;Weibull;8152;81.52
+Weibull;40;BIC_Trad;Generalized gamma;4;0.04
+Weibull;40;BIC_Trad;Gompertz;698;6.98
+Weibull;40;BIC_Trad;Loglogistic;621;6.21
+Weibull;40;BIC_Trad;Lognormal;102;1.02
+Weibull;40;BIC_Trad;Weibull;8575;85.75
+Weibull;40;BIC_Vol;Generalized gamma;5;0.05
+Weibull;40;BIC_Vol;Gompertz;697;6.97
+Weibull;40;BIC_Vol;Loglogistic;621;6.21
+Weibull;40;BIC_Vol;Lognormal;102;1.02
+Weibull;40;BIC_Vol;Weibull;8575;85.75
+Weibull;40;AIC_SURV;Generalized gamma;668;6.68
+Weibull;40;AIC_SURV;Gompertz;555;5.55
+Weibull;40;AIC_SURV;Loglogistic;505;5.05
+Weibull;40;AIC_SURV;Lognormal;57;0.57
+Weibull;40;AIC_SURV;Weibull;8215;82.15
+Weibull;40;KIC;Generalized gamma;96;0.96
+Weibull;40;KIC;Gompertz;677;6.77
+Weibull;40;KIC;Loglogistic;604;6.04
+Weibull;40;KIC;Lognormal;90;0.9
+Weibull;40;KIC;Weibull;8533;85.33
+Weibull;40;KICc;Generalized gamma;75;0.75
+Weibull;40;KICc;Gompertz;682;6.82
+Weibull;40;KICc;Loglogistic;609;6.09
+Weibull;40;KICc;Lognormal;93;0.93
+Weibull;40;KICc;Weibull;8541;85.41
+Weibull;50;AIC;Generalized gamma;276;2.76
+Weibull;50;AIC;Gompertz;735;7.35
+Weibull;50;AIC;Loglogistic;1234;12.34
+Weibull;50;AIC;Lognormal;222;2.22
+Weibull;50;AIC;Weibull;7533;75.33
+Weibull;50;BIC_Trad;Exponential;4;0.04
+Weibull;50;BIC_Trad;Generalized gamma;6;0.06
+Weibull;50;BIC_Trad;Gompertz;832;8.32
+Weibull;50;BIC_Trad;Loglogistic;1257;12.57
+Weibull;50;BIC_Trad;Lognormal;247;2.47
+Weibull;50;BIC_Trad;Weibull;7654;76.54
+Weibull;50;BIC_Vol;Exponential;1;0.01
+Weibull;50;BIC_Vol;Generalized gamma;7;0.07
+Weibull;50;BIC_Vol;Gompertz;831;8.31
+Weibull;50;BIC_Vol;Loglogistic;1258;12.58
+Weibull;50;BIC_Vol;Lognormal;247;2.47
+Weibull;50;BIC_Vol;Weibull;7656;76.56
+Weibull;50;AIC_SURV;Generalized gamma;214;2.14
+Weibull;50;AIC_SURV;Gompertz;750;7.5
+Weibull;50;AIC_SURV;Loglogistic;1240;12.4
+Weibull;50;AIC_SURV;Lognormal;228;2.28
+Weibull;50;AIC_SURV;Weibull;7568;75.68
+Weibull;50;KIC;Generalized gamma;24;0.24
+Weibull;50;KIC;Gompertz;816;8.16
+Weibull;50;KIC;Loglogistic;1258;12.58
+Weibull;50;KIC;Lognormal;247;2.47
+Weibull;50;KIC;Weibull;7655;76.55
+Weibull;50;KICc;Generalized gamma;22;0.22
+Weibull;50;KICc;Gompertz;817;8.17
+Weibull;50;KICc;Loglogistic;1258;12.58
+Weibull;50;KICc;Lognormal;247;2.47
+Weibull;50;KICc;Weibull;7656;76.56
+Weibull;60;AIC;Exponential;1;0.01
+Weibull;60;AIC;Generalized gamma;163;1.63
+Weibull;60;AIC;Gompertz;995;9.95
+Weibull;60;AIC;Loglogistic;2035;20.35
+Weibull;60;AIC;Lognormal;514;5.14
+Weibull;60;AIC;Weibull;6292;62.92
+Weibull;60;BIC_Trad;Exponential;31;0.31
+Weibull;60;BIC_Trad;Gompertz;1103;11.03
+Weibull;60;BIC_Trad;Loglogistic;2033;20.33
+Weibull;60;BIC_Trad;Lognormal;515;5.15
+Weibull;60;BIC_Trad;Weibull;6318;63.18
+Weibull;60;BIC_Vol;Exponential;18;0.18
+Weibull;60;BIC_Vol;Generalized gamma;5;0.05
+Weibull;60;BIC_Vol;Gompertz;1101;11.01
+Weibull;60;BIC_Vol;Loglogistic;2035;20.35
+Weibull;60;BIC_Vol;Lognormal;515;5.15
+Weibull;60;BIC_Vol;Weibull;6326;63.26
+Weibull;60;AIC_SURV;Exponential;1;0.01
+Weibull;60;AIC_SURV;Generalized gamma;138;1.38
+Weibull;60;AIC_SURV;Gompertz;1010;10.1
+Weibull;60;AIC_SURV;Loglogistic;2035;20.35
+Weibull;60;AIC_SURV;Lognormal;515;5.15
+Weibull;60;AIC_SURV;Weibull;6301;63.01
+Weibull;60;KIC;Exponential;5;0.05
+Weibull;60;KIC;Generalized gamma;44;0.44
+Weibull;60;KIC;Gompertz;1073;10.73
+Weibull;60;KIC;Loglogistic;2035;20.35
+Weibull;60;KIC;Lognormal;515;5.15
+Weibull;60;KIC;Weibull;6328;63.28
+Weibull;60;KICc;Exponential;6;0.06
+Weibull;60;KICc;Generalized gamma;39;0.39
+Weibull;60;KICc;Gompertz;1078;10.78
+Weibull;60;KICc;Loglogistic;2035;20.35
+Weibull;60;KICc;Lognormal;515;5.15
+Weibull;60;KICc;Weibull;6327;63.27
+Weibull;70;AIC;Exponential;12;0.12
+Weibull;70;AIC;Generalized gamma;72;0.72
+Weibull;70;AIC;Gompertz;1422;14.22
+Weibull;70;AIC;Loglogistic;2501;25.01
+Weibull;70;AIC;Lognormal;1125;11.25
+Weibull;70;AIC;Weibull;4868;48.68
+Weibull;70;BIC_Trad;Exponential;285;2.85
+Weibull;70;BIC_Trad;Generalized gamma;2;0.02
+Weibull;70;BIC_Trad;Gompertz;1398;13.98
+Weibull;70;BIC_Trad;Loglogistic;2438;24.38
+Weibull;70;BIC_Trad;Lognormal;1117;11.17
+Weibull;70;BIC_Trad;Weibull;4760;47.6
+Weibull;70;BIC_Vol;Exponential;117;1.17
+Weibull;70;BIC_Vol;Generalized gamma;4;0.04
+Weibull;70;BIC_Vol;Gompertz;1434;14.34
+Weibull;70;BIC_Vol;Loglogistic;2480;24.8
+Weibull;70;BIC_Vol;Lognormal;1127;11.27
+Weibull;70;BIC_Vol;Weibull;4838;48.38
+Weibull;70;AIC_SURV;Exponential;16;0.16
+Weibull;70;AIC_SURV;Generalized gamma;54;0.54
+Weibull;70;AIC_SURV;Gompertz;1429;14.29
+Weibull;70;AIC_SURV;Loglogistic;2501;25.01
+Weibull;70;AIC_SURV;Lognormal;1127;11.27
+Weibull;70;AIC_SURV;Weibull;4873;48.73
+Weibull;70;KIC;Exponential;44;0.44
+Weibull;70;KIC;Generalized gamma;14;0.14
+Weibull;70;KIC;Gompertz;1440;14.4
+Weibull;70;KIC;Loglogistic;2493;24.93
+Weibull;70;KIC;Lognormal;1130;11.3
+Weibull;70;KIC;Weibull;4879;48.79
+Weibull;70;KICc;Exponential;48;0.48
+Weibull;70;KICc;Generalized gamma;14;0.14
+Weibull;70;KICc;Gompertz;1440;14.4
+Weibull;70;KICc;Loglogistic;2493;24.93
+Weibull;70;KICc;Lognormal;1130;11.3
+Weibull;70;KICc;Weibull;4875;48.75

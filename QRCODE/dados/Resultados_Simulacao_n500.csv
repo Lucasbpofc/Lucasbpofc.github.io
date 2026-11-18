@@ -1,0 +1,181 @@
+"Distribuicao","Censura","Criterio","Probabilidade"
+"Lognormal",30,"AIC",78.3
+"Lognormal",30,"BIC Tradicional",90.65
+"Lognormal",30,"BIC Volinsky",90.45
+"Lognormal",30,"AIC SURV",78.61
+"Lognormal",30,"KIC",84.95
+"Lognormal",30,"KICc",85.1
+"Lognormal",40,"AIC",79.69
+"Lognormal",40,"BIC Tradicional",90.3
+"Lognormal",40,"BIC Volinsky",90.08
+"Lognormal",40,"AIC SURV",79.99
+"Lognormal",40,"KIC",85.53
+"Lognormal",40,"KICc",85.69
+"Lognormal",50,"AIC",80.04
+"Lognormal",50,"BIC Tradicional",89.72
+"Lognormal",50,"BIC Volinsky",89.34
+"Lognormal",50,"AIC SURV",80.44
+"Lognormal",50,"KIC",85.29
+"Lognormal",50,"KICc",85.48
+"Lognormal",60,"AIC",79.8
+"Lognormal",60,"BIC Tradicional",89.11
+"Lognormal",60,"BIC Volinsky",88.62
+"Lognormal",60,"AIC SURV",80.29
+"Lognormal",60,"KIC",84.85
+"Lognormal",60,"KICc",85.01
+"Lognormal",70,"AIC",78.73
+"Lognormal",70,"BIC Tradicional",88.04
+"Lognormal",70,"BIC Volinsky",87.06
+"Lognormal",70,"AIC SURV",79.27
+"Lognormal",70,"KIC",83.42
+"Lognormal",70,"KICc",83.61
+"Loglogistic",30,"AIC",81.69
+"Loglogistic",30,"BIC Tradicional",86.55
+"Loglogistic",30,"BIC Volinsky",86.45
+"Loglogistic",30,"AIC SURV",81.78
+"Loglogistic",30,"KIC",83.99
+"Loglogistic",30,"KICc",84.03
+"Loglogistic",40,"AIC",77.1
+"Loglogistic",40,"BIC Tradicional",84.32
+"Loglogistic",40,"BIC Volinsky",84.22
+"Loglogistic",40,"AIC SURV",77.24
+"Loglogistic",40,"KIC",80.65
+"Loglogistic",40,"KICc",80.77
+"Loglogistic",50,"AIC",75.15
+"Loglogistic",50,"BIC Tradicional",80.17
+"Loglogistic",50,"BIC Volinsky",80.17
+"Loglogistic",50,"AIC SURV",75.48
+"Loglogistic",50,"KIC",78.81
+"Loglogistic",50,"KICc",78.91
+"Loglogistic",60,"AIC",70.11
+"Loglogistic",60,"BIC Tradicional",71.56
+"Loglogistic",60,"BIC Volinsky",71.56
+"Loglogistic",60,"AIC SURV",70.34
+"Loglogistic",60,"KIC",71.44
+"Loglogistic",60,"KICc",71.5
+"Loglogistic",70,"AIC",60.53
+"Loglogistic",70,"BIC Tradicional",60.57
+"Loglogistic",70,"BIC Volinsky",60.57
+"Loglogistic",70,"AIC SURV",60.53
+"Loglogistic",70,"KIC",60.57
+"Loglogistic",70,"KICc",60.57
+"Gompertz",30,"AIC",77.25
+"Gompertz",30,"BIC Tradicional",81.62
+"Gompertz",30,"BIC Volinsky",82.14
+"Gompertz",30,"AIC SURV",77.6
+"Gompertz",30,"KIC",81.86
+"Gompertz",30,"KICc",81.98
+"Gompertz",40,"AIC",67.95
+"Gompertz",40,"BIC Tradicional",56.5
+"Gompertz",40,"BIC Volinsky",59.08
+"Gompertz",40,"AIC SURV",68.06
+"Gompertz",40,"KIC",68.56
+"Gompertz",40,"KICc",68.53
+"Gompertz",50,"AIC",52.86
+"Gompertz",50,"BIC Tradicional",31.53
+"Gompertz",50,"BIC Volinsky",35.04
+"Gompertz",50,"AIC SURV",52.8
+"Gompertz",50,"KIC",49.63
+"Gompertz",50,"KICc",49.45
+"Gompertz",60,"AIC",34.19
+"Gompertz",60,"BIC Tradicional",13.29
+"Gompertz",60,"BIC Volinsky",17.01
+"Gompertz",60,"AIC SURV",34.1
+"Gompertz",60,"KIC",28.82
+"Gompertz",60,"KICc",28.57
+"Gompertz",70,"AIC",21.54
+"Gompertz",70,"BIC Tradicional",4.84
+"Gompertz",70,"BIC Volinsky",7.58
+"Gompertz",70,"AIC SURV",21.18
+"Gompertz",70,"KIC",15.29
+"Gompertz",70,"KICc",15.03
+"Generalized gamma",30,"AIC",92.43
+"Generalized gamma",30,"BIC Tradicional",59.56
+"Generalized gamma",30,"BIC Volinsky",62.94
+"Generalized gamma",30,"AIC SURV",92.27
+"Generalized gamma",30,"KIC",87.59
+"Generalized gamma",30,"KICc",87.41
+"Generalized gamma",40,"AIC",79.63
+"Generalized gamma",40,"BIC Tradicional",25.27
+"Generalized gamma",40,"BIC Volinsky",32.2
+"Generalized gamma",40,"AIC SURV",79.25
+"Generalized gamma",40,"KIC",68.51
+"Generalized gamma",40,"KICc",68
+"Generalized gamma",50,"AIC",54.65
+"Generalized gamma",50,"BIC Tradicional",1.19
+"Generalized gamma",50,"BIC Volinsky",3.75
+"Generalized gamma",50,"AIC SURV",53.77
+"Generalized gamma",50,"KIC",36.15
+"Generalized gamma",50,"KICc",35.29
+"Generalized gamma",60,"AIC",22.96
+"Generalized gamma",60,"BIC Tradicional",0
+"Generalized gamma",60,"BIC Volinsky",0
+"Generalized gamma",60,"AIC SURV",21.69
+"Generalized gamma",60,"KIC",6.74
+"Generalized gamma",60,"KICc",6.09
+"Generalized gamma",70,"AIC",2.38
+"Generalized gamma",70,"BIC Tradicional",0.01
+"Generalized gamma",70,"BIC Volinsky",0.01
+"Generalized gamma",70,"AIC SURV",1.8
+"Generalized gamma",70,"KIC",0.07
+"Generalized gamma",70,"KICc",0.06
+"Exponential",30,"AIC",74.2
+"Exponential",30,"BIC Tradicional",97.5
+"Exponential",30,"BIC Volinsky",97.12
+"Exponential",30,"AIC SURV",74.53
+"Exponential",30,"KIC",86.06
+"Exponential",30,"KICc",86.3
+"Exponential",40,"AIC",73.31
+"Exponential",40,"BIC Tradicional",97.32
+"Exponential",40,"BIC Volinsky",96.57
+"Exponential",40,"AIC SURV",73.85
+"Exponential",40,"KIC",85.31
+"Exponential",40,"KICc",85.48
+"Exponential",50,"AIC",72.72
+"Exponential",50,"BIC Tradicional",96.84
+"Exponential",50,"BIC Volinsky",95.61
+"Exponential",50,"AIC SURV",73.26
+"Exponential",50,"KIC",84.31
+"Exponential",50,"KICc",84.44
+"Exponential",60,"AIC",69.38
+"Exponential",60,"BIC Tradicional",96.31
+"Exponential",60,"BIC Volinsky",94.06
+"Exponential",60,"AIC SURV",70.07
+"Exponential",60,"KIC",81.82
+"Exponential",60,"KICc",82.15
+"Exponential",70,"AIC",68.5
+"Exponential",70,"BIC Tradicional",96.59
+"Exponential",70,"BIC Volinsky",93.85
+"Exponential",70,"AIC SURV",69.43
+"Exponential",70,"KIC",82.34
+"Exponential",70,"KICc",82.81
+"Weibull",30,"AIC",83.39
+"Weibull",30,"BIC Tradicional",98.13
+"Weibull",30,"BIC Volinsky",97.85
+"Weibull",30,"AIC SURV",83.79
+"Weibull",30,"KIC",91.3
+"Weibull",30,"KICc",91.47
+"Weibull",40,"AIC",83.85
+"Weibull",40,"BIC Tradicional",96.52
+"Weibull",40,"BIC Volinsky",96.4
+"Weibull",40,"AIC SURV",84.29
+"Weibull",40,"KIC",91.23
+"Weibull",40,"KICc",91.47
+"Weibull",50,"AIC",83.05
+"Weibull",50,"BIC Tradicional",90.53
+"Weibull",50,"BIC Volinsky",90.52
+"Weibull",50,"AIC SURV",83.5
+"Weibull",50,"KIC",88.34
+"Weibull",50,"KICc",88.5
+"Weibull",60,"AIC",76.29
+"Weibull",60,"BIC Tradicional",79.37
+"Weibull",60,"BIC Volinsky",79.35
+"Weibull",60,"AIC SURV",76.52
+"Weibull",60,"KIC",78.84
+"Weibull",60,"KICc",78.9
+"Weibull",70,"AIC",63.14
+"Weibull",70,"BIC Tradicional",64.62
+"Weibull",70,"BIC Volinsky",64.64
+"Weibull",70,"AIC SURV",63.25
+"Weibull",70,"KIC",64.43
+"Weibull",70,"KICc",64.46
